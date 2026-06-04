@@ -1,0 +1,73 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FocusBuddy",
+  "version": "0.1.0",
+  "identifier": "com.focusbuddy.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "FocusBuddy",
+        "width": 900,
+        "height": 650,
+        "minWidth": 800,
+        "minHeight": 600,
+        "visible": true,
+        "resizable": true,
+        "maximizable": true,
+        "minimizable": true,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "skipTaskbar": false
+      },
+      {
+        "label": "widget",
+        "title": "FocusBuddy Widget",
+        "width": 200,
+        "height": 250,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "skipTaskbar": true,
+        "resizable": false,
+        "maximizable": false,
+        "minimizable": false,
+        "shadow": false
+      }
+    ],
+    "trayIcon": {
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate": false,
+      "menuOnLeftClick": false,
+      "tooltip": "FocusBuddy"
+    },
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    }
+  },
+  "plugins": {}
+}

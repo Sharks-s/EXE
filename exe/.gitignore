@@ -1,0 +1,50 @@
+HELP.md
+
+# --- Build Outputs (Gradle & Maven) ---
+.gradle
+build/
+target/
+out/
+bin/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# --- Environment & Local Configs (Security) ---
+.env
+.env.*
+application-local.properties
+application-local.yml
+
+# --- IntelliJ IDEA ---
+.idea
+*.iws
+*.iml
+*.ipr
+
+# --- STS (Spring Tool Suite) ---
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# --- NetBeans ---
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# --- VS Code ---
+.vscode/
+
+# --- OS temporary files ---
+.DS_Store
+Thumbs.db

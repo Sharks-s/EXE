@@ -1,0 +1,79 @@
+.auth-container {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  --v1: calc(max(7.5vw, 11vh));
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #0e0e0e;
+}
+
+/* cursor */
+.auth-cursor {
+  position: absolute;
+  width: calc(var(--v1) * 2.5);
+  height: calc(var(--v1) * 2.5);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 1;
+
+  animation: hue 3s linear infinite;
+}
+
+/* hover bật cursor */
+.auth-container:hover .auth-cursor {
+  background: radial-gradient(circle, #fbbf24 0%, rgba(0, 0, 0, 0) 70%);
+  visibility: visible;
+}
+
+/* hex grid */
+.auth-container .hex {
+  z-index: 2;
+}
+
+.auth-container .row {
+  display: inline-flex;
+  margin-top: calc(var(--v1) * -0.32);
+  margin-left: calc(var(--v1) * -0.5);
+}
+
+.auth-container .row:nth-child(even) {
+  margin-left: calc(var(--v1) * 0.02);
+}
+
+.hex {
+  position: relative;
+  width: var(--v1);
+  height: calc(var(--v1) * 1.1);
+  margin: calc(var(--v1) * 0.04) calc(var(--v1) * 0.02);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: #1c1c1c;
+  transition: 2s;
+  box-shadow: 2px #1c1c1c;
+}
+
+/* ánh sáng nhẹ cho hex */
+.hex::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.051),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+@keyframes hue {
+  from {
+    filter: hue-rotate(0deg);
+  }
+  to {
+    filter: hue-rotate(360deg);
+  }
+}

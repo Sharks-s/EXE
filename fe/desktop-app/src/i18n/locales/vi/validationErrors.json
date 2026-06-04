@@ -1,0 +1,13 @@
+{
+  "email": {
+    "notBlank": "Email không được để trống",
+    "email": "Email không đúng định dạng",
+    "max": "Email tối đa {{max}} ký tự"
+  },
+  "password": {
+    "notBlank": "Mật khẩu không được để trống",
+    "min": "Mật khẩu tối thiểu {{min}} ký tự",
+    "max": "Mật khẩu tối đa {{max}} ký tự",
+    "pattern": "Mật khẩu phải chứa ít nhất 1 chữ hoa và 1 chữ thường"
+  }
+}

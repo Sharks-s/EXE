@@ -1,0 +1,12 @@
+{
+  "email": {
+    "notBlank": "Email cannot be empty",
+    "invalid": "Invalid email format",
+    "size": "Email must be at most 150 characters"
+  },
+  "password": {
+    "notBlank": "Password cannot be empty",
+    "size": "Password must be between 6 and 32 characters",
+    "pattern": "Password must contain at least one uppercase and one lowercase letter"
+  }
+}

@@ -1,0 +1,201 @@
+.auth-wrapper {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-card {
+  position: relative;
+  overflow: hidden;
+  width: 720px;
+  min-height: 450px;
+  border-radius: 30px;
+  background: #f1f5f9;
+  box-shadow:
+    0 0 20px rgba(255, 107, 0, 0.5),
+    0 0 40px rgba(255, 165, 0, 0.3),
+    0 0 80px rgba(255, 215, 0, 0.2),
+    inset 0 0 30px rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  animation:
+    cardEnter 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    cardGlow 2.5s ease-in-out infinite alternate;
+}
+@keyframes cardEnter {
+  0% {
+    opacity: 0;
+    transform: translateX(-80px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@keyframes cardGlow {
+  0% {
+    box-shadow:
+      0 0 6px rgba(255, 107, 0, 0.15),
+      0 0 12px rgba(255, 165, 0, 0.1),
+      0 0 24px rgba(255, 215, 0, 0.08),
+      inset 0 0 10px rgba(255, 255, 255, 0.04);
+  }
+
+  100% {
+    box-shadow:
+      0 0 24px rgba(255, 107, 0, 0.9),
+      0 0 50px rgba(255, 165, 0, 0.6),
+      0 0 110px rgba(255, 215, 0, 0.35),
+      inset 0 0 35px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.auth-form {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: all 0.6s ease-in-out;
+}
+
+.auth-form-signin {
+  left: 0;
+  width: 50%;
+  z-index: 2;
+}
+
+.auth-card.active .auth-form-signin {
+  transform: translateX(100%);
+}
+
+.auth-form-signup {
+  left: 0;
+  width: 50%;
+  opacity: 0;
+  z-index: 1;
+}
+
+.auth-card.active .auth-form-signup {
+  transform: translateX(100%);
+  opacity: 1;
+  z-index: 5;
+  animation: move 0.6s;
+}
+@keyframes move {
+  0%,
+  49.99% {
+    opacity: 0;
+    z-index: 1;
+  }
+  50%,
+  100% {
+    opacity: 1;
+    z-index: 5;
+  }
+}
+.auth-toggle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  transition: all 0.6s ease-in-out;
+  border-radius: 0 0 0 100px;
+  z-index: 1000;
+}
+.auth-card.active .auth-toggle {
+  transform: translateX(-100%);
+  border-radius: 0 0 100px 0;
+}
+.auth-toggle-slider {
+  height: 100%;
+  background: #e9ba00;
+  color: #f1f5f9;
+  position: relative;
+  left: -100%;
+  height: 100%;
+  width: 200%;
+  transform: translateX(0);
+  transition: all 0.6s ease-in-out;
+}
+
+.auth-card.active .auth-toggle-slider {
+  transform: translateX(50%);
+}
+.auth-toggle-panel {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 30px;
+  text-align: center;
+  top: 0;
+  transform: translateX(0);
+  transition: all 0.6s ease-in-out;
+}
+.auth-toggle-left {
+  transform: translateX(-200%);
+}
+.auth-card.active .auth-toggle-left {
+  transform: translateX(0);
+}
+.auth-toggle-right {
+  right: 0;
+  transform: translateX(0);
+}
+.auth-card.active .auth-toggle-right {
+  transform: translateX(200%);
+}
+.left-child,
+.right-child {
+  width: 100%;
+  height: 100%;
+  background: #e9ba00;
+}
+.verify-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  padding: 1.5rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== VERIFY CARD ===== */
+.verify-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 2.5rem 2rem;
+
+  border-radius: 28px;
+  background: #f1f5f9;
+
+  border: 2px solid rgba(255, 215, 0, 0.35);
+  box-shadow:
+    0 0 18px rgba(255, 107, 0, 0.45),
+    0 0 36px rgba(255, 165, 0, 0.25),
+    0 0 70px rgba(255, 215, 0, 0.18),
+    inset 0 0 28px rgba(255, 255, 255, 0.12);
+
+  animation:
+    verifyEnter 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    cardGlow 2.5s ease-in-out infinite alternate;
+}
+
+/* ENTRY */
+@keyframes verifyEnter {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

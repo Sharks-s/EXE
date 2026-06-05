@@ -2,10 +2,7 @@
 export interface User {
   id: number;
   email: string;
-  displayName: string;
-  avatarUrl?: string;
-  plan: "FREE" | "PREMIUM";
-  profileCompleted: boolean; // ← thêm để biết cần setup profile không
+  roles: string[];
 }
 
 // ── Requests ──────────────────────────────────────────

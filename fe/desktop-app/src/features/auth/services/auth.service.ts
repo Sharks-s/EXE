@@ -16,14 +16,12 @@ export async function loginService(data: LoginRequest): Promise<User> {
   return res.user;
 }
 
-// ── Register 3 bước ───────────────────────────────────
+// ── Register  ───────────────────────────────────
 
-// Bước 1 — gửi email → nhận verifyId
 export async function registerInitService(data: RegisterInitRequest) {
   return authApi.registerInit(data);
 }
 
-// Bước 2 — verify OTP → nhận sessionToken
 export async function verifyOtpService(data: {
   verifyId: string;
   otp: string;
@@ -34,7 +32,6 @@ export async function verifyOtpService(data: {
   });
 }
 
-// Bước 3 — set password → auto login
 export async function completeRegisterService(
   data: CompleteRegisterRequest,
 ): Promise<User> {

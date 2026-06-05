@@ -1,76 +1,22 @@
-import { useState } from "react";
-import axios from "axios";
-import { useTranslation } from "react-i18next";
-import { useForm, type FieldPath } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-import { registerInitService } from "../services/auth.service";
-import { RegisterInitSchema } from "../schemas/auth.schemas";
-import { getStringLimits } from "../../../utils/zod-utils";
-import { parseApiError } from "../../../utils/error-mapper";
-import type { ApiErrorResponse } from "../../../types";
+import { useRegisterForm } from "../hooks/useRegisterForm";
 import type { RegisterResponse } from "../types/auth.types";
 
 type Props = {
   onRegisterSuccess: (data: RegisterResponse) => void;
 };
 
-type FormData = z.infer<typeof RegisterInitSchema>;
-
-const emailLimits = getStringLimits(RegisterInitSchema.shape.email);
-
 export default function RegisterForm({ onRegisterSuccess }: Props) {
-  const { t } = useTranslation(["validationErrors", "common"]);
-  const [loading, setLoading] = useState(false);
-  const [localGlobalError, setLocalGlobalError] = useState("");
-
   const {
     register,
     handleSubmit,
-    setError,
-    clearErrors,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(RegisterInitSchema),
-    mode: "onChange",
-    reValidateMode: "onChange",
-  });
-
-  const onSubmit = async (data: FormData) => {
-    setLocalGlobalError("");
-    try {
-      setLoading(true);
-      const res = await registerInitService({ email: data.email });
-      onRegisterSuccess(res);
-    } catch (err: unknown) {
-      if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
-        const { globalMessage, fieldErrors } = parseApiError(err.response.data);
-        Object.entries(fieldErrors).forEach(([field, message]) => {
-          setError(field as FieldPath<FormData>, {
-            type: "server",
-            message: message ?? "Invalid value",
-          });
-        });
-        if (globalMessage) setLocalGlobalError(globalMessage);
-      } else {
-        setLocalGlobalError("An unexpected error occurred.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createChangeHandler =
-    (
-      fieldName: FieldPath<FormData>,
-      originalOnChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
-    ) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      originalOnChange(e);
-      if (localGlobalError) setLocalGlobalError("");
-      clearErrors(fieldName);
-    };
+    errors,
+    onSubmit,
+    createChangeHandler,
+    loading,
+    localGlobalError,
+    t,
+    emailLimits,
+  } = useRegisterForm({ onRegisterSuccess });
 
   const emailReg = register("email");
 

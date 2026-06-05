@@ -1,97 +1,22 @@
-import { useState } from "react";
-import axios from "axios";
-import { useTranslation } from "react-i18next";
-import { useForm, type FieldPath } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-import { useAuthStore } from "../stores/authStore";
-import { LoginSchema } from "../schemas/auth.schemas";
-import { getStringLimits } from "../../../utils/zod-utils";
-import { parseApiError } from "../../../utils/error-mapper";
-import type { ApiErrorResponse } from "../../../types";
-
-type LoginFormData = z.infer<typeof LoginSchema>;
-
-// Bóc tách giới hạn ký tự từ schema để truyền vào i18n
-const passwordLimits = getStringLimits(LoginSchema.shape.password);
-const emailLimits = getStringLimits(LoginSchema.shape.email);
+import { useLoginForm } from "../hooks/useLoginForm";
 
 export default function LoginForm() {
-  // Chuyển sang Named export cho đồng bộ
-  // 2. Lấy state và actions từ Zustand authStore
-  const { login, isLoading, error: authError, clearError } = useAuthStore();
-
-  const { t } = useTranslation(["validationErrors", "common"]);
-  const [localGlobalError, setLocalGlobalError] = useState<string>("");
-
   const {
     register,
     handleSubmit,
-    setError,
-    clearErrors,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(LoginSchema),
-    mode: "onChange",
-    reValidateMode: "onChange",
-  });
-
-  /* ===============================
-      SUBMIT LOGIC
-  =============================== */
-  const onSubmit = async (data: LoginFormData) => {
-    setLocalGlobalError("");
-    if (authError) clearError();
-
-    try {
-      // 3. Gọi hàm login của Zustand. Hàm này tự lưu token vào memory,
-      // cập nhật session flag và chuyển trạng thái user để drive UI đổi màn hình.
-      await login(data);
-
-      // XOÁ BỎ: navigate("/home") cũ ở đây!
-    } catch (err: unknown) {
-      if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
-        const { globalMessage, fieldErrors } = parseApiError(err.response.data);
-
-        if (fieldErrors && Object.keys(fieldErrors).length > 0) {
-          Object.entries(fieldErrors).forEach(([field, message]) => {
-            const fieldName = field as FieldPath<LoginFormData>;
-            setError(fieldName, {
-              type: "server",
-              message: message ?? "Invalid",
-            });
-          });
-        }
-
-        if (globalMessage) {
-          setLocalGlobalError(String(globalMessage));
-        }
-      } else {
-        setLocalGlobalError("An unexpected error occurred. Please try again.");
-      }
-    }
-  };
-
-  /* ===============================
-      CHANGE HANDLER
-  =============================== */
-  const createChangeHandler =
-    (
-      fieldName: FieldPath<LoginFormData>,
-      originalOnChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
-    ) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      originalOnChange(e);
-      if (authError) clearError();
-      if (localGlobalError) setLocalGlobalError("");
-      clearErrors(fieldName);
-    };
+    errors,
+    onSubmit,
+    createChangeHandler,
+    isLoading,
+    displayGlobalError,
+    t,
+    emailLimits,
+    passwordLimits,
+  } = useLoginForm();
 
   const emailReg = register("email");
   const passwordReg = register("password");
 
-  const displayGlobalError = localGlobalError || authError;
   const isEmailError = !!errors.email || !!displayGlobalError;
   const isPasswordError = !!errors.password || !!displayGlobalError;
 
@@ -131,7 +56,7 @@ export default function LoginForm() {
         })}
       </span>
 
-      {/* EMAIL INPUT */}
+      {/* EMAIL */}
       <div className="w-full max-w-sm">
         <input
           {...emailReg}
@@ -156,16 +81,16 @@ export default function LoginForm() {
         )}
       </div>
 
-      {/* PASSWORD INPUT */}
+      {/* PASSWORD */}
       <div className="w-full max-w-sm mt-3">
         <input
           {...passwordReg}
           onChange={createChangeHandler("password", passwordReg.onChange)}
           type="password"
+          autoComplete="current-password"
           placeholder={t("common:auth.password_placeholder", {
             defaultValue: "Password",
           })}
-          autoComplete="current-password"
           className={`w-full px-4 py-3 text-sm rounded-xl border bg-white focus:outline-none transition ${
             isPasswordError
               ? "border-red-400 focus:ring-2 focus:ring-red-400/30"
@@ -190,7 +115,7 @@ export default function LoginForm() {
         )}
       </div>
 
-      {/* SUBMIT BUTTON */}
+      {/* SUBMIT */}
       <button
         type="submit"
         disabled={isLoading}

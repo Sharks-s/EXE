@@ -234,7 +234,7 @@ export default function VerifyForm({
         <button
           type="button"
           onClick={onBack}
-          className="text-slate-500 hover:underline"
+          className="text-slate-500 hover:underline cursor-pointer"
         >
           {t("common:auth.btn_back", { defaultValue: "Back" })}
         </button>

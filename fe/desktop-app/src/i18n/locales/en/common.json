@@ -31,5 +31,36 @@
     "toggle_signin_subtitle": "Enter your personal details to continue your journey",
     "toggle_signup_title": "Hello, Friend",
     "toggle_signup_subtitle": "Register with your personal details and start your journey"
+  },
+  "dashboard": {
+    "title": "Good day, get ready to focus!",
+    "subtitle": "Quickly set your goal to activate your AI Assistant.",
+    "goal_label": "1. What do you need to accomplish today?",
+    "goal_placeholder": "Or type your specific goal here...",
+    "duration_label": "2. Session Duration",
+    "duration_suffix": "m",
+    "assistant_label": "3. Select AI Personality",
+    "btn_start": "START FOCUS SESSION",
+    "starting": "STARTING...",
+    "presets": {
+      "coding": "Coding",
+      "assignment": "Assignments",
+      "study": "Study",
+      "meeting": "Meeting",
+      "writing": "Writing"
+    },
+    "assistants": {
+      "sweet": "SWEET",
+      "strict": "STRICT",
+      "mean": "SAVAGE"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "profile": "Profile",
+    "upgrade": "Upgrade Premium",
+    "logout": "Logout"
   }
 }

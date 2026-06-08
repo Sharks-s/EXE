@@ -16,8 +16,8 @@ export default function AuthLayout({
   const { t } = useTranslation("common");
 
   return (
-    <div className="auth-container relative min-h-screen">
-      <AuthBackground />
+    <div className="auth-container relative min-h-screen bg-black flex items-center justify-center ">
+      {/* <AuthBackground /> */}
 
       <div className="auth-wrapper">
         {mode === "auth" && (
@@ -46,7 +46,7 @@ export default function AuthLayout({
                     })}
                   </p>
                   <button
-                    className="mt-6 px-10 py-3 rounded-full border border-white/60 text-sm font-semibold uppercase tracking-wider text-black backdrop-blur hover:bg-white hover:text-black hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] transition"
+                    className="mt-6 px-10 py-3 rounded-full border border-white/60 bg-white text-sm font-semibold uppercase tracking-wider text-black backdrop-blur hover:bg-white hover:text-black hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] transition"
                     onClick={() => setActive(false)}
                   >
                     {t("auth.btn_login", { defaultValue: "Sign In" })}
@@ -67,7 +67,7 @@ export default function AuthLayout({
                     })}
                   </p>
                   <button
-                    className="mt-6 px-10 py-3 rounded-full border border-white/60 text-sm font-semibold uppercase tracking-wider text-black backdrop-blur hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] transition"
+                    className="mt-6 px-10 py-3 rounded-full border border-white/60 bg-white text-sm font-semibold uppercase tracking-wider text-black backdrop-blur hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] transition"
                     onClick={() => setActive(true)}
                   >
                     {t("auth.btn_register", { defaultValue: "Sign Up" })}

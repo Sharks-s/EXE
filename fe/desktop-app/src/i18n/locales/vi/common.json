@@ -31,5 +31,36 @@
     "toggle_signin_subtitle": "Nhập thông tin để tiếp tục hành trình của bạn",
     "toggle_signup_title": "Xin chào bạn!",
     "toggle_signup_subtitle": "Đăng ký với thông tin cá nhân và bắt đầu hành trình"
+  },
+  "dashboard": {
+    "title": "Chào ngày mới, chuẩn bị tập trung nhé!",
+    "subtitle": "Thiết lập nhanh mục tiêu của bạn để kích hoạt Trợ lý ảo.",
+    "goal_label": "1. Hôm nay bạn cần hoàn thành việc gì?",
+    "goal_placeholder": "Hoặc tự nhập mục tiêu cụ thể khác...",
+    "duration_label": "2. Thời gian phiên",
+    "duration_suffix": " phút",
+    "assistant_label": "3. Lựa chọn Gu Trợ lý",
+    "btn_start": "BẮT ĐẦU PHIÊN LÀM VIỆC",
+    "starting": "ĐANG KHỞI ĐỘNG...",
+    "presets": {
+      "coding": "Lập trình",
+      "assignment": "Bài tập",
+      "study": "Học tập",
+      "meeting": "Hội họp",
+      "writing": "Viết báo cáo"
+    },
+    "assistants": {
+      "sweet": "Ngọt Ngào",
+      "strict": "Tổng Tài",
+      "mean": "Mỏ Hỗn"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Bảng điều khiển",
+    "analytics": "Thống kê",
+    "settings": "Cài đặt",
+    "profile": "Hồ sơ cá nhân",
+    "upgrade": "Nâng cấp Premium",
+    "logout": "Đăng xuất"
   }
 }

@@ -119,10 +119,10 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className={`mt-3 px-12 py-3 rounded-xl text-sm font-semibold uppercase bg-yellow-400 text-black transition ${
+        className={`mt-3 px-12 py-3 rounded-xl text-sm font-semibold uppercase bg-[#9fd6fa] text-[#0f172a] transition duration-300 ${
           isLoading
             ? "opacity-60 cursor-wait"
-            : "hover:shadow-[0_0_25px_rgba(250,204,21,0.7)]"
+            : "hover:bg-[#7bc3f7] hover:shadow-[0_0_25px_rgba(159,214,250,0.65)]"
         }`}
       >
         {isLoading

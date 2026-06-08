@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@layer base {
+  /* Tất cả element clickable tự có cursor pointer */
+  button,
+  [role="button"],
+  a,
+  select,
+  label[for],
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
+}

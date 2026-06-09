@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,8 +19,7 @@ import java.util.Set;
                 @UniqueConstraint(name = "uk_users_email", columnNames = "email")
         },
         indexes = {
-                @Index(name = "idx_users_email", columnList = "email"),
-                @Index(name = "idx_users_status", columnList = "status")
+                @Index(name = "idx_users_email", columnList = "email")
         }
 )
 @Getter
@@ -27,7 +27,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"identities", "userRoles"})
+@ToString(exclude = {"identities","userRoles" ,"refreshTokens", "userSetting", "focusSessions", "subscriptions", "appRules"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
 
@@ -36,15 +36,23 @@ public class User {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Size(max = 100)
-    @Column(length = 100) // Đồng bộ độ dài validation với độ dài DB column
-    private String name;
-
     @Email
     @Size(max = 150)
     @Column(nullable = false, length = 150)
     @EqualsAndHashCode.Include
     private String email;
+
+    @Size(max = 100)
+    @Column(name = "full_name", length = 100)
+    private String fullName;
+
+    @Size(max = 512)
+    @Column(name = "avatar_url", length = 512)
+    private String avatarUrl;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean profileCompleted = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -52,39 +60,53 @@ public class User {
 
     private Instant lastLoginAt;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean profileCompleted = false;
-
-    @Size(max = 512) // Giới hạn độ dài URL để tránh lỗi SQL hụt data
-    @Column(name = "avatar_url", length = 512)
-    private String avatarUrl;
-
-    // Đổi sang CascadeType.MERGE, PERSIST, REFRESH, REMOVE thay vì ALL để kiểm soát hành vi chặt chẽ hơn
-    @Builder.Default
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true)
-    private Set<UserIdentity> identities = new HashSet<>();
-
-    // Thêm Cascade hoặc cân nhắc xử lý riêng qua Role, bật orphanRemoval nếu muốn xoá role trực tiếp qua User
     @Builder.Default
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UserRole> userRoles = new HashSet<>();
 
-    // GIẢI PHÁP XỊN: Thêm Version để chống hiện tượng Lost Update (Optimistic Locking) khi 2 request cùng sửa User một lúc
+    @Column(name = "daily_used_minutes", nullable = false)
+    @Builder.Default
+    private Integer dailyUsedMinutes = 0;
+
+    @Column(name = "last_usage_date")
+    private LocalDate lastUsageDate;
+
     @Version
     private Long version;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    // --- HELPER METHODS (Mấu chốt để code xịn hơn) ---
-    // Vì đây là quan hệ 2 chiều (Bidirectional), nếu chỉ add vào Set của User mà không set User cho Identity thì JPA sẽ lưu lỗi hoặc null FK.
+    // --- RELATIONS ---
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserIdentity> identities = new HashSet<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<RefreshToken> refreshTokens = new HashSet<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private UserSetting userSetting;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<FocusSession> focusSessions = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Subscription> subscriptions = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AppRule> appRules = new HashSet<>();
+
+    // --- HELPER METHODS ---
     public void addIdentity(UserIdentity identity) {
         this.identities.add(identity);
         identity.setUser(this);
@@ -94,13 +116,22 @@ public class User {
         this.identities.remove(identity);
         identity.setUser(null);
     }
-
     public void addUserRole(UserRole userRole) {
         this.userRoles.add(userRole);
         userRole.setUser(this);
     }
+    // Các helper methods tương tự cho RefreshToken, FocusSession, Subscription... có thể được thêm vào đây
+    public void setUserSetting(UserSetting userSetting) {
+        if (userSetting == null) {
+            if (this.userSetting != null) {
+                this.userSetting.setUser(null);
+            }
+        } else {
+            userSetting.setUser(this);
+        }
+        this.userSetting = userSetting;
+    }
 
-    // Factory method nhanh cho việc mapping hoặc test
     public static User ref(Long id) {
         User u = new User();
         u.setId(id);

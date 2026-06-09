@@ -249,7 +249,7 @@ public class AuthServiceImpl implements AuthService {
     public ExchangeResponse exchangeRefreshForAccess(String refreshToken) {
         RefreshToken refresh = refreshTokenService.verify(refreshToken);
 
-        User user = userService.findById(refresh.getUserId());
+        User user = userService.findById(refresh.getUser().getId());
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
 

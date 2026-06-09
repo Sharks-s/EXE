@@ -67,7 +67,7 @@ public class DataInitializer implements CommandLineRunner {
                 .orElseGet(() -> userRepository.save(
                         User.builder()
                                 .email(adminEmail)
-                                .name("Admin")
+                                .fullName("Admin")
                                 .status(UserStatus.ACTIVE)
                                 .profileCompleted(true)
                                 .build()

@@ -4,6 +4,7 @@ import com.exe101.exe.config.JwtProperties;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.RefreshToken;
+import com.exe101.exe.model.entity.User;
 import com.exe101.exe.repository.RefreshTokenRepository;
 import com.exe101.exe.security.JwtTokenProvider;
 import com.exe101.exe.security.TokenHashingService;
@@ -76,7 +77,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         RefreshToken newEntity = RefreshToken.builder()
                 .token(tokenHashingService.hash(newRefreshToken))
-                .userId(userId)
+                .user(User.ref(userId))
                 .jti(jwtTokenProvider.getJti(newRefreshToken))
                 .deviceId(deviceId)
                 .expiresAt(
@@ -98,7 +99,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public void create(Long userId, String rawRefreshToken, String deviceId) {
 
         RefreshToken token = RefreshToken.builder()
-                .userId(userId)
+                .user(User.ref(userId))
                 .token(tokenHashingService.hash(rawRefreshToken))
                 .jti(jwtTokenProvider.getJti(rawRefreshToken))
                 .deviceId(deviceId)

@@ -36,7 +36,7 @@ public class UserServiceImpl implements UserService {
 
         User user = User.builder()
                 .email(email)
-                .name(null)
+                .fullName(null)
                 .status(UserStatus.PENDING)
                 .profileCompleted(false)
                 .lastLoginAt(null)
@@ -76,7 +76,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(
                 User.builder()
                         .email(email)
-                        .name(name)
+                        .fullName(name)
                         .avatarUrl(avatarUrl)
                         .status(UserStatus.ACTIVE)
                         .profileCompleted(true)
@@ -89,9 +89,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User updateOAuthUser(User user, String name, String avatarUrl) {
 
-        if ((user.getName() == null || user.getName().isBlank())
+        if ((user.getFullName() == null || user.getFullName().isBlank())
                 && name != null && !name.isBlank()) {
-            user.setName(name);
+            user.setFullName(name);
         }
 
         if ((user.getAvatarUrl() == null || user.getAvatarUrl().isBlank())

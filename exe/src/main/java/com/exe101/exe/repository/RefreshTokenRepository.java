@@ -1,6 +1,7 @@
 package com.exe101.exe.repository;
 
 import com.exe101.exe.model.entity.RefreshToken;
+import com.exe101.exe.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

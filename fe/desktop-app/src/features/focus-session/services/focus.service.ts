@@ -4,6 +4,7 @@ import type {
   CreateSessionRequest,
   FocusSessionResponse,
 } from "../types/focus.types";
+import { cameraApi } from "../api/cameraApi";
 
 export async function startFocusSessionService(
   data: CreateSessionRequest,
@@ -12,7 +13,7 @@ export async function startFocusSessionService(
   const sessionData = await focusApi.createSession(data);
 
   // 2. Đánh thức OpenCV Camera của Python Bot ngầm
-  await focusApi.startPythonCamera();
+  await cameraApi.start();
 
   // 3. Gọi Tauri Core ẩn Main Window và đưa Widget Window lên
   await invoke("toggle_windows_to_session");

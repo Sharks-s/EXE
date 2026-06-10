@@ -85,3 +85,17 @@ app:
     secure: false
     refresh-max-age: 2592000
     same-site: Lax
+  seed:
+    personalities:
+      - code: "SWEET"
+        name: "Sweet Assistant"
+        description: "Always encouraging, gentle, and positive."
+        premium: false
+      - code: "STRICT"
+        name: "Strict Assistant"
+        description: "Disciplined, straightforward, and unyielding."
+        premium: false
+      - code: "MEAN"
+        name: "Mean Assistant"
+        description: "Challenging, provocative, and roasts your ego mercilessly."
+        premium: true

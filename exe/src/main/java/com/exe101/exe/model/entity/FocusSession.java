@@ -1,5 +1,6 @@
 package com.exe101.exe.model.entity;
 
+import com.exe101.exe.model.enums.SessionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -38,6 +39,9 @@ public class FocusSession {
     @JoinColumn(name = "personality_id", foreignKey = @ForeignKey(name = "fk_focus_sessions_personality"))
     private Personality personality;
 
+    @Column(name = "goal", length = 255)
+    private String goal;
+
     @Column(name = "planned_duration")
     private Integer plannedDuration;
 
@@ -50,8 +54,9 @@ public class FocusSession {
     @Column(name = "break_bank_final")
     private Integer breakBankFinal;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String status; // COMPLETED, ABORTED, IN_PROGRESS
+    private SessionStatus status;
 
     @CreationTimestamp
     @Column(name = "started_at", nullable = false, updatable = false)

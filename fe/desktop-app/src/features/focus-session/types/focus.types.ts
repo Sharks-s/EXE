@@ -13,7 +13,7 @@ export interface CreateSessionRequest {
 }
 
 export interface FocusSessionResponse {
-  sessionId: string;
+  sessionId: number;
   userId: string;
   goal: string;
   durationMinutes: number;

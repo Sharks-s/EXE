@@ -6,12 +6,14 @@ interface CameraSetupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  isSubmitting?: boolean;
 }
 
 export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  isSubmitting = false,
 }) => {
   const {
     status,
@@ -31,150 +33,137 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
   const { pitch = 0, yaw = 0, face_detected = false, checks } = status || {};
   const activeError = hookError || streamError;
 
+  const passedCount = checks ? Object.values(checks).filter(Boolean).length : 0;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
-      <div className="w-[500px] rounded-2xl bg-[#1e1e1e] p-6 text-white shadow-2xl border border-zinc-800 flex flex-col items-center">
-        <h3 className="text-xl font-bold tracking-wide text-zinc-100 mb-5 text-center w-full">
-          Căn chỉnh khoảng cách & góc mặt
-        </h3>
-
-        {/* Video stream */}
-        <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-zinc-700 bg-zinc-950 flex items-center justify-center shadow-inner">
-          {isLoading ? (
-            <span className="text-xs text-zinc-400 animate-pulse">
-              Đang khởi động camera...
-            </span>
-          ) : activeError ? (
-            <div className="text-red-400 text-xs px-6 text-center space-y-1">
-              <p className="font-bold">⚠️ Lỗi luồng video</p>
-              <p className="text-zinc-500 text-[11px]">{activeError}</p>
-            </div>
-          ) : (
-            <img
-              src={streamUrl}
-              className="w-full h-full object-cover pointer-events-none select-none"
-              alt="Live Stream"
-              onError={() =>
-                setStreamError(
-                  "Luồng stream từ Bot bị gián đoạn hoặc thiết bị bận.",
-                )
-              }
-            />
-          )}
-        </div>
-
-        {/* Metrics */}
-        <div className="grid grid-cols-2 gap-4 w-full mt-6">
-          <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-zinc-800/80 text-center">
-            <div className="text-[10px] tracking-wider text-zinc-400 font-bold mb-1">
-              GÓC MẶT
-            </div>
-            <div className="font-mono text-xs text-zinc-500 space-y-0.5">
-              <div>
-                Ngẩng (Pitch):{" "}
-                <span
-                  className={
-                    checks?.face_centered
-                      ? "text-green-400 font-bold"
-                      : "text-red-400"
-                  }
-                >
-                  {pitch}°
-                </span>
-              </div>
-              <div>
-                Quay (Yaw):{" "}
-                <span
-                  className={
-                    checks?.face_centered
-                      ? "text-green-400 font-bold"
-                      : "text-red-400"
-                  }
-                >
-                  {yaw}°
-                </span>
-              </div>
-            </div>
-            <div
-              className={`text-[11px] font-semibold mt-2 inline-block px-2 py-0.5 rounded-full ${
-                checks?.face_centered && face_detected
-                  ? "bg-green-500/10 text-green-400"
-                  : "bg-red-500/10 text-red-400"
-              }`}
-            >
-              {face_detected
-                ? checks?.face_centered
-                  ? "Góc mặt hợp lệ"
-                  : "Mặt bị lệch góc"
-                : "Không tìm thấy khuôn mặt"}
-            </div>
-          </div>
-
-          <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-zinc-800/80 text-center flex flex-col justify-between">
-            <div>
-              <div className="text-[10px] tracking-wider text-zinc-400 font-bold mb-1">
-                KHOẢNG CÁCH
-              </div>
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
-                {checks?.close_enough
-                  ? "Vị trí chuẩn xác"
-                  : "Cần điều chỉnh lại ghế ngồi"}
-              </p>
-            </div>
-            <div
-              className={`text-[11px] font-semibold mt-2 inline-block px-2 py-0.5 rounded-full ${
-                checks?.close_enough
-                  ? "bg-green-500/10 text-green-400"
-                  : "bg-yellow-500/10 text-yellow-500"
-              }`}
-            >
-              {checks?.close_enough ? "Đạt yêu cầu" : "Chưa đạt"}
-            </div>
-          </div>
-        </div>
-
-        {/* Checklist */}
-        <div className="w-full space-y-1 mt-4 bg-zinc-950/80 p-4 rounded-xl border border-zinc-900">
-          <CheckItem
-            label="Khuôn mặt ở chính giữa khung hình"
-            isDone={!!checks?.face_centered}
-            hint="Nhìn thẳng vào tâm camera, không nghiêng trái/phải hoặc cúi gầm."
-          />
-          <CheckItem
-            label="Đã ngồi lùi ra xa đạt khoảng cách tối ưu"
-            isDone={!!checks?.close_enough}
-            hint="Đẩy ghế lùi ra sau một chút, đảm bảo không quá sát màn hình."
-          />
-          <CheckItem
-            label="Ánh sáng phòng đảm bảo rõ nét"
-            isDone={!!checks?.lighting_ok}
-            hint="Bật thêm đèn hoặc tránh nguồn sáng chói rọi ngược từ sau lưng."
-          />
-          <CheckItem
-            label="Phần vai hiển thị đầy đủ trong camera"
-            isDone={!!checks?.shoulders_visible}
-            hint="Ngồi thẳng lưng để camera bắt được trọn vẹn cả hai bên vai."
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 w-full mt-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+      <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1e1e1e] text-white shadow-2xl border border-zinc-800">
+        {/* Header — luôn cố định, có nút back rõ ràng */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-[#1e1e1e] border-b border-zinc-800">
           <button
             onClick={onClose}
-            className="flex-1 py-3 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 transition font-semibold text-zinc-300 text-sm"
+            disabled={isSubmitting}
+            className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition disabled:opacity-50"
           >
-            Hủy và tắt cam
+            <i
+              className="ti ti-arrow-left"
+              style={{ fontSize: 16 }}
+              aria-hidden="true"
+            />
+            Quay lại
           </button>
+          <h3 className="text-sm font-medium text-zinc-100">
+            Căn chỉnh camera
+          </h3>
+          <span className="text-xs text-zinc-500 w-[60px] text-right">
+            {passedCount}/4
+          </span>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Video stream — rectangle thay vì circle, gọn hơn */}
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center">
+            {isLoading ? (
+              <span className="text-xs text-zinc-400 animate-pulse">
+                Đang khởi động camera...
+              </span>
+            ) : activeError ? (
+              <div className="text-red-400 text-xs px-6 text-center space-y-1">
+                <i
+                  className="ti ti-camera-off"
+                  style={{ fontSize: 24 }}
+                  aria-hidden="true"
+                />
+                <p className="text-zinc-500 text-[11px]">{activeError}</p>
+              </div>
+            ) : (
+              <img
+                src={streamUrl}
+                className="w-full h-full object-cover"
+                alt="Live camera stream"
+                onError={() =>
+                  setStreamError(
+                    "Luồng stream từ Bot bị gián đoạn hoặc thiết bị bận.",
+                  )
+                }
+              />
+            )}
+
+            {/* Pitch/Yaw overlay nhỏ gọn trên video */}
+            {!isLoading && !activeError && face_detected && (
+              <div className="absolute bottom-2 left-2 flex gap-1.5">
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 ${checks?.face_centered ? "text-green-400" : "text-amber-400"}`}
+                >
+                  P {pitch}°
+                </span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 ${checks?.face_centered ? "text-green-400" : "text-amber-400"}`}
+                >
+                  Y {yaw}°
+                </span>
+              </div>
+            )}
+
+            {!isLoading && !activeError && !face_detected && (
+              <div className="absolute bottom-2 left-2">
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-black/60 text-red-400">
+                  Không tìm thấy khuôn mặt
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Checklist */}
+          <div className="space-y-1">
+            <CheckItem
+              label="Khuôn mặt ở chính giữa khung hình"
+              isDone={!!checks?.face_centered}
+              hint="Nhìn thẳng vào tâm camera, không nghiêng hoặc cúi gầm."
+            />
+            <CheckItem
+              label="Khoảng cách phù hợp"
+              isDone={!!checks?.close_enough}
+              hint="Ngồi lùi ra xa hơn một chút, không quá sát màn hình."
+            />
+            <CheckItem
+              label="Ánh sáng đủ rõ"
+              isDone={!!checks?.lighting_ok}
+              hint="Bật thêm đèn hoặc tránh ánh sáng chói từ phía sau."
+            />
+            <CheckItem
+              label="Vai hiển thị đầy đủ"
+              isDone={!!checks?.shoulders_visible}
+              hint="Ngồi thẳng lưng để camera bắt được cả hai vai."
+            />
+          </div>
+        </div>
+
+        {/* Footer — sticky để luôn thấy nút bấm */}
+        <div className="sticky bottom-0 px-4 py-3 bg-[#1e1e1e] border-t border-zinc-800">
           <button
-            disabled={!canProceed}
+            disabled={!canProceed || isSubmitting}
             onClick={onConfirm}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 ${
-              canProceed
-                ? "bg-green-500 text-black hover:bg-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)] cursor-pointer"
+            className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+              canProceed && !isSubmitting
+                ? "bg-green-500 text-black hover:bg-green-400 cursor-pointer"
                 : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
             }`}
           >
-            Sẵn sàng, bắt đầu
+            {isSubmitting ? (
+              <>
+                <i
+                  className="ti ti-loader-2 animate-spin"
+                  style={{ fontSize: 16 }}
+                  aria-hidden="true"
+                />
+                Đang khởi động...
+              </>
+            ) : canProceed ? (
+              "Sẵn sàng, bắt đầu"
+            ) : (
+              "Hoàn thành các bước trên"
+            )}
           </button>
         </div>
       </div>

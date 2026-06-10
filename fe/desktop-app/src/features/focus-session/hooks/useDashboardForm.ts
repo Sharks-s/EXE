@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import axios from "axios";
-import { startFocusSessionService } from "../services/focus.service";
 import type {
   CreateSessionRequest,
   AssistantPersonality,
@@ -9,9 +7,7 @@ import type {
   GoalPresetItem,
   AssistantItem,
 } from "../types/focus.types";
-import type { ApiErrorResponse } from "../../../types";
 
-// Khai báo tĩnh ngoài hook — không tính toán lại khi re-render
 const PRESET_GOALS: GoalPresetItem[] = [
   { key: "coding", labelKey: "common:dashboard.presets.coding" },
   { key: "assignment", labelKey: "common:dashboard.presets.assignment" },
@@ -31,7 +27,6 @@ const DURATIONS = [25, 45, 50, 60] as const;
 export function useDashboardForm() {
   const { t } = useTranslation(["common", "validationErrors"]);
 
-  // ── States ─────────────────────────────────────────
   const [selectedPreset, setSelectedPreset] = useState<PresetGoalKey | null>(
     "coding",
   );
@@ -39,85 +34,46 @@ export function useDashboardForm() {
   const [duration, setDuration] = useState<number>(25);
   const [assistant, setAssistant] = useState<AssistantPersonality>("MEAN");
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [localGlobalError, setLocalGlobalError] = useState("");
-
-  // ── Handlers & Dọn dẹp lỗi khi user tương tác lại ──
   const handleSelectPreset = (key: PresetGoalKey) => {
     setSelectedPreset(key);
     setCustomGoal("");
-    setLocalGlobalError("");
   };
 
   const handleChangeCustomGoal = (value: string) => {
     setCustomGoal(value);
     setSelectedPreset(null);
-    setLocalGlobalError("");
   };
 
-  const handleSelectAssistant = (id: AssistantPersonality) => {
-    setAssistant(id);
-    setLocalGlobalError("");
-  };
+  const handleSelectAssistant = (id: AssistantPersonality) => setAssistant(id);
+  const handleSelectDuration = (mins: number) => setDuration(mins);
 
-  const handleSelectDuration = (mins: number) => {
-    setDuration(mins);
-    setLocalGlobalError("");
-  };
-
-  // ── Submit Logic ───────────────────────────────────
-  const onSubmit = async () => {
-    setIsLoading(true);
-    setLocalGlobalError("");
-
-    // Unwrap chuỗi mục tiêu dựa trên lựa chọn của user
+  // Build request data — Dashboard dùng để gọi API sau khi camera xác minh xong
+  const buildRequest = (): CreateSessionRequest => {
     const finalGoal =
       customGoal.trim() !== ""
-        ? customGoal
+        ? customGoal.trim()
         : t(PRESET_GOALS.find((g) => g.key === selectedPreset)?.labelKey ?? "");
 
-    const requestData: CreateSessionRequest = {
+    return {
       goal: finalGoal,
       durationMinutes: duration,
       personality: assistant,
     };
-
-    try {
-      await startFocusSessionService(requestData);
-    } catch (err: unknown) {
-      if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
-        // Khớp hoàn toàn với cách hiển thị lỗi toàn cục của useLoginForm
-        setLocalGlobalError(
-          err.response.data.message || "Failed to start session.",
-        );
-      } else {
-        setLocalGlobalError("An unexpected connection error occurred.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return {
-    // Statics
     PRESET_GOALS,
     ASSISTANTS,
     DURATIONS,
-
-    // States
     selectedPreset,
     customGoal,
     duration,
     assistant,
-    isLoading,
-    displayGlobalError: localGlobalError,
-
-    // Handlers
     handleSelectPreset,
     handleChangeCustomGoal,
     handleSelectDuration,
     handleSelectAssistant,
-    onSubmit,
+    buildRequest,
     t,
   };
 }

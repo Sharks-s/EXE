@@ -30,8 +30,8 @@
       {
         "label": "widget",
         "title": "FocusBuddy Widget",
-        "width": 200,
-        "height": 250,
+        "width": 160,
+        "height": 160,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,

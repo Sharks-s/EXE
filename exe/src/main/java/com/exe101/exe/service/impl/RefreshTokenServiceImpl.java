@@ -6,6 +6,7 @@ import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.RefreshToken;
 import com.exe101.exe.model.entity.User;
 import com.exe101.exe.repository.RefreshTokenRepository;
+import com.exe101.exe.repository.UserRepository;
 import com.exe101.exe.security.JwtTokenProvider;
 import com.exe101.exe.security.TokenHashingService;
 import com.exe101.exe.service.RefreshTokenService;
@@ -26,6 +27,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
     private final TokenHashingService tokenHashingService;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -97,9 +99,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     @Transactional
     public void create(Long userId, String rawRefreshToken, String deviceId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         RefreshToken token = RefreshToken.builder()
-                .user(User.ref(userId))
+                .user(user)
                 .token(tokenHashingService.hash(rawRefreshToken))
                 .jti(jwtTokenProvider.getJti(rawRefreshToken))
                 .deviceId(deviceId)

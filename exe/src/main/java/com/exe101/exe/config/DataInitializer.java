@@ -6,12 +6,10 @@ import com.exe101.exe.model.entity.UserIdentity;
 import com.exe101.exe.model.entity.UserRole;
 import com.exe101.exe.model.enums.AuthProvider;
 import com.exe101.exe.model.enums.UserStatus;
-import com.exe101.exe.repository.RoleRepository;
-import com.exe101.exe.repository.UserIdentityRepository;
-import com.exe101.exe.repository.UserRepository;
-import com.exe101.exe.repository.UserRoleRepository;
+import com.exe101.exe.repository.*;
 import com.exe101.exe.security.SecurityConfig;
 
+import com.exe101.exe.service.PersonalityService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +34,7 @@ public class DataInitializer implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final UserIdentityRepository userIdentityRepository;
+    private final PersonalityService personalityService;
 
     @Override
     @Transactional
@@ -94,6 +93,9 @@ public class DataInitializer implements CommandLineRunner {
                     .active(true)
                     .build());
         }
+
+        //--------Init default personalities-----------
+        personalityService.seedDefaultPersonalities();
     }
 }
 

@@ -59,9 +59,14 @@ public enum ErrorCode {
     REFRESH_TOKEN_MISSING("AUTH_027", HttpStatus.UNAUTHORIZED, "Refresh token missing"),
     IDENTITY_NOT_FOUND("AUTH_028", HttpStatus.NOT_FOUND, "Identity not found"),
     REFRESH_TOKEN_REUSED("AUTH_029", HttpStatus.UNAUTHORIZED, "Refresh token reused"),
-    SESSION_EXPIRED("AUTH_030", HttpStatus.UNAUTHORIZED, "Session expired")
-    ;
+    SESSION_EXPIRED("AUTH_030", HttpStatus.UNAUTHORIZED, "Session expired"),
 
+    // ===== PERSONALITY =====
+    PERSONALITY_NOT_FOUND("PERSONALITY_001", HttpStatus.NOT_FOUND, "Personality not found"),
+
+    // ===== FOCUS SESSION =====
+    SESSION_NOT_FOUND("SESSION_001", HttpStatus.NOT_FOUND, "Session not found"),
+    SESSION_ALREADY_ENDED("SESSION_002", HttpStatus.BAD_REQUEST, "Session already ended");
 
     private final String code;
     private final HttpStatus httpStatus;

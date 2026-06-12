@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+// 🔥 Import thêm WebviewWindow để tìm và điều khiển cửa sổ warning từ Frontend
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useDashboardForm } from "../hooks/useDashboardForm";
 import { CameraSetupModal } from "../components/CameraSetupModal";
 import { focusApi } from "../api/focus.api";
@@ -40,26 +42,16 @@ export default function Dashboard() {
     let session: FocusSessionResponse | null = null;
 
     try {
-      // 1. Tạo session trong DB
       session = await focusApi.createSession(buildRequest());
-
-      // 2. Lưu session vào local store cho widget đọc
       await tauriStore.set("active_session", session);
-
-      // 3. Tắt camera và hạ cờ mở Modal ngay lập tức khi thành công
       setIsCameraOpen(false);
       await cameraApi.stop().catch(() => {});
-
-      // 4. Đợi 100ms nhường quyền cho React chạy xong hàm Cleanup (clearInterval)
       await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // 5. Chuyển sang widget an toàn
       await invoke("toggle_windows_to_session");
     } catch (err) {
       if (session?.sessionId) {
         await focusApi.endSession(session.sessionId).catch(() => {});
       }
-
       setError("Không thể tạo phiên. Vui lòng thử lại.");
       await cameraApi.stop().catch(() => {});
       setIsCameraOpen(false);
@@ -70,10 +62,25 @@ export default function Dashboard() {
 
   const handleFastTrackToWidget = async () => {
     try {
-      // Gọi thẳng lệnh Rust để tính tọa độ góc phải và hoán đổi cửa sổ
       await invoke("toggle_windows_to_session");
     } catch (error) {
       console.error("Không thể mở nhanh Widget:", error);
+    }
+  };
+
+  // 🔥 Hàm gọi test nhanh Cửa sổ Cảnh báo giữa màn hình
+  const handleTestWarningWindow = async () => {
+    try {
+      // Tìm cửa sổ tên là 'warning' trong cấu hình tauri.conf.json
+      const warningWindow = await WebviewWindow.getByLabel("warning");
+      if (warningWindow) {
+        await warningWindow.show(); // Hiện hình lên
+        await warningWindow.setFocus(); // Ép tập trung trỏ chuột vào nó
+      } else {
+        alert("Không tìm thấy nhãn cửa sổ 'warning' trong tauri.conf.json!");
+      }
+    } catch (err) {
+      console.error("Lỗi khi mở cửa sổ cảnh báo:", err);
     }
   };
 
@@ -86,25 +93,48 @@ export default function Dashboard() {
             defaultValue: "Chào ngày mới, chuẩn bị tập trung nhé!",
           })}
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+        <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-3">
           {t("common:dashboard.subtitle", {
             defaultValue:
               "Thiết lập nhanh mục tiêu của bạn để kích hoạt Trợ lý ảo.",
           })}
         </p>
-        <button
-          onClick={handleFastTrackToWidget}
-          style={{
-            background: "#10B981",
-            color: "white",
-            borderRadius: "6px",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          Widget
-        </button>
+
+        {/* KHU VỰC CÁC NÚT BẤM TEST DEVELOPER */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleFastTrackToWidget}
+            style={{
+              padding: "6px 14px",
+              background: "#10B981",
+              color: "white",
+              borderRadius: "6px",
+              border: "none",
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: "13px",
+            }}
+          >
+            Widget
+          </button>
+
+          {/* 🔥 NÚT BẤM TEST CẢNH BÁO MỚI THÊM */}
+          <button
+            onClick={handleTestWarningWindow}
+            style={{
+              padding: "6px 14px",
+              background: "#FF4757", // Màu đỏ rực cảnh báo
+              color: "white",
+              borderRadius: "6px",
+              border: "none",
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: "13px",
+            }}
+          >
+            🚨 Test Cảnh Báo
+          </button>
+        </div>
       </div>
 
       {/* FORM */}

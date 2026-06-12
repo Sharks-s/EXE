@@ -30,8 +30,8 @@
       {
         "label": "widget",
         "title": "FocusBuddy Widget",
-        "width": 160,
-        "height": 160,
+        "width": 200,
+        "height": 260,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
@@ -40,6 +40,22 @@
         "resizable": false,
         "maximizable": false,
         "minimizable": false,
+        "shadow": false
+      },
+      {
+        "label": "warning",
+        "title": "FocusBuddy Warning",
+        "width": 800,
+        "height": 550,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "center": true,
+        "resizable": false,
+        "maximizable": false,
+        "minimizable": false,
+        "skipTaskbar": true,
         "shadow": false
       }
     ],

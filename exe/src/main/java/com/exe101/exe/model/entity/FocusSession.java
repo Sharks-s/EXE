@@ -48,12 +48,6 @@ public class FocusSession {
     @Column(name = "actual_duration")
     private Integer actualDuration;
 
-    @Column(name = "break_bank_initial")
-    private Integer breakBankInitial;
-
-    @Column(name = "break_bank_final")
-    private Integer breakBankFinal;
-
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private SessionStatus status;
@@ -64,6 +58,23 @@ public class FocusSession {
 
     @Column(name = "ended_at")
     private Instant endedAt;
+
+    @Column(name = "total_reward_pool", nullable = false)
+    private Integer totalRewardPool; // Tổng quỹ thưởng gốc ban đầu (Ví dụ: 10 phút)
+
+    @Column(name = "potential_reward", nullable = false)
+    private Integer potentialReward; // Quỹ thưởng tương lai còn lại (Giảm dần khi chuyển hóa hoặc bị phạt)
+
+    @Column(name = "last_cycle_at")
+    private Instant lastCycleAt;
+
+    @Column(name = "accumulated_reward", nullable = false)
+    @Builder.Default
+    private Integer accumulatedReward = 0; // Quỹ thưởng thực tế đã thu thập
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_pet_id", foreignKey = @ForeignKey(name = "fk_focus_sessions_user_pet"))
+    private UserPet userPet;
 
     @Builder.Default
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

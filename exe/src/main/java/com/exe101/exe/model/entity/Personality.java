@@ -52,11 +52,11 @@ public class Personality {
 
     @Builder.Default
     @OneToMany(mappedBy = "personality", fetch = FetchType.LAZY)
-    private Set<UserSetting> userSettings = new HashSet<>();
+    private Set<FocusSession> focusSessions = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "personality", fetch = FetchType.LAZY)
-    private Set<FocusSession> focusSessions = new HashSet<>();
+    private Set<User> users = new HashSet<>();
 
     public static Personality ref(Long id) {
         Personality p = new Personality();

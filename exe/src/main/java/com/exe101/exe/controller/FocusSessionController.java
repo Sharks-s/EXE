@@ -27,12 +27,22 @@ public class FocusSessionController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @PatchMapping("/{sessionId}/end")
-    public ResponseEntity<ApiResponse<FocusSessionResponse>> endSession(
+    @PostMapping("/{sessionId}/cycle")
+    public ResponseEntity<ApiResponse<FocusSessionResponse>> completeCycle(
             @PathVariable Long sessionId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        FocusSessionResponse response = focusSessionService.endSession(sessionId, userDetails.getId());
+        FocusSessionResponse response = focusSessionService.completeCycle(sessionId, userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PatchMapping("/{sessionId}/end")
+    public ResponseEntity<ApiResponse<FocusSessionResponse>> endSession(
+            @PathVariable Long sessionId,
+            @RequestParam boolean isAborted,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        FocusSessionResponse response = focusSessionService.endSession(sessionId, userDetails.getId(), isAborted);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

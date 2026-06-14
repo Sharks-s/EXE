@@ -20,6 +20,8 @@ public interface UserService {
 
     User findById(Long id);
 
+    User save(User user);
+
     User getReferenceById(Long id);
     //User createByAdmin(CreateUserByAdminRequest request);
 }

@@ -6,14 +6,17 @@ import java.time.Instant;
 
 public record FocusSessionResponse(
         Long id,
-        Long userId,
         String goal,
         Integer plannedDuration,
         Integer actualDuration,
-        Integer breakBankInitial,
-        Integer breakBankFinal,
+        Integer totalRewardPool,
+        Integer potentialReward,
+        Integer accumulatedReward,
         SessionStatus status,
         Instant startedAt,
-        Instant endedAt
+        Instant endedAt,
+        Long userPetId,
+        Long personalityId,
+        Instant lastCycleAt
 ) {
 }

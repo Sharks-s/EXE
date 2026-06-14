@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface FocusSessionMapper {
 
-    @Mapping(source = "user.id", target = "userId")
+    @Mapping(source = "userPet.id", target = "userPetId")
+    @Mapping(source = "personality.id", target = "personalityId")
     FocusSessionResponse toResponse(FocusSession session);
 }

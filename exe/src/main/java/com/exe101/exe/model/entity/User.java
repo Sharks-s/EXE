@@ -8,7 +8,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,7 +26,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"identities","userRoles" ,"refreshTokens", "userSetting", "focusSessions", "subscriptions", "appRules"})
+@ToString(exclude = {"identities", "userRoles", "refreshTokens", "userSetting", "focusSessions", "subscriptions", "appRules", "userPets"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
 
@@ -69,7 +68,7 @@ public class User {
     private Integer dailyUsedMinutes = 0;
 
     @Column(name = "last_usage_date")
-    private LocalDate lastUsageDate;
+    private Instant lastUsageDate;
 
     @Version
     private Long version;
@@ -106,6 +105,14 @@ public class User {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AppRule> appRules = new HashSet<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserPet> userPets = new HashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "personality_id", foreignKey = @ForeignKey(name = "fk_users_personality"))
+    private Personality personality;
+
     // --- HELPER METHODS ---
     public void addIdentity(UserIdentity identity) {
         this.identities.add(identity);
@@ -136,5 +143,15 @@ public class User {
         User u = new User();
         u.setId(id);
         return u;
+    }
+
+    public void addUserPet(UserPet userPet) {
+        this.userPets.add(userPet);
+        userPet.setUser(this);
+    }
+
+    public void removeUserPet(UserPet userPet) {
+        this.userPets.remove(userPet);
+        userPet.setUser(null);
     }
 }

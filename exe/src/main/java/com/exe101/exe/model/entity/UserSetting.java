@@ -27,18 +27,6 @@ public class UserSetting {
     @JoinColumn(name = "user_id", nullable = false, unique = true, foreignKey = @ForeignKey(name = "fk_user_settings_user"))
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "personality_id", foreignKey = @ForeignKey(name = "fk_user_settings_personality"))
-    private Personality personality;
-
-    @Column(name = "focus_duration_mins", nullable = false)
-    @Builder.Default
-    private Integer focusDurationMins = 50;
-
-    @Column(name = "break_bank_mins", nullable = false)
-    @Builder.Default
-    private Integer breakBankMins = 10;
-
     @Column(name = "camera_enabled", nullable = false)
     @Builder.Default
     private boolean cameraEnabled = true;

@@ -1,0 +1,235 @@
+/* ── Container chính ── */
+.active-view-container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* ── Header ── */
+.active-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.active-view-header h1 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.active-view-header p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.btn-back-dashboard {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-back-dashboard:hover {
+  background-color: #f1f5f9;
+}
+
+/* ── Progress Ring Component ── */
+.progress-ring-wrapper {
+  position: relative;
+}
+
+.progress-ring-svg {
+  transform: rotate(-90deg);
+}
+
+/* Vòng tròn chạy tiến độ kế thừa biến --total-progress từ cha */
+.progress-ring-circle-fill {
+  stroke-dashoffset: calc(
+    var(--circumference) - (var(--total-progress) * var(--circumference))
+  );
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.progress-ring-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-ring-content .time-text {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.progress-ring-content .label-text {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* ── Main Timer Box ── */
+.main-timer-box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.timer-bars-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bar-row-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.bar-row-header .title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.bar-row-header .sub-info {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.bar-row-header .reward-info {
+  font-size: 12px;
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+/* Thanh Tiến Độ Base */
+.progress-bar-bg {
+  height: 6px;
+  background-color: #f1f5f9;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-bar-bg.break-bank-bg {
+  background-color: #fef3c7;
+}
+
+/* CSS THUẦN: Lấy biến --cycle-progress từ scope cha để kéo width */
+.progress-bar-fill {
+  height: 100%;
+  width: calc(var(--cycle-progress) * 100%);
+  background: linear-gradient(90deg, #9fd6fa, #60c5f7);
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+/* CSS THUẦN: Lấy biến --bank-progress từ scope cha để kéo width */
+.progress-bar-fill.break-bank-fill {
+  width: calc(var(--bank-progress) * 100%);
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+/* ── Stat Card Component ── */
+.stat-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card-label {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-card-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stat-card-sub {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Actions Buttons ── */
+.actions-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.btn-abort-session {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #fee2e2;
+  background-color: #fff5f5;
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 13px;
+  transition: opacity 0.2s;
+}
+
+.btn-complete-session {
+  flex: 2;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #9fd6fa, #60c5f7);
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow: 0 4px 14px rgba(159, 214, 250, 0.4);
+  transition: opacity 0.2s;
+}
+
+.btn-abort-session:disabled,
+.btn-complete-session:disabled {
+  opacity: 0.6;
+}
+
+.cursor-wait {
+  cursor: wait;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}

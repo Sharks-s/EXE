@@ -4,12 +4,11 @@ import {
   getCurrentWebviewWindow,
 } from "@tauri-apps/api/webviewWindow";
 import { ChatBubble } from "../../shared/components/ChatBubble";
+import { useFocusStore } from "../../features/focus-session/stores/focusStore";
+import { focusApi } from "../../features/focus-session/api/focus.api";
 
-// Cấu hình cho 10 frame của bạn
 const FRAME_COUNT = 10;
-const ANIMATION_SPEED_FPS = 10; // Tốc độ chạy (12 hình trên 1 giây, bạn có thể chỉnh lại cho vừa mắt)
-
-// Hàm lấy đường dẫn ảnh từ thư mục public/frames mà bạn vừa xếp lúc nãy
+const ANIMATION_SPEED_FPS = 10;
 const getFramePath = (index: number) => `/monkeyFrames/bot_${index}.png`;
 
 export default function WidgetWindow() {
@@ -18,16 +17,18 @@ export default function WidgetWindow() {
   const animationFrameIdRef = useRef<number | null>(null);
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [isReady, setIsReady] = useState(false);
-  const [botMessage, setBotMessage] = useState<string>(
-    "Ủa cái điện thoại có dính vàng hay sao mà nhìn hoài vậy bạn? Trừ 2 phút nghỉ nhé, bớt nhìn lại!",
+  const [showBubble, setShowBubble] = useState(false);
+  const [bubbleMessage, setBubbleMessage] = useState("");
+  const [bubbleMode, setBubbleMode] = useState<"cycle" | "warning" | null>(
+    null,
   );
-  const [showBubble, setShowBubble] = useState<boolean>(true);
 
-  // 1. Tải trước (Pre-load) toàn bộ 10 ảnh vào RAM để khi chạy không bị nhấp nháy
+  const { session, syncSession } = useFocusStore();
+
+  // ── Preload frames ─────────────────────────────────
   useEffect(() => {
     const loadedImages: HTMLImageElement[] = [];
     let loadedCount = 0;
-
     for (let i = 0; i < FRAME_COUNT; i++) {
       const img = new Image();
       img.src = getFramePath(i);
@@ -40,100 +41,132 @@ export default function WidgetWindow() {
       };
       loadedImages.push(img);
     }
-
     return () => {
-      if (animationFrameIdRef.current !== null) {
+      if (animationFrameIdRef.current !== null)
         cancelAnimationFrame(animationFrameIdRef.current);
-      }
     };
   }, []);
 
-  // 2. Vòng lặp vẽ ảnh lên Canvas (Giữ nguyên độ xóa phông của PNG)
+  // ── Animation loop ─────────────────────────────────
   useEffect(() => {
     if (!isReady || !canvasRef.current || images.length === 0) return;
-
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     const frameInterval = 1000 / ANIMATION_SPEED_FPS;
     let lastTime = 0;
-
     const animate = (timestamp: number) => {
       if (timestamp - lastTime >= frameInterval) {
         lastTime = timestamp;
-
-        // Xóa sạch khung cũ để vẽ khung mới (giúp giữ độ trong suốt, không bị đè hình)
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const imgToDraw = images[currentFrameRef.current];
-
-        if (imgToDraw) {
-          const imgWidth = imgToDraw.width;
-          const imgHeight = imgToDraw.height;
-
-          // Tính toán tỷ lệ để ảnh vừa khít trong ô vuông 160x160 của cửa sổ
+        const img = images[currentFrameRef.current];
+        if (img) {
           const scale = Math.min(
-            canvas.width / imgWidth,
-            canvas.height / imgHeight,
+            canvas.width / img.width,
+            canvas.height / img.height,
           );
-          const dWidth = imgWidth * scale;
-          const dHeight = imgHeight * scale;
-
-          // Căn giữa hình ảnh vào tâm Canvas
-          const dx = (canvas.width - dWidth) / 2;
-          const dy = (canvas.height - dHeight) / 2;
-
-          ctx.drawImage(imgToDraw, dx, dy, dWidth, dHeight);
+          const dW = img.width * scale;
+          const dH = img.height * scale;
+          ctx.drawImage(
+            img,
+            (canvas.width - dW) / 2,
+            (canvas.height - dH) / 2,
+            dW,
+            dH,
+          );
         }
-
-        // Lặp vòng từ 0 đến 9
         currentFrameRef.current = (currentFrameRef.current + 1) % FRAME_COUNT;
       }
-
       animationFrameIdRef.current = requestAnimationFrame(animate);
     };
-
     animationFrameIdRef.current = requestAnimationFrame(animate);
-
     return () => {
-      if (animationFrameIdRef.current) {
+      if (animationFrameIdRef.current)
         cancelAnimationFrame(animationFrameIdRef.current);
-      }
     };
   }, [isReady, images]);
 
-  // 3. Click chuột vào con Bot để thu nhỏ quay về Dashboard chính
-  const handleClick = async () => {
-    // 🎯 LOG 1: Xem thực chất nút click này đang chạy trên CỬA SỔ NÀO
-    const currentWin = getCurrentWebviewWindow();
-    console.log(
-      "[WidgetWindow] 🛑 Cú click chuột xảy ra trên CỬA SỔ CÓ LABEL:",
-      currentWin.label,
-    );
+  // ── Cycle timer trigger ────────────────────────────
+  useEffect(() => {
+    if (!session) return;
 
-    const mainWindow = await WebviewWindow.getByLabel("main");
-    const widgetWindow = await WebviewWindow.getByLabel("widget");
+    const lastCycleAt = session.lastCycleAt
+      ? new Date(session.lastCycleAt).getTime()
+      : new Date(session.startedAt).getTime();
 
-    // 🎯 LOG 2: Kiểm tra xem các thực thể cửa sổ có tìm thấy không
-    console.log("[WidgetWindow] Kiểm tra thực thể cửa sổ tìm kiếm:");
-    console.log("- mainWindow:", mainWindow ? "Tìm thấy" : "NULL");
-    console.log("- widgetWindow:", widgetWindow ? "Tìm thấy" : "NULL");
+    const cycleEndAt = lastCycleAt + 25 * 60 * 1000;
+    const delay = cycleEndAt - Date.now();
 
-    if (!mainWindow || !widgetWindow) {
-      console.log(
-        "[WidgetWindow] ↩️ Hàm bị RETURN vì không tìm thấy đủ 2 cửa sổ trên!",
-      );
+    if (delay <= 0) {
+      // Đã quá 25 phút rồi → gọi luôn
+      handleCycleComplete();
       return;
     }
 
+    // Chưa đủ 25 phút → đặt timeout đúng lúc
+    const timeout = setTimeout(() => {
+      handleCycleComplete();
+    }, delay);
+
+    return () => clearTimeout(timeout);
+  }, [session?.lastCycleAt]); // re-run mỗi khi lastCycleAt đổi (sau mỗi cycle)
+
+  // ── Cycle complete handler ─────────────────────────
+  const handleCycleComplete = async () => {
+    if (!session) return;
+    try {
+      const res = await focusApi.completeCycle(session.id);
+      syncSession(res);
+      setBubbleMessage("Hiệp xong! 🎉 Nghỉ xíu hay cày tiếp?");
+      setBubbleMode("cycle");
+      setShowBubble(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleBreak = () => {
+    setBubbleMessage("Nghỉ 5 phút nhé! ☕ Quay lại đúng giờ đó!");
+    setBubbleMode(null);
+    setTimeout(() => setShowBubble(false), 4000);
+  };
+
+  const handleContinue = () => {
+    setShowBubble(false);
+    setBubbleMode(null);
+  };
+
+  // ── Click bot → back to dashboard ─────────────────
+  const handleClick = async () => {
+    const currentWin = getCurrentWebviewWindow();
+    console.log("[WidgetWindow] click on:", currentWin.label);
+    const mainWindow = await WebviewWindow.getByLabel("main");
+    const widgetWindow = await WebviewWindow.getByLabel("widget");
+    if (!mainWindow || !widgetWindow) return;
     try {
       await mainWindow.show();
       await widgetWindow.hide();
     } catch (err) {
-      console.error("[WidgetWindow] Lỗi khi chuyển đổi cửa sổ:", err);
+      console.error(err);
     }
   };
+
+  // ── Bubble actions theo mode ───────────────────────
+  const bubbleActions =
+    bubbleMode === "cycle"
+      ? [
+          {
+            label: "Nghỉ ☕",
+            onClick: handleBreak,
+            variant: "secondary" as const,
+          },
+          {
+            label: "Tiếp! 🔥",
+            onClick: handleContinue,
+            variant: "primary" as const,
+          },
+        ]
+      : undefined;
 
   return (
     <div
@@ -142,12 +175,9 @@ export default function WidgetWindow() {
         width: "100vw",
         height: "100vh",
         display: "flex",
-
         flexDirection: "column",
         alignItems: "flex-end",
-
         justifyContent: "flex-end",
-        // border: "1px solid #ff2828",
         background: "transparent",
         cursor: "pointer",
         userSelect: "none",
@@ -155,19 +185,17 @@ export default function WidgetWindow() {
         boxSizing: "border-box",
       }}
     >
-      {/* 1. Bong bóng thoại tự flex co giãn nằm ở phía trên */}
-      <ChatBubble message={botMessage} isVisible={showBubble} />
+      <ChatBubble
+        message={bubbleMessage}
+        isVisible={showBubble}
+        actions={bubbleActions}
+      />
 
-      {/* 2. Canvas vẽ chú khỉ nằm ở phía dưới */}
       <canvas
         ref={canvasRef}
-        width={160} // Giữ nguyên độ phân giải vật lý
+        width={160}
         height={160}
-        style={{
-          width: 130, // Khuyên dùng 130 hoặc 140 để cân đối tỉ lệ với khung cửa sổ 200x240
-          height: 130,
-          background: "transparent",
-        }}
+        style={{ width: 130, height: 130, background: "transparent" }}
       />
 
       {!isReady && (

@@ -1,17 +1,16 @@
 package com.exe101.exe.service.impl;
 
 import com.exe101.exe.dto.request.CreateSessionRequest;
+import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.FocusSessionResponse;
-import com.exe101.exe.model.entity.UserPet;
+import com.exe101.exe.model.entity.*;
+import com.exe101.exe.model.enums.ViolationType;
 import com.exe101.exe.repository.SubscriptionRepository;
 import com.exe101.exe.repository.UserPetRepository;
 import com.exe101.exe.service.FocusSessionService;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.mapper.FocusSessionMapper;
-import com.exe101.exe.model.entity.FocusSession;
-import com.exe101.exe.model.entity.Personality;
-import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.enums.SessionStatus;
 import com.exe101.exe.repository.FocusSessionRepository;
 import com.exe101.exe.repository.PersonalityRepository;
@@ -205,6 +204,44 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             pet.setExperience(pet.getExperience() + session.getAccumulatedReward() * 60);
             userPetRepository.save(pet);
         }
+
+        FocusSession savedSession = focusSessionRepository.save(session);
+        return focusSessionMapper.toResponse(savedSession);
+    }
+
+
+    @Override
+    @Transactional
+    public FocusSessionResponse handleViolation(Long sessionId, Long userId, ViolationRequest request) {
+        FocusSession session = focusSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+
+        if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
+        }
+
+        int penaltyMinutes = 1;
+
+        if (session.getPotentialReward() >= penaltyMinutes) {
+            session.setPotentialReward(session.getPotentialReward() - penaltyMinutes);
+        } else {
+            int remainingPenalty = penaltyMinutes - session.getPotentialReward();
+            session.setPotentialReward(0);
+            session.setAccumulatedReward(Math.max(0, session.getAccumulatedReward() - remainingPenalty));
+        }
+
+        Violation violation = Violation.builder()
+                .session(session)
+                .type(request.type())
+                .minutesDeducted(penaltyMinutes)
+                .appName(request.appName())
+                .windowTitle(request.windowTitle())
+                .build();
+        session.addViolation(violation);
 
         FocusSession savedSession = focusSessionRepository.save(session);
         return focusSessionMapper.toResponse(savedSession);

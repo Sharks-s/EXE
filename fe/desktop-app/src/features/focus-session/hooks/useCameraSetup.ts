@@ -65,7 +65,7 @@ export const useCameraSetup = (isOpen: boolean) => {
     };
   }, [isOpen]);
 
-  const canProceed = !!(status?.all_pass && status?.face_detected);
+  const canProceed = !!status?.all_pass;
 
   return {
     status,

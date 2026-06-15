@@ -1,5 +1,6 @@
 package com.exe101.exe.model.entity;
 
+import com.exe101.exe.model.enums.ViolationType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -28,11 +29,12 @@ public class Violation {
     @JoinColumn(name = "session_id", nullable = false, foreignKey = @ForeignKey(name = "fk_violations_session"))
     private FocusSession session;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30, nullable = false)
-    private String type; // AWAY, PHONE, ENTERTAINMENT
+    private ViolationType type;
 
-    @Column(name = "minutes_deducted", precision = 5, scale = 2)
-    private BigDecimal minutesDeducted;
+    @Column(name = "minutes_deducted", nullable = false)
+    private int minutesDeducted;
 
     @Size(max = 150)
     @Column(name = "app_name", length = 150)

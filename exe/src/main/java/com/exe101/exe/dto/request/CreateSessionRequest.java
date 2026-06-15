@@ -13,10 +13,6 @@ public record CreateSessionRequest(
 
         @NotNull(message = "{validation.session.duration.notNull}")
         @Min(value = 1, message = "{validation.session.duration.min}")
-        Integer durationMinutes,
-
-        @NotBlank(message = "{validation.session.personality.notBlank}")
-        String personality
-
+        Integer durationMinutes
 ) {
 }

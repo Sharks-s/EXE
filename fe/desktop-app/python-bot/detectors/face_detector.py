@@ -4,6 +4,8 @@ import time
 import numpy as np
 import mediapipe as mp
 
+# Định vị các điểm mốc trên khuôn mặt theo MediaPipe FaceMesh chuẩn để tính Head Pose
+# 1: Mũi, 33: Khóe mắt trái, 263: Khóe mắt phải, 61: Khóe miệng trái, 291: Khóe miệng phải, 199: Cằm
 POSE_POINTS = [1, 33, 263, 61, 291, 199]
 
 class FaceDetector:
@@ -17,11 +19,11 @@ class FaceDetector:
             static_image_mode=False,
             max_num_faces=1,
             refine_landmarks=True,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5,
+            min_detection_confidence=0.6,  # Tăng nhẹ để tránh bắt nhầm nhiễu nền
+            min_tracking_confidence=0.6,
         )
 
-        self._latest_frame: bytes | None = None
+        self._latest_frame = None
         self._latest_data: dict = self._empty_result("not_started")
 
     # ── Camera control ─────────────────────────────────
@@ -31,8 +33,8 @@ class FaceDetector:
             if self._is_running:
                 return True
 
-            # Mỗi lần start -> Ép buộc mở kết nối phần cứng mới toanh
             if self._cap is None:
+                # Dùng CAP_DSHOW trên Windows giúp khởi động camera nhanh hơn
                 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
                 if not cap.isOpened():
                     return False
@@ -46,10 +48,9 @@ class FaceDetector:
         return True
 
     def stop(self):
-        """Dừng hoàn toàn vòng lặp xử lý và giải phóng cứng camera ngay lập tức."""
+        """Dừng hoàn toàn vòng lặp xử lý và giải phóng phần cứng camera ngay lập tức."""
         thread_to_join = None
         
-        # 1. Hạ cờ running và lấy ra camera cần đóng ngay trong lock (nhanh chớp nhoáng)
         with self._lock:
             self._is_running = False
             thread_to_join = self._thread
@@ -58,16 +59,12 @@ class FaceDetector:
             cap_to_close = self._cap
             self._cap = None  # Xóa trắng ngay lập tức để chặn các đầu đọc khác
 
-        # 2. Ra ngoài lock: Cưỡng chế giải phóng phần cứng camera
-        # Việc release này sẽ bẻ gãy hàm cap.read() đang bị kẹt ở luồng ngầm ngay tức khắc!
         if cap_to_close is not None:
             try:
                 cap_to_close.release()
-    
             except Exception as e:
                 print(f"[Python] Lỗi khi release camera: {e}")
 
-        # 3. Đợi luồng ngầm kết thúc an toàn
         if thread_to_join is not None and thread_to_join.is_alive():
             try:
                 thread_to_join.join(timeout=1.0)
@@ -95,39 +92,32 @@ class FaceDetector:
     # ── Background loop ────────────────────────────────
 
     def _loop(self):
-        
         while True:
-            # Check cờ chạy không cần lock để tăng tốc
             if not self._is_running:
                 break
 
-            # Lấy handle camera an toàn
             with self._lock:
                 cap = self._cap
                 if cap is None:
                     break
 
-            # 🛑 ĐƯA LỆNH READ RA NGOÀI LOCK - CHÌA KHÓA CHỐNG DEADLOCK
             ret, frame = cap.read()
-
             if not ret or frame is None:
                 break
 
-            # Xử lý ảnh ảnh lật gương
+            # Lật gương hình ảnh để hiển thị tự nhiên với người dùng
             frame = cv2.flip(frame, 1)
 
-            # Mã hóa JPEG
+            # Phân tích hình ảnh bằng MediaPipe và tính toán checklist trước khi mã hóa hình ảnh công khai
+            self._latest_data = self._analyze(frame)
+
+            # Mã hóa JPEG cho luồng MJPEG Stream
             _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
             self._latest_frame = buf.tobytes()
 
-            # Phân tích hình ảnh bằng MediaPipe
-            self._latest_data = self._analyze(frame)
-
-            # Nghỉ một nhịp ~30fps
+            # Nghỉ một nhịp ~30fps để giảm tải CPU
             time.sleep(0.033)
             
-        
-        # Dự phòng tự dọn dẹp nếu luồng tự thoát do lỗi phần cứng
         with self._lock:
             self._is_running = False
             if self._cap is not None:
@@ -144,9 +134,10 @@ class FaceDetector:
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self._face_mesh.process(rgb)
 
+        # Tính toán độ sáng môi trường làm việc
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         brightness = float(np.mean(gray))
-        lighting_ok = 60 < brightness < 220
+        lighting_ok = 45 < brightness < 230  # Mở rộng dải sáng một chút để tránh nhận diện quá khắt khe vào ban đêm
 
         if not results.multi_face_landmarks:
             return {
@@ -163,16 +154,24 @@ class FaceDetector:
             }
 
         lm = results.multi_face_landmarks[0].landmark
+        
+        # 1. Tính góc quay của đầu (Head Pose)
         pitch, yaw = self._calc_head_pose(lm, w, h)
-        face_centered = abs(yaw) < 15 and abs(pitch) < 20
+        # Giới hạn góc nhìn thẳng chuẩn xác: Yaw góc nghiêng trái/phải, Pitch góc ngẩng/cúi
+        face_centered = abs(yaw) < 12 and -10 < pitch < 18
 
+        # 2. Tính khoảng cách (Dựa trên tỉ lệ bao phủ khuôn mặt trong khung hình)
         xs = [l.x for l in lm]
         ys = [l.y for l in lm]
         face_area = (max(xs) - min(xs)) * (max(ys) - min(ys))
-        close_enough = 0.04 <= face_area <= 0.10
+        # Ngưỡng vàng cho khoảng cách ngồi trước màn hình máy tính (60cm - 80cm)
+        close_enough = 0.05 <= face_area <= 0.14
 
-        face_center_y = (min(ys) + max(ys)) / 2
-        shoulders_visible = face_center_y < 0.45
+        # 3. Tính toán tư thế ngồi (Kiểm tra xem cằm có bị sát đáy hay khuất không)
+        # Điểm số 152 trên FaceMesh là điểm dưới cùng của cằm. 
+        # Nếu ngồi thẳng và vai xuất hiện, cằm không được phép vượt quá 82% chiều cao màn hình từ trên xuống.
+        chin_landmark = lm[152]
+        shoulders_visible = chin_landmark.y < 0.82
 
         checks = {
             "face_centered": face_centered,
@@ -190,13 +189,14 @@ class FaceDetector:
         }
 
     def _calc_head_pose(self, landmarks, w: int, h: int):
+        # Mô hình tọa độ 3D vật lý chuẩn của các điểm mốc trên khuôn mặt người
         model_points = np.array([
-            (0.0,    0.0,    0.0),
-            (-165.0, 170.0, -135.0),
-            (165.0,  170.0, -135.0),
-            (-150.0, -150.0, -125.0),
-            (150.0,  -150.0, -125.0),
-            (0.0,    -330.0, -65.0),
+            (0.0,    0.0,    0.0),      # Mũi
+            (-165.0, 170.0, -135.0),    # Mắt trái
+            (165.0,  170.0, -135.0),    # Mắt phải
+            (-150.0, -150.0, -125.0),   # Miệng trái
+            (150.0,  -150.0, -125.0),   # Miệng phải
+            (0.0,    -330.0, -65.0),    # Cằm
         ], dtype=np.float64)
 
         image_points = np.array([
@@ -204,23 +204,31 @@ class FaceDetector:
             for i in POSE_POINTS
         ], dtype=np.float64)
 
-        focal = w
+        focal_length = w
+        center = (w / 2, h / 2)
         cam_matrix = np.array([
-            [focal, 0,     w / 2],
-            [0,     focal, h / 2],
-            [0,     0,     1    ],
+            [focal_length, 0,            center[0]],
+            [0,            focal_length, center[1]],
+            [0,            0,            1        ],
         ], dtype=np.float64)
 
-        dist = np.zeros((4, 1))
+        dist_coeffs = np.zeros((4, 1)) # Giả định camera không bị méo thấu kính hình học
+        
         _, rvec, _ = cv2.solvePnP(
-            model_points, image_points, cam_matrix, dist,
+            model_points, image_points, cam_matrix, dist_coeffs,
             flags=cv2.SOLVEPNP_ITERATIVE,
         )
 
         rmat, _ = cv2.Rodrigues(rvec)
+        
+        # Trích xuất góc Euler góc quay
         sy = np.sqrt(rmat[0, 0] ** 2 + rmat[1, 0] ** 2)
         pitch = float(np.degrees(np.arctan2(-rmat[2, 0], sy)))
         yaw   = float(np.degrees(np.arctan2(rmat[1, 0], rmat[0, 0])))
+        
+        # SỬA LỖI LẬT GƯƠNG: Vì ảnh đã lật bằng cv2.flip, trục X bị đảo ngược, ta cần đảo ngược dấu Yaw
+        yaw = -yaw
+        
         return pitch, yaw
 
     def _empty_result(self, reason: str) -> dict:

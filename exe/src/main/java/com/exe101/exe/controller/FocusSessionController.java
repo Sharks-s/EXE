@@ -1,8 +1,10 @@
 package com.exe101.exe.controller;
 
 import com.exe101.exe.dto.request.CreateSessionRequest;
+import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.ApiResponse;
 import com.exe101.exe.dto.response.FocusSessionResponse;
+import com.exe101.exe.model.enums.ViolationType;
 import com.exe101.exe.security.CustomUserDetails;
 import com.exe101.exe.service.FocusSessionService;
 import jakarta.validation.Valid;
@@ -43,6 +45,17 @@ public class FocusSessionController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         FocusSessionResponse response = focusSessionService.endSession(sessionId, userDetails.getId(), isAborted);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{sessionId}/violation")
+    public ResponseEntity<ApiResponse<FocusSessionResponse>> handleViolation(
+            @PathVariable Long sessionId,
+            @RequestBody ViolationRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        FocusSessionResponse response = focusSessionService.handleViolation(
+                sessionId, userDetails.getId(), request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

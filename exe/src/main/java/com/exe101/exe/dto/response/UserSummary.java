@@ -12,5 +12,10 @@ import java.util.List;
 public class UserSummary {
     private Long id;
     private String email;
+    private String fullName;
+    private String avatarUrl;
+    private boolean profileCompleted;
+    private Long personalityId;
+    private String personalityCode;
     private List<String> roles;
 }

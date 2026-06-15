@@ -68,7 +68,7 @@ fn start_monitoring_thread(app_handle: tauri::AppHandle) {
                 let app_lower = app_name.to_lowercase();
 
                 // 🎯 BỘ LỌC THÔ: Tìm dấu vết xao nhãng (Trình duyệt + App độc lập)
-                let is_suspicious = title_lower.contains("youtube") 
+                let is_suspicious = title_lower.contains("youtube");
                     || title_lower.contains("facebook") 
                     || title_lower.contains("tiktok")
                     || app_lower.contains("discord")

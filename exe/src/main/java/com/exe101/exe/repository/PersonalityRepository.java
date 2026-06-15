@@ -7,4 +7,8 @@ import java.util.Optional;
 
 public interface PersonalityRepository extends JpaRepository<Personality, Long> {
     Optional<Personality> findByCode(String code);
+    boolean existsByCode(String code);
+
+    boolean existsByCodeAndIdNot(String code, Long id);
+
 }

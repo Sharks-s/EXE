@@ -1,5 +1,6 @@
 package com.exe101.exe.model.entity;
 
+import com.exe101.exe.model.enums.UserGender;
 import com.exe101.exe.model.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,6 +51,9 @@ public class User {
     @Column(name = "avatar_url", length = 512)
     private String avatarUrl;
 
+    @Column(name = "avatar_public_id")
+    private String avatarPublicId;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean profileCompleted = false;
@@ -69,6 +74,16 @@ public class User {
 
     @Column(name = "last_usage_date")
     private Instant lastUsageDate;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender")
+    private UserGender gender;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
 
     @Version
     private Long version;

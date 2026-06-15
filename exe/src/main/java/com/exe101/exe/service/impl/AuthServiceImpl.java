@@ -118,7 +118,6 @@ public class AuthServiceImpl implements AuthService {
 
         CustomUserDetails userDetails =
                 (CustomUserDetails) authentication.getPrincipal();
-
         Long userId = userDetails.getId();
 
         String deviceId = UUID.randomUUID().toString();

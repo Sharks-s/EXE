@@ -1,6 +1,63 @@
 {
-  "SEC_001": "Sai email hoặc mật khẩu",
-  "SEC_002": "Tài khoản chưa được xác thực",
-  "SEC_003": "Tài khoản bị khóa",
-  "SYS_001": "Lỗi hệ thống, vui lòng thử lại"
+  "VAL_001": "Validation failed",
+
+  "BUS_001": "Resource not found",
+  "BUS_002": "Resource already exists",
+  "BUS_003": "Business operation failed",
+
+  "SEC_001": "Unauthorized",
+  "SEC_002": "Access denied",
+  "SEC_003": "Account is locked",
+
+  "SYS_001": "Internal server error, please try again later",
+  "SYS_002": "External service error",
+
+  "USER_001": "User not found",
+  "USER_002": "User is already active",
+  "USER_003": "User ID not found",
+
+  "AUTH_001": "Email already exists",
+  "AUTH_002": "Please verify your email",
+  "AUTH_003": "Account is not active",
+  "AUTH_004": "Invalid verification code",
+  "AUTH_005": "Verification code has expired",
+  "AUTH_006": "Verification code has already been used",
+  "AUTH_007": "Invalid email or password",
+  "AUTH_008": "Too many OTP attempts",
+  "AUTH_009": "Refresh token has already been used",
+  "AUTH_010": "Refresh token has expired",
+  "AUTH_011": "Refresh token has been revoked",
+  "AUTH_012": "Invalid refresh token",
+  "AUTH_013": "Refresh token not found",
+  "AUTH_014": "Email not found",
+  "AUTH_015": "Email not found from OAuth2 provider",
+  "AUTH_016": "OAuth2 authentication failed",
+  "AUTH_017": "OAuth2 provider is not supported",
+  "AUTH_018": "OAuth2 login failed",
+  "AUTH_019": "OAuth2 provider ID is missing",
+  "AUTH_020": "Email not found",
+  "AUTH_021": "Invalid user information",
+  "AUTH_022": "Invalid email or password",
+  "AUTH_023": "Local identity not found",
+  "AUTH_024": "Role not found",
+  "AUTH_025": "OTP is blocked",
+  "AUTH_026": "OTP not found",
+  "AUTH_027": "Refresh token is missing",
+  "AUTH_028": "Identity not found",
+  "AUTH_029": "Refresh token has been reused",
+  "AUTH_030": "Session has expired",
+
+  "PERSONALITY_001": "Personality not found",
+
+  "SESSION_001": "Focus session not found",
+  "SESSION_002": "Session has already ended",
+  "SESSION_003": "A session is already running",
+  "SESSION_004": "Unauthorized access to this session",
+  "SESSION_005": "Session is not in progress",
+  "SESSION_006": "Session cycle has not been completed yet",
+
+  "PREMIUM_001": "Daily usage limit exceeded",
+
+  "PET_001": "Default pet not found",
+  "PET_002": "User personality is not set"
 }

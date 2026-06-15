@@ -50,6 +50,9 @@ public class Pet {
     @Size(max = 512)
     @Column(name = "image_url", length = 512)
     private String imageUrl;
+    @Size(max = 512)
+    @Column(name = "avatar_public_id", length = 512)
+    private String avatarPublicId;
 
     @Column(name = "is_premium", nullable = false)
     @Builder.Default

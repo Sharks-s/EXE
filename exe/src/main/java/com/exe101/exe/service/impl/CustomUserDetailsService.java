@@ -28,7 +28,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         log.debug("Authenticating user by email: {}", email);
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailWithRolesAndPersonality(email)
                 .orElseThrow(() ->
                         new BusinessException(ErrorCode.INVALID_EMAIL_OR_PASSWORD)
                 );

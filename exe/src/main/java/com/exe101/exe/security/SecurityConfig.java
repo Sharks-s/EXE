@@ -5,6 +5,7 @@ import com.exe101.exe.security.oauth.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -47,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/**",
                                 "/oauth2/**",
+                                "/login/oauth2/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml",
@@ -57,7 +59,7 @@ public class SecurityConfig {
                 // ===== OAUTH2 LOGIN ===== ← THÊM ĐOẠN NÀY
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(auth ->
-                                auth.baseUri("/oauth2/authorize")
+                                auth.baseUri("/oauth2/authorization")
                         )
                         .successHandler(oAuth2SuccessHandler)
                         .failureHandler(oAuth2FailureHandler)

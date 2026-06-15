@@ -72,6 +72,11 @@ app:
       access-expiration-ms: 900000
       refresh-expiration-ms: 2592000000
 
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
+
   rate-limit:
     enable: true
     requests-per-minute: 100
@@ -99,3 +104,24 @@ app:
         name: "Mean Assistant"
         description: "Challenging, provocative, and roasts your ego mercilessly."
         premium: true
+    pets:
+      - code : "MONKI"
+        name : "Monkey"
+        description : "A playful and mischievous companion that loves to swing from trees and eat bananas."
+        premium : false
+        image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/MONKI_vtf7p6.png"
+      - code : "PANDO"
+        name: "Panda"
+        description: "A gentle and cuddly companion that loves to eat bamboo and nap in the sun."
+        premium: false
+        image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/PANDO_gs0n1c.png"
+      - code : "PIGGY"
+        name : "Pig"
+        description: "A cute and friendly companion that loves to roll in the mud and eat snacks."
+        premium: true
+        image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/PIGGY_kky3tf.png"
+      - code : "FROGI"
+        name : "Frog"
+        description: "A lively and energetic companion that loves to hop around and catch flies."
+        premium: true
+        image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/FROGI_dxvowf.png"

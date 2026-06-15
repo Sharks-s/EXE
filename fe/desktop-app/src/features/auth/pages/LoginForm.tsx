@@ -35,7 +35,7 @@ export default function LoginForm() {
           type="button"
           onClick={() => {
             window.location.href =
-              "http://localhost:8080/oauth2/authorize/google";
+                "http://localhost:8080/oauth2/authorization/google";
           }}
           className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-600 font-semibold hover:border-yellow-400 hover:text-yellow-500 hover:shadow-[0_0_12px_rgba(250,204,21,0.5)] transition"
         >

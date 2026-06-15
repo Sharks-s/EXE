@@ -63,7 +63,7 @@ public enum ErrorCode {
 
     // ===== PERSONALITY =====
     PERSONALITY_NOT_FOUND("PERSONALITY_001", HttpStatus.NOT_FOUND, "Personality not found"),
-
+    PERSONALITY_CODE_ALREADY_EXISTS("PERSONALITY_002", HttpStatus.CONFLICT, "Personality code already exists"),
     // ===== FOCUS SESSION =====
     SESSION_NOT_FOUND("SESSION_001", HttpStatus.NOT_FOUND, "Session not found"),
     SESSION_ALREADY_ENDED("SESSION_002", HttpStatus.BAD_REQUEST, "Session already ended"),
@@ -77,6 +77,9 @@ public enum ErrorCode {
     // ===== PET =====
     DEFAULT_PET_NOT_FOUND("PET_001", HttpStatus.NOT_FOUND, "Default pet not found"),
     USER_PERSONALITY_NOT_SET("PET_002", HttpStatus.BAD_REQUEST, "User personality not set")
+
+    // ===== CLOUDINARY =====
+
     ;
     private final String code;
     private final HttpStatus httpStatus;

@@ -10,6 +10,7 @@ import com.exe101.exe.repository.*;
 import com.exe101.exe.security.SecurityConfig;
 
 import com.exe101.exe.service.PersonalityService;
+import com.exe101.exe.service.PetService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRoleRepository userRoleRepository;
     private final UserIdentityRepository userIdentityRepository;
     private final PersonalityService personalityService;
+    private final PetService petService;
 
     @Override
     @Transactional
@@ -96,6 +98,8 @@ public class DataInitializer implements CommandLineRunner {
 
         //--------Init default personalities-----------
         personalityService.seedDefaultPersonalities();
+        //--------Init default pets-----------
+        petService.seedDefaultPets();
     }
 }
 

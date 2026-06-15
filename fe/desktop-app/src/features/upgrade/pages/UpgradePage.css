@@ -1,0 +1,349 @@
+.upgrade-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #f2f5ff;
+}
+
+.upgrade-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(220, 233, 255, 0.9);
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.upgrade-header h1 {
+  margin: 0;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #0b1c30;
+}
+
+.upgrade-header p {
+  margin: 1px 0 0;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #6b7685;
+}
+
+.current-plan-badge {
+  display: flex;
+  align-items: center;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #3f9dff, #1a7de8);
+  box-shadow: 0 4px 14px rgba(63, 157, 255, 0.35);
+}
+
+.current-plan-badge span {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: white;
+}
+
+.upgrade-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 36px 48px 56px;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.plan-card {
+  border-radius: 20px;
+  border: 1.5px solid rgba(220, 233, 255, 0.85);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-card.highlight {
+  border: 2px solid #3f9dff;
+  background: linear-gradient(160deg, #ffffff 0%, #f0f8ff 100%);
+  box-shadow: 0 12px 40px rgba(63, 157, 255, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.plan-stripe {
+  height: 4px;
+  background: linear-gradient(90deg, #3f9dff, #1a7de8);
+}
+
+.popular-badge {
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  background: linear-gradient(135deg, #3f9dff, #1a7de8);
+  color: white;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+.plan-content {
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.plan-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.plan-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(63, 157, 255, 0.1);
+  color: #3f9dff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+}
+
+.plan-header h3 {
+  margin: 0;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #0b1c30;
+}
+
+.plan-header p {
+  margin: 0;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  color: #9ba8b9;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.plan-price span {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  color: #3f9dff;
+  letter-spacing: -1px;
+}
+
+.plan-price small {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #9ba8b9;
+}
+
+.plan-divider {
+  height: 1px;
+  background: rgba(220, 233, 255, 0.7);
+  margin-bottom: 18px;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.check-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(63, 157, 255, 0.12);
+  color: #3f9dff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.feature-item p {
+  margin: 0;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: #404752;
+  line-height: 1.4;
+}
+
+.plan-button {
+  margin-top: 24px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(63, 157, 255, 0.3);
+  background: rgba(63, 157, 255, 0.08);
+  color: #3f9dff;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.plan-button.primary {
+  border: none;
+  background: linear-gradient(135deg, #3f9dff, #1a7de8);
+  color: white;
+  box-shadow: 0 4px 16px rgba(63, 157, 255, 0.35);
+}
+
+.plan-button:disabled {
+  cursor: default;
+  color: #9ba8b9;
+  background: rgba(155, 168, 185, 0.08);
+}
+
+.pricing-note {
+  text-align: center;
+  margin-top: 24px;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: rgba(64, 71, 82, 0.5);
+}
+
+.faq-section {
+  max-width: 680px;
+  margin: 44px auto 0;
+}
+
+.faq-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.faq-header h2 {
+  margin: 0;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #0b1c30;
+}
+
+.faq-header p {
+  margin: 4px 0 0;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #9ba8b9;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faq-item {
+  border-radius: 14px;
+  border: 1.5px solid rgba(220, 233, 255, 0.85);
+  background: rgba(255, 255, 255, 0.95);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.faq-question span {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #0b1c30;
+}
+
+.faq-arrow {
+  color: #9ba8b9 !important;
+  transition: transform 0.2s;
+}
+
+.faq-arrow.open {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  padding: 0 20px 16px;
+}
+
+.faq-answer p {
+  margin: 0;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #6b7685;
+  line-height: 1.6;
+}
+
+.upgrade-footer {
+  border-top: 1px solid rgba(220, 233, 255, 0.7);
+  margin-top: 48px;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upgrade-footer span {
+  font-family: "Quicksand", sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: rgba(64, 71, 82, 0.5);
+}
+
+.upgrade-footer div {
+  display: flex;
+  gap: 24px;
+}

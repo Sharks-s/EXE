@@ -1,0 +1,196 @@
+.container {
+  width: 100%;
+  font-family: "Inter", system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: transparent;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* HEADER GREETING */
+.header {
+  padding-left: 2px;
+}
+
+.title {
+  fontsize: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+
+/* SECTIONS COMMON */
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* GOAL PRESETS */
+.presetContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.presetBtn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.presetBtnActive {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.06);
+  color: #2563eb;
+  font-weight: 700;
+}
+
+/* INPUT COMPONENT */
+.customInput {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  font-size: 13px;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.customInput::placeholder {
+  color: #94a3b8;
+}
+
+.customInputFocused {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* DURATION HEADER */
+.durationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.durationBadge {
+  padding: 6px 14px;
+  border-radius: 99px;
+  background: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+/* QUICK TIME BUTTONS */
+.quickTimeContainer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quickTimeBtn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quickTimeBtnActive {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.04);
+  color: #2563eb;
+  font-weight: 700;
+}
+
+/* BREAK BANK */
+.breakBankCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.breakBankIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fcd34d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.breakBankTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #78350f;
+}
+
+.breakBankSubtitle {
+  font-size: 11px;
+  color: #92400e;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* SUBMIT BUTTON */
+.submitBtn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.submitBtn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}

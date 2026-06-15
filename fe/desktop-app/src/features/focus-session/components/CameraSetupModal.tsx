@@ -1,39 +1,83 @@
 import React, { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { useCameraSetup } from "../hooks/useCameraSetup";
+import { useFocusStore } from "../stores/focusStore";
+import { focusApi } from "../api/focus.api";
+import { cameraApi } from "../api/cameraApi";
+import { tauriStore } from "../../../lib/tauriStore";
 import { CheckItem } from "./CheckItemProps";
 
 interface CameraSetupModalProps {
-  isOpen: boolean;
+  goal: string;
+  durationMinutes: number;
   onClose: () => void;
-  onConfirm: () => void;
-  isSubmitting?: boolean;
 }
 
 export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
-  isOpen,
+  goal,
+  durationMinutes,
   onClose,
-  onConfirm,
-  isSubmitting = false,
 }) => {
+  // Vì SetupView render cưỡng bức bằng toán tử &&, nên mặc định mở ra là isOpen = true
   const {
     status,
     error: hookError,
     isLoading,
     canProceed,
     streamUrl,
-  } = useCameraSetup(isOpen);
+  } = useCameraSetup(true);
+
+  const { setSession } = useFocusStore();
   const [streamError, setStreamError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) setStreamError(null);
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+    setStreamError(null);
+    setSubmitError(null);
+  }, []);
 
   const { pitch = 0, yaw = 0, face_detected = false, checks } = status || {};
-  const activeError = hookError || streamError;
-
+  const activeError = hookError || streamError || submitError;
   const passedCount = checks ? Object.values(checks).filter(Boolean).length : 0;
+
+  // ── LUỒNG XỬ LÝ KÍCH HOẠT CHUẨN: PYTHON TRƯỚC -> BACKEND SAU ──
+  const handleStartFocus = async () => {
+    if (!canProceed) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // BƯỚC 1: Gọi thẳng API Backend tạo Session
+      const newSession = await focusApi.createSession({
+        goal: goal,
+        durationMinutes: durationMinutes,
+      });
+
+      // BƯỚC 2: Lưu Session vào Store
+      setSession(newSession);
+      await tauriStore.set("active_session", newSession);
+
+      // BƯỚC 3: Đóng modal an toàn trước.
+      // Khi onClose() chạy -> isOpen thành false -> Hook tự dọn dẹp, tự tắt cam ngầm chuẩn chỉ!
+      onClose();
+
+      // Chờ nhẹ 100ms cho luồng tắt cam của Hook thực thi êm xuôi
+      await new Promise((r) => setTimeout(r, 100));
+
+      // BƯỚC 4: Gọi Rust Tauri hoán đổi sang cửa sổ Widget
+      await invoke("toggle_windows_to_session");
+    } catch (err: any) {
+      console.error("[Start Focus Error]:", err);
+      setSubmitError(err.message || "Không thể tạo phiên làm việc.");
+
+      // Nếu lỗi tạo phiên (Modal không đóng), lúc này mới cần chủ động tắt cam để giải phóng thiết bị
+      await cameraApi.stop().catch(() => {});
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
@@ -61,7 +105,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Video stream — rectangle thay vì circle, gọn hơn */}
+          {/* Video stream hiển thị */}
           <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center">
             {isLoading ? (
               <span className="text-xs text-zinc-400 animate-pulse">
@@ -114,7 +158,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
             )}
           </div>
 
-          {/* Checklist */}
+          {/* Checklist điều kiện */}
           <div className="space-y-1">
             <CheckItem
               label="Khuôn mặt ở chính giữa khung hình"
@@ -139,11 +183,11 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
           </div>
         </div>
 
-        {/* Footer — sticky để luôn thấy nút bấm */}
+        {/* Footer chứa nút bấm hành động */}
         <div className="sticky bottom-0 px-4 py-3 bg-[#1e1e1e] border-t border-zinc-800">
           <button
             disabled={!canProceed || isSubmitting}
-            onClick={onConfirm}
+            onClick={handleStartFocus}
             className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
               canProceed && !isSubmitting
                 ? "bg-green-500 text-black hover:bg-green-400 cursor-pointer"
@@ -157,7 +201,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
                   style={{ fontSize: 16 }}
                   aria-hidden="true"
                 />
-                Đang khởi động...
+                Đang khởi động phiên...
               </>
             ) : canProceed ? (
               "Sẵn sàng, bắt đầu"

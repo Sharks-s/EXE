@@ -1,5 +1,7 @@
 package com.exe101.exe.security;
 
+import com.exe101.exe.security.oauth.OAuth2FailureHandler;
+import com.exe101.exe.security.oauth.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +27,7 @@ public class SecurityConfig {
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2SuccessHandler oAuth2SuccessHandler, OAuth2FailureHandler oAuth2FailureHandler) throws Exception {
         http
                 // ===== BASIC =====
                 .csrf(csrf -> csrf.disable())
@@ -52,7 +54,14 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-
+                // ===== OAUTH2 LOGIN ===== ← THÊM ĐOẠN NÀY
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(auth ->
+                                auth.baseUri("/oauth2/authorize")
+                        )
+                        .successHandler(oAuth2SuccessHandler)
+                        .failureHandler(oAuth2FailureHandler)
+                )
                 // ===== JWT FILTER =====
                 .addFilterBefore(
                         jwtAuthenticationFilter,

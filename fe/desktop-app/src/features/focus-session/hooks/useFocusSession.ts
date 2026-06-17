@@ -8,104 +8,144 @@ export function useFocusSession() {
   const [elapsed, setElapsed] = useState<number>(0);
   const [isEnding, setIsEnding] = useState<boolean>(false);
 
-  const orchestratorIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
-  const cameraPollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
+  // Dùng Ref để lưu session mới nhất, tránh lỗi đóng băng dữ liệu (Stale Closure)
+  const sessionRef = useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  const mainIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Các biến Ref phục vụ cho việc kiểm soát Cam và Sao nhãng
+  const isCameraStartedRef = useRef<boolean>(false);
+  const distractCounterRef = useRef<number>(0); // Bộ đếm số giây sao nhãng liên tục
 
   useEffect(() => {
-    if (!session) {
+    if (!sessionRef.current) {
       stopOrchestrator();
       return;
     }
 
-    const startedAt = new Date(session.startedAt).getTime();
+    const startedAt = new Date(sessionRef.current.startedAt).getTime();
 
-    // 🚀 LUỒNG 1: Bật camera quét ngầm tầng Python
-    cameraApi
-      .start()
-      .catch((err) =>
-        console.error("Không khởi động được Camera Python:", err),
-      );
-
-    // 🚀 LUỒNG 2: Nhịp đếm thời gian gốc (1 giây/lần)
-    orchestratorIntervalRef.current = setInterval(async () => {
+    // 🚀 DÙNG 1 INTERVAL DUY NHẤT ĐỂ QUẢN LÝ TẤT CẢ TIME (Đảm bảo chính xác từng giây)
+    mainIntervalRef.current = setInterval(async () => {
       const now = Date.now();
+
+      // 1. Cập nhật tổng thời gian học trôi qua (elapsed)
       const currentElapsed = Math.floor((now - startedAt) / 1000);
       setElapsed(currentElapsed);
 
-      // Tính toán dựa trên mốc lastCycleAt của Session từ Store
-      const lastCycleAt = session.lastCycleAt
-        ? new Date(session.lastCycleAt).getTime()
+      const latestSession = sessionRef.current;
+      if (!latestSession) return;
+
+      // ── BỘ ĐẾM 1: KIỂM TRA HIỆP 25 PHÚT ─────────────────────────────────
+      const lastCycleAt = latestSession.lastCycleAt
+        ? new Date(latestSession.lastCycleAt).getTime()
         : startedAt;
       const elapsedSecondsFromLastCycle = Math.floor(
         (now - lastCycleAt) / 1000,
       );
 
-      // Kịch bản A: Đủ 25 phút (1500 giây) -> Trigger hoàn thành hiệp lên Spring Boot
       if (elapsedSecondsFromLastCycle >= 25 * 60) {
         try {
-          const updatedSession = await focusApi.completeCycle(session.id);
+          console.log("[useFocusSession] Đủ 25 phút! Gọi completeCycle...");
+          const updatedSession = await focusApi.completeCycle(latestSession.id);
           syncSession(updatedSession);
         } catch (err) {
-          console.error("Lỗi khi đồng bộ Cycle với Spring Boot:", err);
+          console.error("Lỗi hoàn thành hiệp:", err);
         }
       }
 
-      // Kịch bản B: Học hết tổng thời gian đăng ký -> Tự động kết thúc thành công
-      const plannedSeconds = session.plannedDuration * 60;
-      if (currentElapsed >= plannedSeconds) {
+      // Kịch bản phụ: Học hết tổng thời gian đăng ký thì kết thúc phiên luôn
+      if (currentElapsed >= latestSession.plannedDuration * 60) {
         handleEndSession(false);
+        return;
       }
-    }, 1000);
 
-    // 🚀 LUỒNG 3: Polling kiểm tra tín hiệu vi phạm từ Python (2 giây/lần)
-    cameraPollIntervalRef.current = setInterval(async () => {
-      try {
-        const camStatus = await cameraApi.getStatus();
+      // ── BỘ ĐẾM 2: QUẢN LÝ CAMERA (MỞ SAU 3 PHÚT & CHECK SAO NHÃNG 10S) ──
 
-        if (camStatus && !camStatus.all_pass) {
-          // FE đứng ra đại diện báo cáo vi phạm lên Spring Boot
-          const updatedSession = await focusApi.handleViolation(session.id, {
-            type: "LOOK_AWAY",
-            appName: "Camera Tracker",
-            windowTitle: "User Lost Focus",
-          });
-          syncSession(updatedSession);
+      // A. Nếu chưa mở cam VÀ đã học được đủ 3 phút (180 giây) -> Tiến hành mở cam
+      if (!isCameraStartedRef.current && currentElapsed >= 3 * 60) {
+        console.log(
+          "[useFocusSession] Đã học được 3 phút. Kích hoạt Camera...",
+        );
+        isCameraStartedRef.current = true;
+        cameraApi.start().catch((err) => {
+          console.error("Lỗi khởi động Cam Python:", err);
+          isCameraStartedRef.current = false; // Reset lại nếu lỗi để thử lại sau
+        });
+      }
+
+      // B. Nếu camera đã được kích hoạt -> Tiến hành Polling check sao nhãng
+      if (isCameraStartedRef.current) {
+        try {
+          const camStatus = await cameraApi.getStatus();
+
+          // Nếu Python báo người dùng mất tập trung (!all_pass)
+          if (camStatus && !camStatus.all_pass) {
+            distractCounterRef.current += 1; // Tăng bộ đếm sao nhãng lên 1 giây
+            console.log(
+              `[useFocusSession] Đang sao nhãng: ${distractCounterRef.current}s`,
+            );
+
+            // Nếu sao nhãng LIÊN TỤC đủ 10 giây -> Báo vi phạm lên Spring Boot
+            if (distractCounterRef.current >= 10) {
+              console.warn(
+                "[useFocusSession] Sao nhãng liên tục 10s! Gửi vi phạm...",
+              );
+              distractCounterRef.current = 0; // Reset ngay bộ đếm sau khi phạt để tính lượt mới
+
+              const updatedSession = await focusApi.handleViolation(
+                latestSession.id,
+                {
+                  type: "LOOK_AWAY",
+                  appName: "Camera Tracker",
+                  windowTitle: "User Lost Focus",
+                },
+              );
+              syncSession(updatedSession);
+            }
+          } else {
+            // Nếu người dùng tập trung trở lại -> Reset bộ đếm về 0 ngay lập tức (Phải liên tục mới phạt)
+            if (distractCounterRef.current > 0) {
+              console.log(
+                "[useFocusSession] Đã tập trung trở lại. Reset bộ đếm sao nhãng.",
+              );
+              distractCounterRef.current = 0;
+            }
+          }
+        } catch (err) {
+          console.error("Lỗi khi kết nối lấy status từ Python:", err);
         }
-      } catch (err) {
-        console.error("Lỗi khi quét tín hiệu vi phạm từ Python:", err);
       }
-    }, 2000);
+    }, 1000); // Chạy nhịp đếm chuẩn 1 giây / lần
 
-    return () => {
-      stopOrchestrator();
-    };
+    return () => stopOrchestrator();
   }, [session?.id]);
 
   const stopOrchestrator = () => {
-    if (orchestratorIntervalRef.current) {
-      clearInterval(orchestratorIntervalRef.current);
-      orchestratorIntervalRef.current = null;
+    if (mainIntervalRef.current) {
+      clearInterval(mainIntervalRef.current);
+      mainIntervalRef.current = null;
     }
-    if (cameraPollIntervalRef.current) {
-      clearInterval(cameraPollIntervalRef.current);
-      cameraPollIntervalRef.current = null;
-    }
+    // Đảm bảo tắt hẳn camera phần cứng ở Python khi unmount
     cameraApi.stop().catch(() => {});
+    isCameraStartedRef.current = false;
+    distractCounterRef.current = 0;
   };
 
   const handleEndSession = async (isAborted: boolean) => {
-    if (!session) return;
+    const latestSession = sessionRef.current;
+    if (!latestSession) return;
+
     if (isAborted && !window.confirm("Bạn có chắc muốn bỏ cuộc không?")) return;
 
     setIsEnding(true);
     stopOrchestrator();
 
     try {
-      const res = await focusApi.endSession(session.id, isAborted);
+      const res = await focusApi.endSession(latestSession.id, isAborted);
       syncSession(res);
 
       const mainWindow = (await import("@tauri-apps/api/webviewWindow"))
@@ -117,7 +157,7 @@ export function useFocusSession() {
         await widget.hide();
       }
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi khi kết thúc phiên học:", err);
     } finally {
       setIsEnding(false);
     }

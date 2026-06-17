@@ -95,11 +95,11 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 .orElseGet(() -> userPetRepository.findDefaultPetByUserId(userId)
                         .orElseThrow(() -> new BusinessException(ErrorCode.DEFAULT_PET_NOT_FOUND)));
 
-        // 5. Lấy cá tính cấu hình sẵn của User
+        // 5. Lấy cá tính cấu hình sẵn của User, nếu không có thì dùng cá tính mặc định "SWEET"
         Personality chosenPersonality = user.getPersonality();
         if (chosenPersonality == null) {
-            throw new BusinessException(ErrorCode.USER_PERSONALITY_NOT_SET);
-            ////////////////////////// Thiếu ở đây default
+            chosenPersonality = personalityRepository.findByCode("SWEET")
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
         }
 
         // 6. Tính toán quỹ thưởng giải lao (Cứ 25 phút học -> 5 phút nghỉ)

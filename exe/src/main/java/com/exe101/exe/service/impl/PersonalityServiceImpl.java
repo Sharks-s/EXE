@@ -1,6 +1,8 @@
 package com.exe101.exe.service.impl;
 
 import com.exe101.exe.config.AppSeedProperties;
+import com.exe101.exe.dto.request.CreatePersonalityRequest;
+import com.exe101.exe.dto.request.UpdatePersonalityRequest;
 import com.exe101.exe.dto.response.PersonalityResponse;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
@@ -65,4 +67,58 @@ public class PersonalityServiceImpl implements PersonalityService {
             personalityRepository.save(p);
         }
     }
+
+    @Override
+    public PersonalityResponse getById(Long id) {
+        return personalityRepository.findById(id)
+                .map(personalityMapper::toResponse)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public PersonalityResponse create(CreatePersonalityRequest request) {
+        if (personalityRepository.existsByCode(request.code())) {
+            throw new BusinessException(ErrorCode.PERSONALITY_CODE_ALREADY_EXISTS);
+        }
+
+        Personality personality = Personality.builder()
+                .code(request.code())
+                .name(request.name())
+                .description(request.description())
+                .isPremium(request.isPremium())
+                .build();
+
+        return personalityMapper.toResponse(personalityRepository.save(personality));
+    }
+
+    @Override
+    @Transactional
+    public PersonalityResponse update(Long id, UpdatePersonalityRequest request) {
+        Personality personality = personalityRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
+
+        if (personalityRepository.existsByCodeAndIdNot(request.code(), id)) {
+            throw new BusinessException(ErrorCode.PERSONALITY_CODE_ALREADY_EXISTS);
+        }
+
+        personality.setCode(request.code());
+        personality.setName(request.name());
+        personality.setDescription(request.description());
+        personality.setPremium(request.isPremium());
+
+        return personalityMapper.toResponse(personalityRepository.save(personality));
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        if (!personalityRepository.existsById(id)) {
+            throw new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND);
+        }
+
+        personalityRepository.deleteById(id);
+    }
+
+
 }

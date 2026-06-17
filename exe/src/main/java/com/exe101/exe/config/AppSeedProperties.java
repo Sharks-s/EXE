@@ -13,6 +13,7 @@ import java.util.List;
 public class AppSeedProperties {
 
     private List<PersonalitySeed> personalities;
+    private List<PetSeed> pets;
 
     @Getter
     @Setter
@@ -21,5 +22,15 @@ public class AppSeedProperties {
         private String name;
         private String description;
         private boolean premium;
+    }
+
+    @Getter
+    @Setter
+    public static class PetSeed {
+        private String code;
+        private String name;
+        private String description;
+        private boolean premium;
+        private String imageUrl;
     }
 }

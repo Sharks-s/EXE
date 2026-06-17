@@ -19,6 +19,8 @@ public interface UserMapper {
                     ".map(ur -> ur.getRole().getCode())" +
                     ".toList())"
     )
+    @Mapping(target = "personalityId", source = "personality.id")
+    @Mapping(target = "personalityCode", source = "personality.code")
     UserSummary toSummary(User user);
 
     UserResponse toResponse(User user);

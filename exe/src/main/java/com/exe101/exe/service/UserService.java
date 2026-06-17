@@ -1,7 +1,10 @@
 package com.exe101.exe.service;
 
 
+import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
+import com.exe101.exe.dto.response.ProfileCompletionResponse;
 import com.exe101.exe.model.entity.User;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -19,6 +22,14 @@ public interface UserService {
     User updateOAuthUser(User user, String name, String avatarUrl);
 
     User findById(Long id);
+
+    User findByIdWithRoles(Long id);
+
+    ProfileCompletionResponse getProfileCompletion(Long userId);
+
+    User completeBasicProfile(Long userId, CompleteBasicProfileRequest request);
+
+    User updateAvatar(Long userId, MultipartFile avatar);
 
     User save(User user);
 

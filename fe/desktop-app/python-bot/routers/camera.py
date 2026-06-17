@@ -3,6 +3,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import time
+import asyncio
+
 
 from detectors.face_detector import face_detector
 
@@ -53,25 +55,33 @@ def get_status():
     return StatusResponse(**{k: result[k] for k in StatusResponse.model_fields})
 
 @router.get("/stream")
-def stream():
+async def stream():  # <--- Thêm chữ async ở đây
     """
     MJPEG stream — FE dùng <img src="http://localhost:8000/bot/camera/stream" />
-    Lấy trực tiếp byte ảnh từ luồng ngầm, không lo trùng chấp camera.
+    Đã được tối ưu hóa Async để chống sập socket khi re-render.
     """
     if not face_detector.is_running():
         raise HTTPException(status_code=400, detail="Camera chưa được bật")
 
-    def generate():
-        while face_detector.is_running():
-            frame = face_detector.get_jpeg_frame()
-            if frame:
-                yield (
-                    b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n\r\n"
-                    + frame +
-                    b"\r\n"
-                )
-            time.sleep(0.033)  # ~30fps để tiết kiệm CPU
+    async def generate():  # <--- Thêm chữ async ở đây
+        try:
+            while face_detector.is_running():
+                frame = face_detector.get_jpeg_frame()
+                if frame:
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n"
+                        + frame +
+                        b"\r\n"
+                    )
+                # Thay thế time.sleep bằng await asyncio.sleep 
+                # Nhường luồng cho các API khác như /status chạy song song và bắt sự kiện Disconnect
+                await asyncio.sleep(0.033)  
+        except (asyncio.CancelledError, Exception) as e:
+            # Khi thẻ <img> bên React biến mất, code sẽ nhảy vào đây
+            print(f"[Stream] Client disconnected or stream cancelled: {e}")
+        finally:
+            print("[Stream] Stream generator stopped and cleaned up safely.")
 
     return StreamingResponse(
         generate(),

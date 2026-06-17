@@ -7,25 +7,25 @@ export const useCameraSetup = (isOpen: boolean) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Chống StrictMode double-effect (mount → cleanup → mount lại trong dev)
-  const startedRef = useRef(false);
+  const startedRef = useRef<boolean>(false);
+  const isMountedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!isOpen) return;
 
+    isMountedRef.current = true;
     let intervalId: ReturnType<typeof setInterval>;
-    let cancelled = false;
 
     const initCamera = async () => {
       if (startedRef.current) return;
-      startedRef.current = true;
 
       setIsLoading(true);
       setError(null);
 
       const success = await cameraApi.start();
 
-      if (cancelled) {
+      if (!isMountedRef.current) {
+        cameraApi.stop().catch(() => {});
         return;
       }
 
@@ -33,19 +33,22 @@ export const useCameraSetup = (isOpen: boolean) => {
 
       if (!success) {
         setError("Không thể kết nối camera. Vui lòng kiểm tra lại thiết bị.");
-        startedRef.current = false;
         return;
       }
 
-      intervalId = setInterval(async () => {
-        if (cancelled) {
-          clearInterval(intervalId);
-          return;
-        }
+      startedRef.current = true;
 
-        const data = await cameraApi.getStatus();
-        if (data && !cancelled) {
-          setStatus(data);
+      intervalId = setInterval(async () => {
+        if (!isMountedRef.current) return;
+
+        try {
+          const data = await cameraApi.getStatus();
+          if (data && isMountedRef.current) {
+            setStatus(data);
+          }
+        } catch (err) {
+          // Giữ lại log lỗi hệ thống này để sau này debug nếu API getStatus bị crash đột xuất
+          console.error("Error fetching camera status:", err);
         }
       }, 500);
     };
@@ -53,15 +56,16 @@ export const useCameraSetup = (isOpen: boolean) => {
     initCamera();
 
     return () => {
-      cancelled = true;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-      if (startedRef.current) {
-        cameraApi.stop().catch(() => {});
-        startedRef.current = false;
-      }
-      setStatus(null);
+      isMountedRef.current = false;
+      if (intervalId) clearInterval(intervalId);
+
+      setTimeout(() => {
+        if (!isMountedRef.current && startedRef.current) {
+          cameraApi.stop().catch(() => {});
+          startedRef.current = false;
+          setStatus(null);
+        }
+      }, 100);
     };
   }, [isOpen]);
 

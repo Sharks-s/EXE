@@ -21,6 +21,7 @@ public interface UserMapper {
     )
     @Mapping(target = "personalityId", source = "personality.id")
     @Mapping(target = "personalityCode", source = "personality.code")
+
     UserSummary toSummary(User user);
 
     UserResponse toResponse(User user);

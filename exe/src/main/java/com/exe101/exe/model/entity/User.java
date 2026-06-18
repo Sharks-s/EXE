@@ -154,11 +154,6 @@ public class User {
         this.userSetting = userSetting;
     }
 
-    public static User ref(Long id) {
-        User u = new User();
-        u.setId(id);
-        return u;
-    }
 
     public void addUserPet(UserPet userPet) {
         this.userPets.add(userPet);

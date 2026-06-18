@@ -50,4 +50,12 @@ public class UserController {
 
         return ApiResponse.success(userMapper.toSummary(user));
     }
+
+    @GetMapping
+    public ApiResponse<UserSummary> getMyProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ){
+        User user = userService.findById(userDetails.getId());
+        return ApiResponse.success(userMapper.toSummary(user));
+    }
 }

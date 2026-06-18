@@ -12,4 +12,8 @@ public interface UserPetService {
     boolean hasAnyPet(Long userId);
     UserPetSessionResponse getUserPetForSession(Long userPetId, Long requestingUserId);
     List<UserPetSummaryResponse> listMyPets(Long userId);
+    UserPetSummaryResponse getUserPetSummary(Long userPetId);
+    UserPetSummaryResponse renameUserPet(Long userPetId, Long userId, String customName);
+    UserPetSummaryResponse addPetFromStore(Long petId, Long userId);
+    UserPetSummaryResponse equipUserPet(Long userPetId, Long userId);
 }

@@ -10,6 +10,7 @@ import com.exe101.exe.repository.UserRepository;
 import com.exe101.exe.security.JwtTokenProvider;
 import com.exe101.exe.security.TokenHashingService;
 import com.exe101.exe.service.RefreshTokenService;
+import com.exe101.exe.service.UserService;
 import com.exe101.exe.service.result.TokenPair;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final JwtProperties jwtProperties;
     private final TokenHashingService tokenHashingService;
     private final UserRepository userRepository;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -76,10 +78,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(userId);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId, deviceId);
-
+        User user = userService.findById(userId);
         RefreshToken newEntity = RefreshToken.builder()
                 .token(tokenHashingService.hash(newRefreshToken))
-                .user(User.ref(userId))
+                .user(user)
                 .jti(jwtTokenProvider.getJti(newRefreshToken))
                 .deviceId(deviceId)
                 .expiresAt(

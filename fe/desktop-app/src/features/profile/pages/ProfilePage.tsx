@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import "./ProfilePage.css";
 import { profileApi } from "../api/profile.api";
 import { parseApiError } from "../../../utils/error-mapper";
 import type { ApiErrorResponse } from "../../../types";
 import type { Gender } from "../types/profile.types";
+
+type ProfileForm = {
+  fullName: string;
+  phoneNumber: string;
+  gender: Gender;
+  dateOfBirth: string;
+  avatarUrl: string;
+  personalityId: string;
+};
 
 export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
@@ -19,9 +28,14 @@ export default function ProfilePage() {
 
   const [imgError, setImgError] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState("");
+  const [initialProfile, setInitialProfile] = useState<ProfileForm | null>(
+    null,
+  );
 
   const initials = fullName.trim()
     ? fullName
@@ -34,8 +48,85 @@ export default function ProfilePage() {
     : "?";
 
   const displayAvatar = previewAvatar || avatarUrl;
+  const formattedDateOfBirth = formatDateOfBirth(dateOfBirth);
+
+  const applyProfileForm = (profile: ProfileForm) => {
+    setFullName(profile.fullName);
+    setPhoneNumber(profile.phoneNumber);
+    setGender(profile.gender);
+    setDateOfBirth(profile.dateOfBirth);
+    setAvatarUrl(profile.avatarUrl);
+    setPersonalityId(profile.personalityId);
+    setImgError(false);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const user = await profileApi.getMyProfile();
+
+        if (!mounted) return;
+
+        const profile: ProfileForm = {
+          fullName: user.fullName || "",
+          phoneNumber: user.phoneNumber || "",
+          gender: user.gender || "MALE",
+          dateOfBirth: user.dob || user.dateOfBirth || "",
+          avatarUrl: user.avatarUrl || "",
+          personalityId:
+            user.personalityId === undefined || user.personalityId === null
+              ? ""
+              : String(user.personalityId),
+        };
+
+        setInitialProfile(profile);
+        applyProfileForm(profile);
+      } catch (err) {
+        console.error(err);
+
+        if (mounted) {
+          setError("Không thể tải thông tin hồ sơ. Vui lòng thử lại.");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleStartEdit = () => {
+    setError("");
+    setSaved(false);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    if (initialProfile) {
+      applyProfileForm(initialProfile);
+    }
+
+    setPreviewAvatar("");
+    setSelectedAvatar(null);
+    setError("");
+    setSaved(false);
+    setIsEditing(false);
+  };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isEditing) return;
+
     const file = event.target.files?.[0];
 
     if (!file) return;
@@ -46,7 +137,7 @@ export default function ProfilePage() {
   };
 
   const handleUploadAvatar = async () => {
-    if (!selectedAvatar || uploadingAvatar) return;
+    if (!isEditing || !selectedAvatar || uploadingAvatar) return;
 
     setError("");
 
@@ -58,6 +149,9 @@ export default function ProfilePage() {
       });
 
       setAvatarUrl(updatedUser.avatarUrl || "");
+      setInitialProfile((prev) =>
+        prev ? { ...prev, avatarUrl: updatedUser.avatarUrl || "" } : prev,
+      );
       setPreviewAvatar("");
       setSelectedAvatar(null);
       setImgError(false);
@@ -78,7 +172,7 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
-    if (saving) return;
+    if (saving || !isEditing) return;
 
     setError("");
     setSaved(false);
@@ -88,6 +182,7 @@ export default function ProfilePage() {
       phoneNumber: phoneNumber.trim() || undefined,
       gender,
       dateOfBirth: dateOfBirth || undefined,
+      dob: dateOfBirth || undefined,
       personalityId: personalityId ? Number(personalityId) : undefined,
     };
 
@@ -96,11 +191,21 @@ export default function ProfilePage() {
 
       const updatedUser = await profileApi.saveProfile(payload);
 
-      setFullName(updatedUser.fullName || "");
-      setPhoneNumber(updatedUser.phoneNumber || "");
-      setGender(updatedUser.gender || "MALE");
-      setDateOfBirth(updatedUser.dateOfBirth || "");
-      setAvatarUrl(updatedUser.avatarUrl || "");
+      const profile: ProfileForm = {
+        fullName: updatedUser.fullName || "",
+        phoneNumber: updatedUser.phoneNumber || "",
+        gender: updatedUser.gender || "MALE",
+        dateOfBirth: updatedUser.dob || updatedUser.dateOfBirth || "",
+        avatarUrl: updatedUser.avatarUrl || "",
+        personalityId:
+          updatedUser.personalityId === undefined || updatedUser.personalityId === null
+            ? ""
+            : String(updatedUser.personalityId),
+      };
+
+      setInitialProfile(profile);
+      applyProfileForm(profile);
+      setIsEditing(false);
 
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -150,7 +255,10 @@ export default function ProfilePage() {
           <div className="profile-card-content">
             <div className="profile-preview">
               <div className="avatar-preview-wrapper">
-                <div className="avatar-preview">
+                <label
+                  className={`avatar-preview ${isEditing ? "" : "locked"}`}
+                  aria-label="Chọn ảnh đại diện"
+                >
                   {displayAvatar && !imgError ? (
                     <img
                       src={displayAvatar}
@@ -160,16 +268,19 @@ export default function ProfilePage() {
                   ) : (
                     <span>{initials}</span>
                   )}
-                </div>
+
+                  <span className="avatar-change-overlay">Đổi ảnh</span>
+
+                  <input
+                    className="avatar-file-input"
+                    type="file"
+                    accept="image/*"
+                    disabled={!isEditing}
+                    onChange={handleAvatarChange}
+                  />
+                </label>
 
                 <small>Ảnh đại diện</small>
-
-                <input
-                  className="form-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                />
 
                 {selectedAvatar && (
                   <button
@@ -196,6 +307,7 @@ export default function ProfilePage() {
                 <input
                   className="form-input"
                   value={fullName}
+                  disabled={!isEditing}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nhập họ và tên của bạn"
                 />
@@ -205,6 +317,7 @@ export default function ProfilePage() {
                 <input
                   className="form-input"
                   value={phoneNumber}
+                  disabled={!isEditing}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="Nhập số điện thoại"
                 />
@@ -214,6 +327,7 @@ export default function ProfilePage() {
                 <select
                   className="form-input"
                   value={gender}
+                  disabled={!isEditing}
                   onChange={(e) => setGender(e.target.value as Gender)}
                 >
                   <option value="MALE">Male</option>
@@ -223,18 +337,41 @@ export default function ProfilePage() {
               </FormField>
 
               <FormField label="Ngày sinh">
-                <input
-                  className="form-input"
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                />
+                {isEditing ? (
+                  <div className="date-input-shell">
+                    <span
+                      className={
+                        formattedDateOfBirth
+                          ? "date-input-display"
+                          : "date-input-display placeholder"
+                      }
+                    >
+                      {formattedDateOfBirth || "dd/mm/yyyy"}
+                    </span>
+
+                    <input
+                      className="date-input-native"
+                      type="date"
+                      lang="en-GB"
+                      value={dateOfBirth}
+                      onChange={(e) => setDateOfBirth(e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <input
+                    className="form-input"
+                    value={formattedDateOfBirth}
+                    disabled
+                    placeholder="Chưa có ngày sinh"
+                  />
+                )}
               </FormField>
 
               <FormField label="Phong cách trợ lý">
                 <select
                   className="form-input"
                   value={personalityId}
+                  disabled={!isEditing}
                   onChange={(e) => setPersonalityId(e.target.value)}
                 >
                   <option value="">Chọn personality</option>
@@ -244,21 +381,41 @@ export default function ProfilePage() {
 
             <div className="divider" />
 
+            {loading && <p className="profile-loading">Đang tải thông tin hồ sơ...</p>}
+
             {error && <p className="profile-error">{error}</p>}
 
             <div className="profile-actions">
-              <button className="secondary-button" type="button">
-                Bỏ qua
-              </button>
+              {isEditing ? (
+                <>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={handleCancelEdit}
+                    disabled={saving || uploadingAvatar}
+                  >
+                    Hủy
+                  </button>
 
-              <button
-                className={`primary-button ${saved ? "saved" : ""}`}
-                onClick={handleSave}
-                disabled={saving}
-                type="button"
-              >
-                {saving ? "Đang lưu..." : saved ? "Đã lưu!" : "Lưu thông tin"}
-              </button>
+                  <button
+                    className={`primary-button ${saved ? "saved" : ""}`}
+                    onClick={handleSave}
+                    disabled={saving || loading}
+                    type="button"
+                  >
+                    {saving ? "Đang lưu..." : saved ? "Đã lưu!" : "Lưu thông tin"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  className={`primary-button ${saved ? "saved" : ""}`}
+                  onClick={handleStartEdit}
+                  disabled={loading}
+                  type="button"
+                >
+                  {saved ? "Đã lưu!" : "Chỉnh sửa"}
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -285,4 +442,14 @@ function FormField({
       {children}
     </div>
   );
+}
+
+function formatDateOfBirth(value: string) {
+  if (!value) return "";
+
+  const [year, month, day] = value.split("-");
+
+  if (!year || !month || !day) return value;
+
+  return `${day}/${month}/${year}`;
 }

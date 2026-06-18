@@ -11,6 +11,7 @@ import com.exe101.exe.model.entity.UserPet;
 import com.exe101.exe.repository.PetRepository;
 import com.exe101.exe.repository.UserPetRepository;
 import com.exe101.exe.service.UserPetService;
+import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class UserPetServiceImpl implements UserPetService {
     private final AppSeedProperties appSeedProperties;
     private final PetRepository petRepository;
     private final UserPetRepository userPetRepository;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -102,6 +104,117 @@ public class UserPetServiceImpl implements UserPetService {
                             .build();
                 })
                 .toList();
+    }
+
+    @Override
+    public UserPetSummaryResponse getUserPetSummary(Long userPetId) {
+        UserPet userPet = userPetRepository.findByIdWithPet(userPetId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_PET_NOT_FOUND));
+
+        Pet pet = userPet.getPet();
+
+        return UserPetSummaryResponse.builder()
+                .userPetId(userPet.getId())
+                .code(pet.getCode())
+                .customName(userPet.getCustomName())
+                .level(userPet.getLevel())
+                .imageUrl(pet.getImageUrl())
+                .premium(pet.isPremium())
+                .equipped(userPet.isEquipped())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public UserPetSummaryResponse renameUserPet(Long userPetId, Long userId, String customName) {
+        UserPet userPet = userPetRepository.findByIdWithPet(userPetId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_PET_NOT_FOUND));
+
+        if (!userPet.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.USER_PET_NOT_FOUND);
+        }
+
+        userPet.setCustomName(customName.trim());
+        userPetRepository.save(userPet);
+
+        Pet pet = userPet.getPet();
+
+        return UserPetSummaryResponse.builder()
+                .userPetId(userPet.getId())
+                .code(pet.getCode())
+                .customName(userPet.getCustomName())
+                .level(userPet.getLevel())
+                .imageUrl(pet.getImageUrl())
+                .premium(pet.isPremium())
+                .equipped(userPet.isEquipped())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public UserPetSummaryResponse addPetFromStore(Long petId, Long userId) {
+        Pet pet = petRepository.findById(petId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PET_NOT_FOUND));
+
+        if (userPetRepository.existsByUserIdAndPetId(userId, petId)) {
+            throw new BusinessException(ErrorCode.USER_PET_ALREADY_EXISTS);
+        }
+        User user = userService.findById(userId);
+
+        UserPet userPet = UserPet.builder()
+                .user(user)
+                .pet(pet)
+                .customName(pet.getName())
+                .level(1)
+                .experience(0)
+                .equipped(false)
+                .isDefault(false)
+                .build();
+
+        try {
+            userPet = userPetRepository.save(userPet);
+        } catch (DataIntegrityViolationException ex) {
+            if (userPetRepository.existsByUserIdAndPetId(userId, petId)) {
+                throw new BusinessException(ErrorCode.USER_PET_ALREADY_EXISTS);
+            }
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "Failed to add pet from store", ex);
+        }
+
+        return UserPetSummaryResponse.builder()
+                .userPetId(userPet.getId())
+                .code(pet.getCode())
+                .customName(userPet.getCustomName())
+                .level(userPet.getLevel())
+                .imageUrl(pet.getImageUrl())
+                .premium(pet.isPremium())
+                .equipped(userPet.isEquipped())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public UserPetSummaryResponse equipUserPet(Long userPetId, Long userId) {
+        List<UserPet> userPets = userPetRepository.findAllByUserIdWithPet(userId);
+
+        UserPet selectedUserPet = userPets.stream()
+                .filter(userPet -> userPet.getId().equals(userPetId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_PET_NOT_FOUND));
+
+        userPets.forEach(userPet -> userPet.setEquipped(userPet.getId().equals(userPetId)));
+        userPetRepository.saveAll(userPets);
+
+        Pet pet = selectedUserPet.getPet();
+
+        return UserPetSummaryResponse.builder()
+                .userPetId(selectedUserPet.getId())
+                .code(pet.getCode())
+                .customName(selectedUserPet.getCustomName())
+                .level(selectedUserPet.getLevel())
+                .imageUrl(pet.getImageUrl())
+                .premium(pet.isPremium())
+                .equipped(selectedUserPet.isEquipped())
+                .build();
     }
 
 }

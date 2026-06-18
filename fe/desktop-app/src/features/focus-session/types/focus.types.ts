@@ -61,3 +61,53 @@ export interface AssistantItem {
   id: AssistantPersonality;
   labelKey: string;
 }
+
+// ── Pet Details ────────────────────────────────────────
+export interface UserPetDetails {
+  userPetId: number;
+  code: string;
+  customName: string;
+  level: number;
+  experience: number;
+  imageUrl: string | null;
+}
+// ── Personality Details ────────────────────────────────
+export interface PersonalityDetails {
+  id: number;
+  name: string;
+  code: string;
+}
+
+// ── Chat Bubble Action ─────────────────────────────────
+export interface BubbleAction {
+  label: string;
+  onClick: () => void | Promise<void>;
+  variant?: "primary" | "secondary";
+}
+
+// ── Zustand Store State Interface ──────────────────────
+export interface FocusState {
+  session: FocusSessionResponse | null;
+  lastCompletedSession: FocusSessionResponse | null;
+  violationCount: number; // Đảm bảo store có biến đếm tổng số lần vi phạm hiển thị UI
+  currentPet: UserPetDetails | null;
+  currentPersonality: PersonalityDetails | null;
+
+  // Trạng thái hiển thị của Pet ở Widget
+  botMessage: string | null;
+  botActions: BubbleAction[] | undefined; // 🎯 Đã chuẩn hóa từ any[] thành BubbleAction[]
+  isBubbleVisible: boolean;
+
+  // Actions
+  setSession: (session: FocusSessionResponse) => void;
+  syncSession: (session: FocusSessionResponse) => void;
+  clearSession: () => void;
+  dismissSummary: () => void;
+  updateBotBubble: (
+    message: string | null,
+    actions?: BubbleAction[],
+    visible?: boolean,
+  ) => void;
+  clearBotBubble: () => void;
+  initializeSessionConfig: (session: FocusSessionResponse) => Promise<void>;
+}

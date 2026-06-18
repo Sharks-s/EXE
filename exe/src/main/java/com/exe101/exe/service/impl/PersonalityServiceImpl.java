@@ -3,6 +3,7 @@ package com.exe101.exe.service.impl;
 import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.CreatePersonalityRequest;
 import com.exe101.exe.dto.request.UpdatePersonalityRequest;
+import com.exe101.exe.dto.response.PersonalityDetailsResponse;
 import com.exe101.exe.dto.response.PersonalityResponse;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
@@ -120,5 +121,16 @@ public class PersonalityServiceImpl implements PersonalityService {
         personalityRepository.deleteById(id);
     }
 
+    @Override
+    public PersonalityDetailsResponse getDetails(Long personalityId) {
+        Personality personality = personalityRepository.findById(personalityId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
+
+        return PersonalityDetailsResponse.builder()
+                .id(personality.getId())
+                .name(personality.getName())
+                .code(personality.getCode())
+                .build();
+    }
 
 }

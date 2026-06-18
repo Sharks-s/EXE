@@ -17,7 +17,7 @@ import java.io.IOException;
 @Component
 public class OAuth2FailureHandler implements AuthenticationFailureHandler {
 
-    @Value("${app.oauth2.redirect-uri:http://localhost:5173/oauth2/callback}")
+    @Value("${app.oauth2.redirect-uri:http://localhost:1420/}")
     private String redirectUri;
 
     @Override
@@ -38,8 +38,7 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
 
         String targetUrl = UriComponentsBuilder
                 .fromUriString(redirectUri)
-                .queryParam("success", false)
-                .queryParam("error", errorCode)
+                .queryParam("oauth_error", errorCode)
                 .build()
                 .toUriString();
 

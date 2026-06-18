@@ -14,6 +14,9 @@ public class AppSeedProperties {
 
     private List<PersonalitySeed> personalities;
     private List<PetSeed> pets;
+    private String defaultPetCode;
+    private String defaultPersonalityCode;
+    private Integer dailyFreeUsage;
 
     @Getter
     @Setter
@@ -33,4 +36,5 @@ public class AppSeedProperties {
         private boolean premium;
         private String imageUrl;
     }
+
 }

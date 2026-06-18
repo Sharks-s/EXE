@@ -62,6 +62,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         );
 
         // 7. Redirect về luồng xử lý của Frontend (Sau này làm Deep Link hoặc Web tĩnh trung gian)
-        response.sendRedirect("http://localhost:1420/oauth2/success");
+        response.sendRedirect("http://localhost:1420/?oauth_success=true");
     }
 }

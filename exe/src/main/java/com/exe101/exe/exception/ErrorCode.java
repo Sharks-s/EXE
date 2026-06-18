@@ -76,7 +76,10 @@ public enum ErrorCode {
 
     // ===== PET =====
     DEFAULT_PET_NOT_FOUND("PET_001", HttpStatus.NOT_FOUND, "Default pet not found"),
-    USER_PERSONALITY_NOT_SET("PET_002", HttpStatus.BAD_REQUEST, "User personality not set")
+
+    DEFAULT_PET_NOT_CONFIGURED("PET_003", HttpStatus.INTERNAL_SERVER_ERROR, "Default pet not configured"),
+    USER_PET_PROVISION_FAILED("PET_004", HttpStatus.INTERNAL_SERVER_ERROR, "Failed to provision default pet for user"),
+    USER_PET_NOT_FOUND("PET_005", HttpStatus.NOT_FOUND, "User pet not found"),
 
     // ===== CLOUDINARY =====
 

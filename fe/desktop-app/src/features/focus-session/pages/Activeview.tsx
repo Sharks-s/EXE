@@ -4,11 +4,10 @@ import "./ActiveView.css";
 import { ProgressRing } from "../components/ProgressRing";
 import { StatCard } from "../components/StatCard";
 
-// ── ActiveView Main Component ──────────────────────────
 export function ActiveView() {
   const { session, violationCount } = useFocusStore();
 
-  // 🔥 Triệu hồi Hook điều phối trung tâm dọn sạch toàn bộ bộ đếm ở view cũ
+  // Triệu hồi Hook quản lý thời gian gốc
   const { elapsed, isEnding, handleEndSession } = useFocusSession();
 
   if (!session) return null;
@@ -144,22 +143,39 @@ export function ActiveView() {
         />
       </div>
 
-      {/* ACTIONS */}
+      {/* ACTIONS: Tự động tính toán hiển thị nút theo tiến trình học */}
       <div className="actions-footer">
-        <button
-          className={`btn-abort-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
-          onClick={() => handleEndSession(true)}
-          disabled={isEnding}
-        >
-          Từ bỏ (-50% XP)
-        </button>
-        <button
-          className={`btn-complete-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
-          onClick={() => handleEndSession(false)}
-          disabled={isEnding}
-        >
-          Kết thúc phiên ✓
-        </button>
+        {elapsed < plannedSeconds ? (
+          <>
+            {/* Nếu ĐANG học: Chỉ có quyền bỏ cuộc hoặc ẩn ứng dụng ngầm xuống Widget */}
+            <button
+              className={`btn-abort-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
+              onClick={() => handleEndSession(true)}
+              disabled={isEnding}
+            >
+              Từ bỏ (-50% XP) 🏳️
+            </button>
+
+            <button
+              className="btn-minimize-widget"
+              onClick={handleBackToDashboard}
+            >
+              Thu nhỏ về Widget 🗖
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Nếu ĐÃ ĐỦ GIỜ: Khóa nút hủy, mở duy nhất nút hoàn thành nhận quà */}
+            <button
+              className={`btn-complete-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
+              onClick={() => handleEndSession(false)}
+              disabled={isEnding}
+              style={{ width: "100%" }}
+            >
+              Hoàn thành & Nhận thưởng! 🎉 ✓
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

@@ -64,4 +64,8 @@ public class UserPet {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "is_default", nullable = false)
+    @Builder.Default
+    private boolean isDefault = false;
 }

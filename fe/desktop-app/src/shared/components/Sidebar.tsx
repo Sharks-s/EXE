@@ -9,6 +9,7 @@ export type Page =
   | "dashboard"
   | "analytics"
   | "settings"
+  | "pet"
   | "profile"
   | "upgrade";
 
@@ -125,6 +126,14 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           page="settings"
           label={t("sidebar.settings", { defaultValue: "Settings" })}
           icon={icons.settings}
+          currentPage={currentPage}
+          onNavigate={onNavigate}
+          collapsed={collapsed}
+        />
+        <NavItem
+          page="pet"
+          label={t("sidebar.pet", { defaultValue: "Pet" })}
+          icon={icons.pet}
           currentPage={currentPage}
           onNavigate={onNavigate}
           collapsed={collapsed}

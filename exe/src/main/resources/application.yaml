@@ -91,6 +91,9 @@ app:
     refresh-max-age: 2592000
     same-site: Lax
   seed:
+    default-pet-code: "MONKI"
+    default-personality-code: "SWEET"
+    daily-free-usage: 120
     personalities:
       - code: "SWEET"
         name: "Sweet Assistant"

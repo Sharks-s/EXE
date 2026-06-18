@@ -1,29 +1,33 @@
 // features/focus-session/stores/focusStore.ts
 
 import { create } from "zustand";
-import type { FocusSessionResponse } from "../types/focus.types";
+import type { FocusSessionResponse, FocusState } from "../types/focus.types";
+import { focusApi } from "../api/focus.api";
 
-interface FocusState {
-  session: FocusSessionResponse | null;
-  lastCompletedSession: FocusSessionResponse | null; // Giữ lại để hiện summary
-  violationCount: number;
-
-  // Actions
-  setSession: (session: FocusSessionResponse) => void;
-  syncSession: (session: FocusSessionResponse) => void; // Cập nhật từ BE response
-  clearSession: () => void;
-  dismissSummary: () => void; // User bấm đóng popup summary
-}
-
-export const useFocusStore = create<FocusState>((set) => ({
+export const useFocusStore = create<FocusState>((set, get) => ({
+  // ── STATE ────────────────────────────────────────────────────────
   session: null,
   lastCompletedSession: null,
   violationCount: 0,
+  currentPet: null,
+  currentPersonality: null,
+  botMessage: null,
+  botActions: undefined,
+  isBubbleVisible: false,
 
+  // ── ACTIONS ──────────────────────────────────────────────────────
   setSession: (session) =>
-    set({ session, violationCount: 0, lastCompletedSession: null }),
+    set({
+      session,
+      violationCount: 0,
+      lastCompletedSession: null,
+      currentPet: null,
+      currentPersonality: null,
+      botMessage: null,
+      botActions: undefined,
+      isBubbleVisible: false,
+    }),
 
-  // Dùng sau mọi API call (completeCycle, handleViolation, endSession)
   syncSession: (session) => {
     const isEnded =
       session.status === "COMPLETED" ||
@@ -31,12 +35,15 @@ export const useFocusStore = create<FocusState>((set) => ({
       session.status === "CANCELLED";
 
     set((state) => {
-      // Check xem có phải dịch chuyển dòng tiền thành công (completeCycle) không
+      const hasPreviousSession = state.session !== null;
+
+      // Chỉ so sánh biến động ví khi có dữ liệu nền trước đó (tránh lỗi khi resume app)
       const isCompleteCycle =
+        hasPreviousSession &&
         session.accumulatedReward > (state.session?.accumulatedReward ?? 0);
 
-      // Chỉ tính là vi phạm nếu ví tương lai bị hụt mà KHÔNG PHẢI do hoàn thành chu kỳ học
       const isViolation =
+        hasPreviousSession &&
         !isCompleteCycle &&
         session.potentialReward < (state.session?.potentialReward ?? 0);
 
@@ -44,13 +51,65 @@ export const useFocusStore = create<FocusState>((set) => ({
         session: isEnded ? null : session,
         lastCompletedSession: isEnded ? session : state.lastCompletedSession,
         violationCount: isEnded
-          ? state.violationCount // Giữ nguyên số lỗi khi kết thúc để hiển thị lên Summary
+          ? state.violationCount
           : state.violationCount + (isViolation ? 1 : 0),
+        botMessage: isEnded ? null : state.botMessage,
+        botActions: isEnded ? undefined : state.botActions,
+        isBubbleVisible: isEnded ? false : state.isBubbleVisible,
       };
     });
   },
 
-  clearSession: () => set({ session: null, violationCount: 0 }), // lastCompletedSession giữ nguyên để hiện summary
+  clearSession: () =>
+    set({
+      session: null,
+      violationCount: 0,
+      currentPet: null,
+      currentPersonality: null,
+      botMessage: null,
+      botActions: undefined,
+      isBubbleVisible: false,
+    }),
 
-  dismissSummary: () => set({ lastCompletedSession: null }), // Xóa hẳn summary khi user bấm đóng popup
+  dismissSummary: () => set({ lastCompletedSession: null }),
+
+  updateBotBubble: (message, actions = undefined, visible = true) =>
+    set({ botMessage: message, botActions: actions, isBubbleVisible: visible }),
+
+  clearBotBubble: () =>
+    set({ botMessage: null, botActions: undefined, isBubbleVisible: false }),
+
+  initializeSessionConfig: async (session: FocusSessionResponse) => {
+    get().setSession(session);
+
+    if (!session.userPetId && !session.personalityId) return;
+
+    try {
+      // Gọi song song thông tin Pet và Tính cách từ Spring Boot
+      const [petData, personalityData] = await Promise.all([
+        session.userPetId
+          ? focusApi.getPetDetails(session.userPetId)
+          : Promise.resolve(null),
+        session.personalityId
+          ? focusApi.getPersonalityDetails(session.personalityId)
+          : Promise.resolve(null),
+      ]);
+
+      set({
+        currentPet: petData,
+        currentPersonality: personalityData,
+      });
+
+      if (import.meta.env.DEV) {
+        console.log(`[Store] Loaded Pet: ${petData?.code} & AI Personality.`);
+      }
+    } catch (err) {
+      console.error("[Store Error] Failed to fetch config:", err);
+      set({
+        botMessage:
+          "Hệ thống nạp Pet gặp sự cố, nhưng ta vẫn sẽ giám sát ngươi! 👁️",
+        isBubbleVisible: true,
+      });
+    }
+  },
 }));

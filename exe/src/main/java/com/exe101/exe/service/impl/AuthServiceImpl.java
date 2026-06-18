@@ -49,6 +49,7 @@ public class AuthServiceImpl implements AuthService {
     private final MaskUtil maskUtil;
     private final UserIdentityService userIdentityService;
     private final RegisterSessionStore registerSessionStore;
+    private final UserPetService userPetService;
 
     @Override
     @Transactional
@@ -82,6 +83,9 @@ public class AuthServiceImpl implements AuthService {
                                 payload.avatar()
                         );
                         userRoleService.assignRole(newUser, "USER");
+                        if (!userPetService.hasAnyPet(newUser.getId())) {
+                            userPetService.provisionDefaultPet(newUser);
+                        }
                         return newUser;
                     });
 
@@ -207,6 +211,10 @@ public class AuthServiceImpl implements AuthService {
 
         // Activate user
         userService.activateUser(user.getId());
+
+        if (!userPetService.hasAnyPet(user.getId())) {
+            userPetService.provisionDefaultPet(user);
+        }
 
         // Auto login — generate tokens giống login thường
         String deviceId = UUID.randomUUID().toString();

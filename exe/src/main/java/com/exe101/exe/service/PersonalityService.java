@@ -2,6 +2,7 @@ package com.exe101.exe.service;
 
 import com.exe101.exe.dto.request.CreatePersonalityRequest;
 import com.exe101.exe.dto.request.UpdatePersonalityRequest;
+import com.exe101.exe.dto.response.PersonalityDetailsResponse;
 import com.exe101.exe.dto.response.PersonalityResponse;
 
 import java.util.List;
@@ -20,4 +21,6 @@ public interface PersonalityService {
     PersonalityResponse update(Long id, UpdatePersonalityRequest request);
 
     void delete(Long id);
+
+    PersonalityDetailsResponse getDetails(Long personalityId);
 }

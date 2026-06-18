@@ -2,7 +2,9 @@ import api from "../../../lib/axios";
 import type {
   CreateSessionRequest,
   FocusSessionResponse,
-  ViolationRequest, // Import thêm interface này
+  ViolationRequest,
+  UserPetDetails,
+  PersonalityDetails,
 } from "../types/focus.types";
 
 export const focusApi = {
@@ -37,6 +39,20 @@ export const focusApi = {
     data: ViolationRequest,
   ): Promise<FocusSessionResponse> => {
     const res = await api.post(`/focus-sessions/${sessionId}/violation`, data);
+    return res.data.data;
+  },
+
+  // GET /api/pets/{userPetId}
+  getPetDetails: async (userPetId: number): Promise<UserPetDetails> => {
+    const res = await api.get(`/user-pets/${userPetId}`);
+    return res.data.data;
+  },
+
+  // GET /api/personalities/{personalityId}
+  getPersonalityDetails: async (
+    personalityId: number,
+  ): Promise<PersonalityDetails> => {
+    const res = await api.get(`/api/personalities/${personalityId}`);
     return res.data.data;
   },
 };

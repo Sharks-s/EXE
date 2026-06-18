@@ -1,5 +1,6 @@
 package com.exe101.exe.service.impl;
 
+import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.FocusSessionResponse;
@@ -37,6 +38,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private final UserService userService;
     private final UserPetRepository userPetRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final AppSeedProperties appSeedProperties;
 
     @Override
     @Transactional
@@ -85,7 +87,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         if (!isPremium) {
             int projectedUsage = user.getDailyUsedMinutes() + request.durationMinutes();
-            if (projectedUsage > 120) {
+            if (projectedUsage > appSeedProperties.getDailyFreeUsage()) {
                 throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
             }
         }
@@ -98,7 +100,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         // 5. Lấy cá tính cấu hình sẵn của User, nếu không có thì dùng cá tính mặc định "SWEET"
         Personality chosenPersonality = user.getPersonality();
         if (chosenPersonality == null) {
-            chosenPersonality = personalityRepository.findByCode("SWEET")
+            chosenPersonality = personalityRepository.findByCode(appSeedProperties.getDefaultPersonalityCode())
                     .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
         }
 

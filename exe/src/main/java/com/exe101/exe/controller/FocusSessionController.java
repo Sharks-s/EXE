@@ -21,41 +21,41 @@ public class FocusSessionController {
     private final FocusSessionService focusSessionService;
 
     @PostMapping("/start")
-    public ResponseEntity<ApiResponse<FocusSessionResponse>> createSession(
+    public ApiResponse<FocusSessionResponse> createSession(
             @Valid @RequestBody CreateSessionRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         FocusSessionResponse response = focusSessionService.createSession(request, userDetails.getId());
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ApiResponse.success(response);
     }
 
     @PostMapping("/{sessionId}/cycle")
-    public ResponseEntity<ApiResponse<FocusSessionResponse>> completeCycle(
+    public ApiResponse<FocusSessionResponse> completeCycle(
             @PathVariable Long sessionId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         FocusSessionResponse response = focusSessionService.completeCycle(sessionId, userDetails.getId());
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ApiResponse.success(response);
     }
 
     @PatchMapping("/{sessionId}/end")
-    public ResponseEntity<ApiResponse<FocusSessionResponse>> endSession(
+    public ApiResponse<FocusSessionResponse> endSession(
             @PathVariable Long sessionId,
             @RequestParam boolean isAborted,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         FocusSessionResponse response = focusSessionService.endSession(sessionId, userDetails.getId(), isAborted);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ApiResponse.success(response);
     }
 
     @PostMapping("/{sessionId}/violation")
-    public ResponseEntity<ApiResponse<FocusSessionResponse>> handleViolation(
+    public ApiResponse<FocusSessionResponse> handleViolation(
             @PathVariable Long sessionId,
             @RequestBody ViolationRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         FocusSessionResponse response = focusSessionService.handleViolation(
                 sessionId, userDetails.getId(), request);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ApiResponse.success(response);
     }
 }

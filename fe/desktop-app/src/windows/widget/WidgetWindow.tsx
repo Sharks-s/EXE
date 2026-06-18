@@ -5,7 +5,6 @@ import {
 } from "@tauri-apps/api/webviewWindow";
 import { ChatBubble } from "../../shared/components/ChatBubble";
 import { useFocusStore } from "../../features/focus-session/stores/focusStore";
-import { focusApi } from "../../features/focus-session/api/focus.api";
 
 const FRAME_COUNT = 10;
 const ANIMATION_SPEED_FPS = 10;
@@ -17,15 +16,12 @@ export default function WidgetWindow() {
   const animationFrameIdRef = useRef<number | null>(null);
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [isReady, setIsReady] = useState(false);
-  const [showBubble, setShowBubble] = useState(false);
-  const [bubbleMessage, setBubbleMessage] = useState("");
-  const [bubbleMode, setBubbleMode] = useState<"cycle" | "warning" | null>(
-    null,
-  );
 
-  const { session, syncSession } = useFocusStore();
+  // 🎯 LẤY TOÀN BỘ TIN NHẮN VÀ ACTIONS TỪ STORE ĐỔ XUỐNG
+  // Giả định store của bạn quản lý các biến này (hoặc bạn điều chỉnh theo tên biến thực tế trong store)
+  const { botMessage, botActions, isBubbleVisible } = useFocusStore();
 
-  // ── Preload frames ─────────────────────────────────
+  // ── 1. PRELOAD FRAMES (Thuần hiển thị) ─────────────────────────────────
   useEffect(() => {
     const loadedImages: HTMLImageElement[] = [];
     let loadedCount = 0;
@@ -47,7 +43,7 @@ export default function WidgetWindow() {
     };
   }, []);
 
-  // ── Animation loop ─────────────────────────────────
+  // ── 2. ANIMATION LOOP (Thuần hiển thị) ─────────────────────────────────
   useEffect(() => {
     if (!isReady || !canvasRef.current || images.length === 0) return;
     const canvas = canvasRef.current;
@@ -86,57 +82,7 @@ export default function WidgetWindow() {
     };
   }, [isReady, images]);
 
-  // ── Cycle timer trigger ────────────────────────────
-  useEffect(() => {
-    if (!session) return;
-
-    const lastCycleAt = session.lastCycleAt
-      ? new Date(session.lastCycleAt).getTime()
-      : new Date(session.startedAt).getTime();
-
-    const cycleEndAt = lastCycleAt + 25 * 60 * 1000;
-    const delay = cycleEndAt - Date.now();
-
-    if (delay <= 0) {
-      // Đã quá 25 phút rồi → gọi luôn
-      handleCycleComplete();
-      return;
-    }
-
-    // Chưa đủ 25 phút → đặt timeout đúng lúc
-    const timeout = setTimeout(() => {
-      handleCycleComplete();
-    }, delay);
-
-    return () => clearTimeout(timeout);
-  }, [session?.lastCycleAt]); // re-run mỗi khi lastCycleAt đổi (sau mỗi cycle)
-
-  // ── Cycle complete handler ─────────────────────────
-  const handleCycleComplete = async () => {
-    if (!session) return;
-    try {
-      const res = await focusApi.completeCycle(session.id);
-      syncSession(res);
-      setBubbleMessage("Hiệp xong! 🎉 Nghỉ xíu hay cày tiếp?");
-      setBubbleMode("cycle");
-      setShowBubble(true);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleBreak = () => {
-    setBubbleMessage("Nghỉ 5 phút nhé! ☕ Quay lại đúng giờ đó!");
-    setBubbleMode(null);
-    setTimeout(() => setShowBubble(false), 4000);
-  };
-
-  const handleContinue = () => {
-    setShowBubble(false);
-    setBubbleMode(null);
-  };
-
-  // ── Click bot → back to dashboard ─────────────────
+  // ── 3. CLICK VÀO CHÚ KHỈ → QUAY LẠI DASHBOARD ──────────────────────────
   const handleClick = async () => {
     const currentWin = getCurrentWebviewWindow();
     console.log("[WidgetWindow] click on:", currentWin.label);
@@ -150,23 +96,6 @@ export default function WidgetWindow() {
       console.error(err);
     }
   };
-
-  // ── Bubble actions theo mode ───────────────────────
-  const bubbleActions =
-    bubbleMode === "cycle"
-      ? [
-          {
-            label: "Nghỉ ☕",
-            onClick: handleBreak,
-            variant: "secondary" as const,
-          },
-          {
-            label: "Tiếp! 🔥",
-            onClick: handleContinue,
-            variant: "primary" as const,
-          },
-        ]
-      : undefined;
 
   return (
     <div
@@ -185,10 +114,11 @@ export default function WidgetWindow() {
         boxSizing: "border-box",
       }}
     >
+      {/* 🎯 BẢO SAO NGHE VẬY: Truyền trực tiếp data từ Store vào bong bóng */}
       <ChatBubble
-        message={bubbleMessage}
-        isVisible={showBubble}
-        actions={bubbleActions}
+        message={botMessage || ""}
+        isVisible={!!isBubbleVisible}
+        actions={botActions}
       />
 
       <canvas

@@ -3,6 +3,7 @@ package com.exe101.exe.controller;
 import com.exe101.exe.dto.request.CreatePersonalityRequest;
 import com.exe101.exe.dto.request.UpdatePersonalityRequest;
 import com.exe101.exe.dto.response.ApiResponse;
+import com.exe101.exe.dto.response.PersonalityDetailsResponse;
 import com.exe101.exe.dto.response.PersonalityResponse;
 import com.exe101.exe.service.PersonalityService;
 import jakarta.validation.Valid;
@@ -28,17 +29,13 @@ public class PersonalityController {
     public ResponseEntity<ApiResponse<PersonalityResponse>> getByCode(@PathVariable String code) {
         return ResponseEntity.ok(ApiResponse.success(personalityService.getByCode(code)));
     }
+
     @PostMapping
     public ResponseEntity<ApiResponse<PersonalityResponse>> create(
             @Valid @RequestBody CreatePersonalityRequest request
     ) {
         return ResponseEntity
                 .ok(ApiResponse.success(personalityService.create(request)));
-    }
-
-    @GetMapping("/id/{id}")
-    public ResponseEntity<ApiResponse<PersonalityResponse>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(personalityService.getById(id)));
     }
 
     @PutMapping("/{id}")
@@ -50,8 +47,13 @@ public class PersonalityController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(@PathVariable Long id) {
         personalityService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ApiResponse.success(null);
+    }
+
+    @GetMapping("/session/{personalityId}")
+    public ApiResponse<PersonalityDetailsResponse> getDetails(@PathVariable Long personalityId) {
+        return ApiResponse.success(personalityService.getDetails(personalityId));
     }
 }

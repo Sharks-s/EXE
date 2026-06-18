@@ -80,6 +80,8 @@ public enum ErrorCode {
     DEFAULT_PET_NOT_CONFIGURED("PET_003", HttpStatus.INTERNAL_SERVER_ERROR, "Default pet not configured"),
     USER_PET_PROVISION_FAILED("PET_004", HttpStatus.INTERNAL_SERVER_ERROR, "Failed to provision default pet for user"),
     USER_PET_NOT_FOUND("PET_005", HttpStatus.NOT_FOUND, "User pet not found"),
+    PET_NOT_FOUND("PET_006", HttpStatus.NOT_FOUND, "Pet not found"),
+    USER_PET_ALREADY_EXISTS("PET_007", HttpStatus.CONFLICT, "User already owns this pet"),
 
     // ===== CLOUDINARY =====
 

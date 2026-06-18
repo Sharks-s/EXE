@@ -5,6 +5,7 @@ export interface SaveProfileRequest {
   phoneNumber?: string;
   gender: Gender;
   dateOfBirth?: string;
+  dob?: string;
   personalityId?: number;
 }
 
@@ -20,8 +21,12 @@ export interface UserSummary {
   avatarUrl?: string;
   phoneNumber?: string;
   gender: Gender;
-  dateOfBirth?: string;
-  personalityId?: string;
+  dob?: string | null;
+  dateOfBirth?: string | null;
+  profileCompleted?: boolean;
+  personalityId?: number | string;
+  personalityCode?: string | null;
+  roles?: string[];
 }
 
 export interface ProfileCompletionResponse {

@@ -11,6 +11,9 @@ import java.time.Instant;
 @Entity
 @Table(
         name = "user_pets",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_pets_user_pet", columnNames = {"user_id", "pet_id"})
+        },
         indexes = {
                 @Index(name = "idx_user_pets_user_id", columnList = "user_id"),
                 @Index(name = "idx_user_pets_pet_id", columnList = "pet_id")

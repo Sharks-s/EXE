@@ -10,10 +10,15 @@ import type {
 const PROFILE_ENDPOINT = "/users/me";
 
 export const profileApi = {
+  getMyProfile: () =>
+    api
+      .get<ApiResponse<UserSummary>>(PROFILE_ENDPOINT)
+      .then((r) => r.data.data),
+
   saveProfile: (data: SaveProfileRequest) =>
     api
       .put<ApiResponse<UserSummary>>(`${PROFILE_ENDPOINT}/basic-profile`, data)
-      .then((r) => r.data.data),
+      .then((r) => r.data.data),  
 
   getProfileCompletion: () =>
     api

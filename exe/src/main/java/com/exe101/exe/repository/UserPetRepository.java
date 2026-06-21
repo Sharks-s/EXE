@@ -1,9 +1,9 @@
 package com.exe101.exe.repository;
 
 import com.exe101.exe.model.entity.UserPet;
-import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +13,7 @@ public interface UserPetRepository extends JpaRepository<UserPet, Long> {
 
     Optional<UserPet> findDefaultPetByUserId(Long userId);
     Optional<UserPet> findByUserIdAndPetId(Long userId, Long petId);
+    boolean existsByUserIdAndPetId(Long userId, Long petId);
 
     boolean existsByUserId(Long userId);
 

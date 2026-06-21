@@ -1,6 +1,7 @@
 package com.exe101.exe.service.impl;
 
 import com.exe101.exe.config.AppSeedProperties;
+import com.exe101.exe.dto.response.PetResponse;
 import com.exe101.exe.model.entity.Pet;
 import com.exe101.exe.repository.PetRepository;
 import com.exe101.exe.service.PetService;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,5 +46,19 @@ public class PetServiceImpl implements PetService {
 
             petRepository.save(p);
         }
+    }
+
+    @Override
+    public List<PetResponse> getAll(Long userId) {
+        return petRepository.findAllNotOwnedByUser(userId).stream()
+                .map(pet -> PetResponse.builder()
+                        .id(pet.getId())
+                        .code(pet.getCode())
+                        .name(pet.getName())
+                        .description(pet.getDescription())
+                        .imageUrl(pet.getImageUrl())
+                        .premium(pet.isPremium())
+                        .build())
+                .toList();
     }
 }

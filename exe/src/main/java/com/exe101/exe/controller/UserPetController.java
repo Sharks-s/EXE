@@ -1,10 +1,12 @@
 package com.exe101.exe.controller;
 
+import com.exe101.exe.dto.request.RenameUserPetRequest;
 import com.exe101.exe.dto.response.ApiResponse;
 import com.exe101.exe.dto.response.UserPetSessionResponse;
 import com.exe101.exe.dto.response.UserPetSummaryResponse;
 import com.exe101.exe.security.CustomUserDetails;
 import com.exe101.exe.service.UserPetService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +30,7 @@ public class UserPetController {
         return ApiResponse.success(response);
     }
 
-    @GetMapping
+    @GetMapping("/me")
     public ApiResponse<List<UserPetSummaryResponse>> listMyPets(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -36,4 +38,42 @@ public class UserPetController {
                 userPetService.listMyPets(userDetails.getId());
         return ApiResponse.success(response);
     }
+    @PostMapping("/{userPetId}/rename")
+    public ApiResponse<UserPetSummaryResponse> rename(
+            @PathVariable Long userPetId,
+            @Valid @RequestBody RenameUserPetRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UserPetSummaryResponse response = userPetService.renameUserPet(
+                userPetId,
+                userDetails.getId(),
+                request.customName()
+        );
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/shop/{petId}")
+    public ApiResponse<UserPetSummaryResponse> addPetFromStore(
+            @PathVariable Long petId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UserPetSummaryResponse response = userPetService.addPetFromStore(
+                petId,
+                userDetails.getId()
+        );
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/{userPetId}/equip")
+    public ApiResponse<UserPetSummaryResponse> equip(
+            @PathVariable Long userPetId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UserPetSummaryResponse response = userPetService.equipUserPet(
+                userPetId,
+                userDetails.getId()
+        );
+        return ApiResponse.success(response);
+    }
+
 }

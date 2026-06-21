@@ -12,7 +12,7 @@ import AnalyticsPage from "../../features/analytics/pages/AnalyticsPage";
 import SettingsPage from "../../features/settings/pages/SettingsPage";
 import ProfilePage from "../../features/profile/pages/ProfilePage";
 import UpgradePage from "../../features/upgrade/pages/UpgradePage";
-import Pet from "../../features/pet/pet";
+import Pet from "../../features/pet/pages/PetsPage";
 
 export default function MainWindow() {
   const { t } = useTranslation("common");

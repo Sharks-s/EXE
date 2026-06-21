@@ -3,6 +3,7 @@ import {
   WebviewWindow,
   getCurrentWebviewWindow,
 } from "@tauri-apps/api/webviewWindow";
+import { listen, emit } from "@tauri-apps/api/event";
 import { ChatBubble } from "../../shared/components/ChatBubble";
 import { useFocusStore } from "../../features/focus-session/stores/focusStore";
 
@@ -17,9 +18,74 @@ export default function WidgetWindow() {
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [isReady, setIsReady] = useState(false);
 
-  // 🎯 LẤY TOÀN BỘ TIN NHẮN VÀ ACTIONS TỪ STORE ĐỔ XUỐNG
-  // Giả định store của bạn quản lý các biến này (hoặc bạn điều chỉnh theo tên biến thực tế trong store)
+  // 🌟 ĐỒNG BỘ: Cấu trúc lại State để hứng mốc thời gian tuyệt đối từ Main Window gửi qua
+  const [breakPrompt, setBreakPrompt] = useState<{
+    isOpen: boolean;
+    startedAtMs: number | null;
+    durationSeconds: number;
+    countdown: number;
+  }>({ isOpen: false, startedAtMs: null, durationSeconds: 60, countdown: 60 });
+
   const { botMessage, botActions, isBubbleVisible } = useFocusStore();
+
+  // ── 🎯 LẮNG NGHE TÍN HIỆU MỞ/ĐÓNG TỪ MAIN WINDOW (KÈM MỐC THỜI GIAN THỰC) ──
+  useEffect(() => {
+    const unlistenPrompt = listen<{
+      isOpen: boolean;
+      startedAtMs?: number;
+      durationSeconds?: number;
+    }>("tauri-break-prompt", (event) => {
+      if (event.payload.isOpen) {
+        setBreakPrompt({
+          isOpen: true,
+          startedAtMs: event.payload.startedAtMs ?? Date.now(),
+          durationSeconds: event.payload.durationSeconds ?? 60,
+          countdown: event.payload.durationSeconds ?? 60,
+        });
+      } else {
+        setBreakPrompt({
+          isOpen: false,
+          startedAtMs: null,
+          durationSeconds: 60,
+          countdown: 60,
+        });
+      }
+    });
+
+    return () => {
+      unlistenPrompt.then((f) => f());
+    };
+  }, []);
+
+  // ── 🎯 TỰ ĐỘNG TÍNH LÙI THEO PHÉP TRỪ MỐC TUYỆT ĐỐI (Chạy song song hoàn hảo) ────
+  useEffect(() => {
+    if (!breakPrompt.isOpen || !breakPrompt.startedAtMs) return;
+
+    // Quét chu kỳ nhanh (500ms) giúp con số hiển thị khít khao mili-giây với Main Window
+    const timer = setInterval(() => {
+      const elapsedSeconds = Math.floor(
+        (Date.now() - breakPrompt.startedAtMs!) / 1000,
+      );
+      const remaining = breakPrompt.durationSeconds - elapsedSeconds;
+
+      if (remaining <= 0) {
+        setBreakPrompt({
+          isOpen: false,
+          startedAtMs: null,
+          durationSeconds: 60,
+          countdown: 60,
+        });
+      } else {
+        setBreakPrompt((prev) => ({ ...prev, countdown: remaining }));
+      }
+    }, 500);
+
+    return () => clearInterval(timer);
+  }, [
+    breakPrompt.isOpen,
+    breakPrompt.startedAtMs,
+    breakPrompt.durationSeconds,
+  ]);
 
   // ── 1. PRELOAD FRAMES (Thuần hiển thị) ─────────────────────────────────
   useEffect(() => {
@@ -82,7 +148,7 @@ export default function WidgetWindow() {
     };
   }, [isReady, images]);
 
-  // ── 3. CLICK VÀO CHÚ KHỈ → QUAY LẠI DASHBOARD ──────────────────────────
+  // ── 3. CLICK VÀO CHÚ KHỈ → LUÔN CHO QUAY LẠI DASHBOARD (ĐÃ MỞ CHẶN CLICK) ──
   const handleClick = async () => {
     const currentWin = getCurrentWebviewWindow();
     console.log("[WidgetWindow] click on:", currentWin.label);
@@ -96,6 +162,28 @@ export default function WidgetWindow() {
       console.error(err);
     }
   };
+
+  // ── 🎯 ƯU TIÊN HIỂN THỊ BUBBLE HỎI NGHỈ LÊN TRÊN TIN NHẮN THƯỜNG CỦA STORE ──
+  const finalMessage = breakPrompt.isOpen
+    ? `Hết hiệp rồi! Bạn nghỉ tí không? (${breakPrompt.countdown}s)`
+    : botMessage || "";
+
+  const finalVisibility = breakPrompt.isOpen ? true : !!isBubbleVisible;
+
+  const finalActions = breakPrompt.isOpen
+    ? [
+        {
+          label: "Nghỉ ☕",
+          variant: "primary" as const,
+          onClick: () => emit("widget-click-accept-break"),
+        },
+        {
+          label: "Học tiếp 🎯",
+          variant: "secondary" as const,
+          onClick: () => emit("widget-click-reject-break"),
+        },
+      ]
+    : botActions;
 
   return (
     <div
@@ -114,11 +202,10 @@ export default function WidgetWindow() {
         boxSizing: "border-box",
       }}
     >
-      {/* 🎯 BẢO SAO NGHE VẬY: Truyền trực tiếp data từ Store vào bong bóng */}
       <ChatBubble
-        message={botMessage || ""}
-        isVisible={!!isBubbleVisible}
-        actions={botActions}
+        message={finalMessage}
+        isVisible={finalVisibility}
+        actions={finalActions}
       />
 
       <canvas

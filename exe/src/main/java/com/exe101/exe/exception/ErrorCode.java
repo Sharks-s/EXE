@@ -71,6 +71,9 @@ public enum ErrorCode {
     SESSION_UNAUTHORIZED_ACCESS("SESSION_004", HttpStatus.FORBIDDEN, "Unauthorized access to session"),
     SESSION_NOT_IN_PROGRESS("SESSION_005", HttpStatus.BAD_REQUEST, "Session not in progress"),
     SESSION_CYCLE_NOT_COMPLETED_YET("SESSION_006", HttpStatus.BAD_REQUEST, "Session cycle not completed yet"),
+    SESSION_ALREADY_PAUSED("SESSION_007", HttpStatus.BAD_REQUEST, "Session already paused"),
+    SESSION_NOT_PAUSED("SESSION_008", HttpStatus.BAD_REQUEST, "Session is not paused"),
+    NO_BREAK_TIME_AVAILABLE("SESSION_009", HttpStatus.BAD_REQUEST, "No break time available"),
     // ===== PREMIUM =====
     DAILY_LIMIT_EXCEEDED("PREMIUM_001", HttpStatus.BAD_REQUEST, "Daily limit exceeded"),
 

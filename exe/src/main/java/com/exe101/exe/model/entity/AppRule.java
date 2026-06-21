@@ -1,5 +1,6 @@
 package com.exe101.exe.model.entity;
 
+import com.exe101.exe.model.enums.RuleType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -26,7 +27,7 @@ public class AppRule {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_app_rules_user"))
+    @JoinColumn(name = "user_id", nullable = true, foreignKey = @ForeignKey(name = "fk_app_rules_user"))
     private User user;
 
     @Size(max = 150)
@@ -38,5 +39,5 @@ public class AppRule {
     private String windowTitleKeyword;
 
     @Column(name = "rule_type", length = 20, nullable = false)
-    private String ruleType; // WHITELIST, BLACKLIST
+    private RuleType ruleType; // WHITELIST, BLACKLIST
 }

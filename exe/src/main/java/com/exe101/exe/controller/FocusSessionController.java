@@ -4,6 +4,7 @@ import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.ApiResponse;
 import com.exe101.exe.dto.response.FocusSessionResponse;
+import com.exe101.exe.dto.response.HandleViolationResponse;
 import com.exe101.exe.model.enums.ViolationType;
 import com.exe101.exe.security.CustomUserDetails;
 import com.exe101.exe.service.FocusSessionService;
@@ -49,13 +50,32 @@ public class FocusSessionController {
     }
 
     @PostMapping("/{sessionId}/violation")
-    public ApiResponse<FocusSessionResponse> handleViolation(
+    public ApiResponse<HandleViolationResponse> handleViolation(
             @PathVariable Long sessionId,
             @RequestBody ViolationRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        FocusSessionResponse response = focusSessionService.handleViolation(
+        HandleViolationResponse response = focusSessionService.handleViolation(
                 sessionId, userDetails.getId(), request);
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/{sessionId}/pause")
+    public ApiResponse<FocusSessionResponse> pauseSession(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        FocusSessionResponse response = focusSessionService.pauseSession(sessionId, userDetails.getId());
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/{sessionId}/resume")
+    public ApiResponse<FocusSessionResponse> resumeSession(
+            @PathVariable Long sessionId,
+            @RequestParam int minutesUsed,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        FocusSessionResponse response = focusSessionService.resumeSession(sessionId, userDetails.getId(), minutesUsed);
         return ApiResponse.success(response);
     }
 }

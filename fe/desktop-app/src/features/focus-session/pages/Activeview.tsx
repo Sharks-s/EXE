@@ -3,12 +3,24 @@ import { useFocusSession } from "../hooks/useFocusSession";
 import "./ActiveView.css";
 import { ProgressRing } from "../components/ProgressRing";
 import { StatCard } from "../components/StatCard";
+import { BreakPromptPopup } from "../../../shared/components/BreakPromptPopup";
 
 export function ActiveView() {
   const { session, violationCount } = useFocusStore();
 
   // Triệu hồi Hook quản lý thời gian gốc
-  const { elapsed, isEnding, handleEndSession } = useFocusSession();
+  const {
+    elapsed,
+    isEnding,
+    handleEndSession,
+    isPromptActive,
+    isBreaking,
+    breakRemaining,
+    promptCountdown,
+    handleRejectBreak,
+    handleAcceptBreak,
+    handleResumeSession,
+  } = useFocusSession();
 
   if (!session) return null;
 
@@ -47,16 +59,30 @@ export function ActiveView() {
 
   const handleBackToDashboard = async () => {
     try {
-      const mainWindow = (await import("@tauri-apps/api/webviewWindow"))
-        .WebviewWindow;
-      const main = await mainWindow.getByLabel("main");
-      const widget = await mainWindow.getByLabel("widget");
-      if (main && widget) {
-        await main.show();
-        await widget.hide();
+      console.log("[ActiveView] Đang thu nhỏ về Widget...");
+
+      // 1. Import các module quản lý Webview của Tauri v2
+      const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+
+      // 2. Lấy cụ thể target window theo label
+      const widgetWindow = await WebviewWindow.getByLabel("widget");
+      const currentWindow = getCurrentWindow(); // Chính là thằng 'main' chứa ActiveView
+
+      if (widgetWindow) {
+        // 3. Hiện Widget lên và kéo nó lên trên cùng (set focus)
+        await widgetWindow.show();
+        await widgetWindow.unminimize();
+        await widgetWindow.setFocus();
+
+        // 4. Ẩn thằng 'main' (ActiveView) đi để nó chạy ngầm
+        await currentWindow.hide();
+        console.log("[ActiveView] Đã chuyển đổi cửa sổ thành công.");
+      } else {
+        console.error("Không tìm thấy label cửa sổ 'widget'!");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi điều khiển chuyển đổi WebviewWindow:", err);
     }
   };
 
@@ -84,11 +110,22 @@ export function ActiveView() {
         <ProgressRing
           radius={72}
           stroke={8}
-          progress={progressTotal}
-          color="#9fd6fa"
+          // Nếu đang nghỉ, tính tiến trình dựa trên thời gian nghỉ còn lại
+          progress={
+            isBreaking
+              ? breakRemaining / (session.accumulatedReward * 60 || 1)
+              : progressTotal
+          }
+          // Đổi màu vòng tròn khi nghỉ sang màu cam nhẹ #F59E0B hoặc giữ màu của bạn
+          color={isBreaking ? "#F59E0B" : "#9fd6fa"}
         >
-          <span className="time-text">{formatTime(remaining)}</span>
-          <span className="label-text">CÒN LẠI</span>
+          {/* Đổi text thời gian tương ứng theo trạng thái học/nghỉ */}
+          <span className="time-text">
+            {isBreaking ? formatTime(breakRemaining) : formatTime(remaining)}
+          </span>
+          <span className="label-text">
+            {isBreaking ? "GIẢI LAO" : "CÒN LẠI"}
+          </span>
         </ProgressRing>
 
         <div className="timer-bars-container">
@@ -145,9 +182,18 @@ export function ActiveView() {
 
       {/* ACTIONS: Tự động tính toán hiển thị nút theo tiến trình học */}
       <div className="actions-footer">
-        {elapsed < plannedSeconds ? (
+        {isBreaking ? (
+          /* 🎯 KỊCH BẢN NGHỈ: Hiện nút quay lại học sớm */
+          <button
+            className="btn-complete-session cursor-pointer"
+            onClick={handleResumeSession}
+            style={{ width: "100%", backgroundColor: "#10B981" }} // Màu xanh lá cho tươi tắn
+          >
+            Học tiếp sớm (Kết thúc nghỉ) 🚀
+          </button>
+        ) : elapsed < plannedSeconds ? (
           <>
-            {/* Nếu ĐANG học: Chỉ có quyền bỏ cuộc hoặc ẩn ứng dụng ngầm xuống Widget */}
+            {/* Nếu ĐANG học: Giữ nguyên 2 nút Từ bỏ và Thu nhỏ cũ của bạn */}
             <button
               className={`btn-abort-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
               onClick={() => handleEndSession(true)}
@@ -165,7 +211,7 @@ export function ActiveView() {
           </>
         ) : (
           <>
-            {/* Nếu ĐÃ ĐỦ GIỜ: Khóa nút hủy, mở duy nhất nút hoàn thành nhận quà */}
+            {/* Nếu ĐÃ ĐỦ GIỜ: Giữ nguyên nút Hoàn thành cũ của bạn */}
             <button
               className={`btn-complete-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
               onClick={() => handleEndSession(false)}
@@ -177,6 +223,13 @@ export function ActiveView() {
           </>
         )}
       </div>
+
+      <BreakPromptPopup
+        isOpen={isPromptActive}
+        countdown={promptCountdown}
+        onAccept={handleAcceptBreak}
+        onReject={handleRejectBreak}
+      />
     </div>
   );
 }

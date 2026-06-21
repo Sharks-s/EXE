@@ -3,8 +3,10 @@ import type {
   CreateSessionRequest,
   FocusSessionResponse,
   ViolationRequest,
+  HandleViolationResponse,
   UserPetDetails,
   PersonalityDetails,
+  AppRulesResponse,
 } from "../types/focus.types";
 
 export const focusApi = {
@@ -33,16 +35,17 @@ export const focusApi = {
     return res.data.data;
   },
 
-  // POST /focus-sessions/{id}/violation
+  // POST /focus-sessions/{id}/violation — giờ trả về HandleViolationResponse
+  // (bọc session + isPenalty + type), không phải FocusSessionResponse trần như cũ
   handleViolation: async (
     sessionId: number,
     data: ViolationRequest,
-  ): Promise<FocusSessionResponse> => {
+  ): Promise<HandleViolationResponse> => {
     const res = await api.post(`/focus-sessions/${sessionId}/violation`, data);
     return res.data.data;
   },
 
-  // GET /api/pets/{userPetId}
+  // GET /user-pets/{userPetId}
   getPetDetails: async (userPetId: number): Promise<UserPetDetails> => {
     const res = await api.get(`/user-pets/${userPetId}`);
     return res.data.data;
@@ -53,6 +56,28 @@ export const focusApi = {
     personalityId: number,
   ): Promise<PersonalityDetails> => {
     const res = await api.get(`/api/personalities/${personalityId}`);
+    return res.data.data;
+  },
+
+  // POST /focus-sessions/{id}/pause
+  pauseSession: async (sessionId: number): Promise<FocusSessionResponse> => {
+    const res = await api.post(`/focus-sessions/${sessionId}/pause`);
+    return res.data.data;
+  },
+
+  // POST /focus-sessions/{id}/resume?minutesUsed={minutesUsed}
+  resumeSession: async (
+    sessionId: number,
+    minutesUsed: number,
+  ): Promise<FocusSessionResponse> => {
+    const res = await api.post(`/focus-sessions/${sessionId}/resume`, null, {
+      params: { minutesUsed },
+    });
+    return res.data.data;
+  },
+
+  getAppRules: async (): Promise<AppRulesResponse> => {
+    const res = await api.get("/app-rules");
     return res.data.data;
   },
 };

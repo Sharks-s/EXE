@@ -17,6 +17,7 @@ public class AppSeedProperties {
     private String defaultPetCode;
     private String defaultPersonalityCode;
     private Integer dailyFreeUsage;
+    private Integer defaultViolationMinutes;
 
     @Getter
     @Setter

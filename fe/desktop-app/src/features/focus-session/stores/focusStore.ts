@@ -11,6 +11,10 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   violationCount: 0,
   currentPet: null,
   currentPersonality: null,
+
+  appRules: null,
+  allowedCache: new Set<string>(),
+
   botMessage: null,
   botActions: undefined,
   isBubbleVisible: false,
@@ -64,6 +68,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
     set({
       session: null,
       violationCount: 0,
+      appRules: null,
+      allowedCache: new Set<string>(),
       currentPet: null,
       currentPersonality: null,
       botMessage: null,
@@ -82,10 +88,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   initializeSessionConfig: async (session: FocusSessionResponse) => {
     get().setSession(session);
 
-    if (!session.userPetId && !session.personalityId) return;
-
     try {
-      // Gọi song song thông tin Pet và Tính cách từ Spring Boot
+      // Gom tất cả các hàm cần lấy dữ liệu chạy SONG SONG cùng lúc, kể cả việc fetch App Rules
       const [petData, personalityData] = await Promise.all([
         session.userPetId
           ? focusApi.getPetDetails(session.userPetId)
@@ -93,6 +97,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
         session.personalityId
           ? focusApi.getPersonalityDetails(session.personalityId)
           : Promise.resolve(null),
+        get().fetchAppRules(), //  Kích hoạt tải luôn Blacklist/Whitelist về Store local ngay khi vào session
       ]);
 
       set({
@@ -101,7 +106,9 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       });
 
       if (import.meta.env.DEV) {
-        console.log(`[Store] Loaded Pet: ${petData?.code} & AI Personality.`);
+        console.log(
+          `[Store] Loaded Pet: ${petData?.code}, AI Personality & App Rules.`,
+        );
       }
     } catch (err) {
       console.error("[Store Error] Failed to fetch config:", err);
@@ -112,4 +119,34 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       });
     }
   },
+
+  // ── CÁC ACTIONS  TÍCH HỢP QUẢN LÝ APP RULES ─────────────────
+
+  fetchAppRules: async () => {
+    try {
+      const rules = await focusApi.getAppRules();
+      set({ appRules: rules });
+    } catch (error) {
+      console.error(
+        "[Store Error] Không thể tải danh sách quy tắc ứng dụng:",
+        error,
+      );
+      // Fallback an toàn tránh sập app: Cho danh sách rỗng
+      set({ appRules: { blacklist: [], whitelist: [] } });
+    }
+  },
+
+  addToAllowedCache: (appOrTitle) => {
+    const currentCache = get().allowedCache;
+    // Clone Set để Zustand hiểu là có sự thay đổi tham chiếu (Reference change) và trigger re-render
+    const newCache = new Set(currentCache);
+    newCache.add(appOrTitle.toLowerCase().trim());
+    set({ allowedCache: newCache });
+  },
+
+  clearAppRules: () =>
+    set({
+      appRules: null,
+      allowedCache: new Set<string>(),
+    }),
 }));

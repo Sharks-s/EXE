@@ -94,6 +94,7 @@ app:
     default-pet-code: "MONKI"
     default-personality-code: "SWEET"
     daily-free-usage: 120
+    default-violation-minutes: 5
     personalities:
       - code: "SWEET"
         name: "Sweet Assistant"
@@ -128,3 +129,9 @@ app:
         description: "A lively and energetic companion that loves to hop around and catch flies."
         premium: true
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/FROGI_dxvowf.png"
+  ai-cloud:
+    base-url: https://openrouter.ai/api/v1
+    api-key: ${AI_CLOUD_API_KEY}
+    model: "google/gemini-2.5-flash"
+    timeout-seconds: 10
+

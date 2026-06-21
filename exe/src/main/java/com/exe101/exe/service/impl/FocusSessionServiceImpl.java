@@ -4,6 +4,7 @@ import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.FocusSessionResponse;
+import com.exe101.exe.dto.response.HandleViolationResponse;
 import com.exe101.exe.model.entity.*;
 import com.exe101.exe.model.enums.ViolationType;
 import com.exe101.exe.repository.SubscriptionRepository;
@@ -26,6 +27,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,11 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private final UserPetRepository userPetRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final AppSeedProperties appSeedProperties;
+
+    private static final Set<ViolationType> NON_PENALTY_TYPES = Set.of(
+            ViolationType.BAD_POSTURE,
+            ViolationType.POOR_LIGHTING
+    );
 
     @Override
     @Transactional
@@ -156,10 +163,9 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.setLastCycleAt(baseTime.plus(25, ChronoUnit.MINUTES));
 
         // Dịch chuyển dòng tiền thưởng giải lao
-        if (session.getPotentialReward() >= 5) {
-            session.setPotentialReward(session.getPotentialReward() - 5);
-            session.setAccumulatedReward(session.getAccumulatedReward() + 5);
-        }
+        int amountToMove = Math.min(appSeedProperties.getDefaultViolationMinutes(), session.getPotentialReward());
+        session.setPotentialReward(session.getPotentialReward() - amountToMove);
+        session.setAccumulatedReward(session.getAccumulatedReward() + amountToMove);
 
         // Cộng dồn hạn mức ngày cho User
         User user = userService.findById(userId);
@@ -214,7 +220,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
     @Override
     @Transactional
-    public FocusSessionResponse handleViolation(Long sessionId, Long userId, ViolationRequest request) {
+    public HandleViolationResponse handleViolation(Long sessionId, Long userId, ViolationRequest request) {
         FocusSession session = focusSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -226,26 +232,109 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
         }
 
-        int penaltyMinutes = 1;
+        boolean isPenalty = !NON_PENALTY_TYPES.contains(request.type());
+        int penaltyMinutes = isPenalty ? 1 : 0;
 
-        if (session.getPotentialReward() >= penaltyMinutes) {
-            session.setPotentialReward(session.getPotentialReward() - penaltyMinutes);
-        } else {
-            int remainingPenalty = penaltyMinutes - session.getPotentialReward();
-            session.setPotentialReward(0);
-            session.setAccumulatedReward(Math.max(0, session.getAccumulatedReward() - remainingPenalty));
+        if (isPenalty) {
+            if (session.getPotentialReward() >= penaltyMinutes) {
+                session.setPotentialReward(session.getPotentialReward() - penaltyMinutes);
+            } else {
+                int remainingPenalty = penaltyMinutes - session.getPotentialReward();
+                session.setPotentialReward(0);
+                session.setAccumulatedReward(Math.max(0, session.getAccumulatedReward() - remainingPenalty));
+            }
         }
+        // Nhóm nhắc nhở (BAD_POSTURE, POOR_LIGHTING) -> không đụng vào potentialReward/accumulatedReward,
+        // chỉ ghi lại Violation để có log/thống kê, không phải lỗi nên không throw.
 
         Violation violation = Violation.builder()
                 .session(session)
                 .type(request.type())
-                .minutesDeducted(penaltyMinutes)
+                .minutesDeducted(penaltyMinutes) // 0 cho nhóm nhắc nhở
                 .appName(request.appName())
                 .windowTitle(request.windowTitle())
                 .build();
         session.addViolation(violation);
 
         FocusSession savedSession = focusSessionRepository.save(session);
+
+        return HandleViolationResponse.builder()
+                .focusSessionResponse(focusSessionMapper.toResponse(savedSession))
+                .isPenalty(isPenalty)
+                .type(request.type())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public FocusSessionResponse pauseSession(Long sessionId, Long userId) {
+        FocusSession session = loadOwnedSession(sessionId, userId);
+
+        if (session.getPausedAt() != null) {
+            throw new BusinessException(ErrorCode.SESSION_ALREADY_PAUSED);
+        }
+
+        // 🎯 CHECK THỜI GIAN NGHỈ THƯỞNG: Nếu không còn phút nghỉ nào thì KHÔNG cho pause
+        if (session.getAccumulatedReward() <= 0) {
+            throw new BusinessException(ErrorCode.NO_BREAK_TIME_AVAILABLE);
+        }
+
+        // Tiến hành đóng băng để bắt đầu tính giờ nghỉ
+        session.setPausedAt(Instant.now());
+        FocusSession savedSession = focusSessionRepository.save(session);
+
         return focusSessionMapper.toResponse(savedSession);
+    }
+
+    @Override
+    @Transactional
+    public FocusSessionResponse resumeSession(Long sessionId, Long userId, int minutesUsedByFrontEnd) {
+        FocusSession session = loadOwnedSession(sessionId, userId);
+
+        if (session.getPausedAt() == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_PAUSED);
+        }
+
+        //Không tính Duration.between nữa, tin tưởng hoàn toàn vào số phút FE gửi lên
+        // Bọc thêm Math.min để chống trường hợp FE gửi bậy số phút lớn hơn ví hiện có
+        int minutesConsumed = Math.min(minutesUsedByFrontEnd, session.getAccumulatedReward());
+
+        // Khấu trừ vào ví nghỉ thưởng
+        session.setAccumulatedReward(session.getAccumulatedReward() - minutesConsumed);
+
+        // Cộng dồn vào thời gian pause tổng để loại trừ khỏi thời gian học thực tế
+        session.setPausedMinutes(session.getPausedMinutes() + minutesConsumed);
+
+        // Giải phóng trạng thái nghỉ
+        session.setPausedAt(null);
+
+        FocusSession savedSession = focusSessionRepository.save(session);
+        return focusSessionMapper.toResponse(savedSession);
+    }
+    // Helper
+
+    private FocusSession loadOwnedSession(Long sessionId, Long userId) {
+        FocusSession session = focusSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+        if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
+        }
+        return session;
+    }
+
+    private Instant effectiveNow(FocusSession session) {
+        // Nếu đang trong trạng thái nghỉ/chờ, mốc thời gian hiệu lực sẽ bị đóng băng tại pausedAt
+        return session.getPausedAt() != null ? session.getPausedAt() : Instant.now();
+    }
+
+    private int getActualFocusMinutes(FocusSession session) {
+        Instant now = effectiveNow(session);
+        long totalElapsedMins = Duration.between(session.getStartedAt(), now).toMinutes();
+        // Tổng thời gian học thực tế = Toàn bộ thời gian từ lúc start - Thời gian đã pause/break
+        return (int) totalElapsedMins - session.getPausedMinutes();
     }
 }

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useFocusStore } from "../stores/focusStore";
 import { SetupView } from "./SetupView";
 import { ActiveView } from "./Activeview";

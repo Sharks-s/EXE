@@ -4,7 +4,6 @@ import { authSession } from "../../features/auth/services/auth.session";
 import { toast } from "../../shared/store/toastStore";
 import Sidebar, { type Page } from "../../shared/components/Sidebar";
 import Auth from "../../features/auth/pages/Auth";
-import { useTranslation } from "react-i18next";
 
 // Pages
 import Dashboard from "../../features/focus-session/pages/Dashboard";
@@ -15,7 +14,6 @@ import UpgradePage from "../../features/upgrade/pages/UpgradePage";
 import Pet from "../../features/pet/pages/PetsPage";
 
 export default function MainWindow() {
-  const { t } = useTranslation("common");
   const { bootstrap, isInitializing, isAuthenticated } = useAuthStore();
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
 

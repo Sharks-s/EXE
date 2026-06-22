@@ -4,21 +4,42 @@ import RegisterForm from "./RegisterForm";
 import AuthLayout from "./AuthLayout";
 import VerifyForm from "./VerifyForm";
 import PasswordForm from "./PasswordForm";
-import type { RegisterResponse } from "../types/auth.types";
+import ForgotPasswordForm from "./ForgotPasswordForm";
+import ResetPasswordForm from "./ResetPasswordForm";
+import {
+  forgotPasswordService,
+  registerInitService,
+  verifyOtpService,
+  verifyResetPasswordOtpService,
+} from "../services/auth.service";
+import type {
+  ForgotPasswordResponse,
+  RegisterResponse,
+} from "../types/auth.types";
 
-type Mode = "auth" | "verify" | "password";
+type Mode =
+  | "auth"
+  | "verify"
+  | "password"
+  | "forgot"
+  | "reset-otp"
+  | "reset-password";
 
 export default function Auth() {
   const [mode, setMode] = useState<Mode>("auth");
   const [registerResult, setRegisterResult] = useState<RegisterResponse | null>(
     null,
   );
+  const [resetResult, setResetResult] = useState<ForgotPasswordResponse | null>(
+    null,
+  );
+  const [resetEmail, setResetEmail] = useState("");
   const [sessionToken, setSessionToken] = useState<string>("");
 
   return (
     <AuthLayout mode={mode}>
       {/* Slot 0 — LoginForm */}
-      <LoginForm />
+      <LoginForm onForgotPassword={() => setMode("forgot")} />
 
       {/* Slot 1 — RegisterForm */}
       <RegisterForm
@@ -34,6 +55,14 @@ export default function Auth() {
           email={registerResult.email}
           expiresInSeconds={registerResult.expiresInSeconds}
           verifyId={registerResult.verifyId}
+          onVerify={verifyOtpService}
+          onResend={async () => {
+            const res = await registerInitService({
+              email: registerResult.email,
+            });
+            setRegisterResult(res);
+            return res;
+          }}
           onVerifySuccess={(token) => {
             setSessionToken(token);
             setMode("password");
@@ -45,6 +74,48 @@ export default function Auth() {
         <PasswordForm
           sessionToken={sessionToken}
           onBack={() => setMode("verify")}
+        />
+      )}
+      {mode === "forgot" && (
+        <ForgotPasswordForm
+          onSuccess={(res, email) => {
+            setResetResult(res);
+            setResetEmail(email);
+            setMode("reset-otp");
+          }}
+          onBack={() => setMode("auth")}
+        />
+      )}
+      {mode === "reset-otp" && resetResult && (
+        <VerifyForm
+          email={resetResult.email}
+          expiresInSeconds={resetResult.expiresInSeconds}
+          verifyId={resetResult.verifyId}
+          onVerify={verifyResetPasswordOtpService}
+          onResend={async () => {
+            const res = await forgotPasswordService({
+              email: resetEmail,
+            });
+            setResetResult(res);
+            return res;
+          }}
+          onVerifySuccess={(token) => {
+            setSessionToken(token);
+            setMode("reset-password");
+          }}
+          onBack={() => setMode("forgot")}
+        />
+      )}
+      {mode === "reset-password" && (
+        <ResetPasswordForm
+          sessionToken={sessionToken}
+          onSuccess={() => {
+            setSessionToken("");
+            setResetResult(null);
+            setResetEmail("");
+            setMode("auth");
+          }}
+          onBack={() => setMode("reset-otp")}
         />
       )}
     </AuthLayout>

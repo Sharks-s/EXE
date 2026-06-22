@@ -1,15 +1,22 @@
 import { useState } from "react";
 import "./AuthLayout.css";
-import AuthBackground from "./AuthBackground";
 import React from "react";
 import { useTranslation } from "react-i18next";
+
+type AuthMode =
+  | "auth"
+  | "verify"
+  | "password"
+  | "forgot"
+  | "reset-otp"
+  | "reset-password";
 
 export default function AuthLayout({
   children,
   mode,
 }: {
   children: React.ReactNode;
-  mode: "auth" | "verify" | "password";
+  mode: AuthMode;
 }) {
   const childrenArray = React.Children.toArray(children);
   const [active, setActive] = useState(false);
@@ -78,7 +85,7 @@ export default function AuthLayout({
           </div>
         )}
 
-        {(mode === "verify" || mode === "password") && (
+        {mode !== "auth" && (
           <div className="verify-wrapper">
             <div className="verify-card auth-card flex items-center justify-center">
               {childrenArray[2]}

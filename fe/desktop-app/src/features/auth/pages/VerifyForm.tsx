@@ -2,10 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-import {
-  verifyOtpService,
-  registerInitService,
-} from "../services/auth.service";
 import type { ApiErrorResponse } from "../../../types";
 import { parseApiError } from "../../../utils/error-mapper";
 
@@ -13,6 +9,12 @@ type Props = {
   email: string;
   expiresInSeconds: number;
   verifyId: string;
+  onVerify: (data: { verifyId: string; otp: string }) => Promise<{
+    sessionToken: string;
+  }>;
+  onResend: () => Promise<{
+    expiresInSeconds: number;
+  }>;
   onVerifySuccess: (sessionToken: string) => void;
   onBack: () => void;
 };
@@ -21,6 +23,8 @@ export default function VerifyForm({
   email,
   expiresInSeconds,
   verifyId,
+  onVerify,
+  onResend,
   onVerifySuccess,
   onBack,
 }: Props) {
@@ -119,7 +123,7 @@ export default function VerifyForm({
       setError(null);
 
       // Verify OTP → nhận sessionToken
-      const res = await verifyOtpService({ verifyId, otp });
+      const res = await onVerify({ verifyId, otp });
 
       // Chuyển sang PasswordForm với sessionToken
       onVerifySuccess(res.sessionToken);
@@ -142,7 +146,7 @@ export default function VerifyForm({
       setError(null);
 
       // Gọi registerInit lại với email → BE tạo OTP mới
-      const res = await registerInitService({ email });
+      const res = await onResend();
 
       setRemaining(res.expiresInSeconds);
       setDigits(["", "", "", "", "", ""]);

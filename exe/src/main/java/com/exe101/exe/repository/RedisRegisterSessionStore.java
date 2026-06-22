@@ -1,6 +1,7 @@
 package com.exe101.exe.repository;
 
 import com.exe101.exe.model.entity.RegisterSession;
+import com.exe101.exe.model.enums.OtpType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -24,6 +25,7 @@ public class RedisRegisterSessionStore implements RegisterSessionStore {
         String k = key(token);
         redis.opsForHash().put(k, "userId", String.valueOf(session.getUserId()));
         redis.opsForHash().put(k, "email", session.getEmail());
+        redis.opsForHash().put(k, "type", session.getType().name());
         redis.opsForHash().put(k, "expiresAt", session.getExpiresAt().toString());
         redis.expire(k, ttl);
     }
@@ -39,6 +41,7 @@ public class RedisRegisterSessionStore implements RegisterSessionStore {
         return Optional.of(RegisterSession.builder()
                 .userId(Long.parseLong((String) map.get("userId")))
                 .email((String) map.get("email"))
+                .type(OtpType.valueOf((String) map.getOrDefault("type", OtpType.REGISTER.name())))
                 .expiresAt(Instant.parse((String) map.get("expiresAt")))
                 .build());
     }

@@ -32,7 +32,13 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [initialProfile, setInitialProfile] = useState<ProfileForm | null>(
     null,
   );
@@ -222,6 +228,52 @@ export default function ProfilePage() {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (changingPassword) return;
+
+    setPasswordError("");
+    setPasswordSaved(false);
+
+    const validationError = validatePasswordChange({
+      oldPassword,
+      newPassword,
+      confirmNewPassword,
+    });
+
+    if (validationError) {
+      setPasswordError(validationError);
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await profileApi.changePassword({
+        oldPassword,
+        newPassword,
+      });
+
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPasswordSaved(true);
+      setTimeout(() => setPasswordSaved(false), 2000);
+    } catch (err: unknown) {
+      if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
+        const { globalMessage, fieldErrors } = parseApiError(err.response.data);
+        setPasswordError(
+          globalMessage ||
+            Object.values(fieldErrors)[0] ||
+            "Không thể đổi mật khẩu, vui lòng thử lại",
+        );
+      } else {
+        setPasswordError("Không thể đổi mật khẩu, vui lòng thử lại.");
+      }
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -417,6 +469,77 @@ export default function ProfilePage() {
                 </button>
               )}
             </div>
+
+            <div className="divider" />
+
+            <form className="password-panel" onSubmit={handleChangePassword}>
+              <div className="password-panel-header">
+                <div>
+                  <h3>Đổi mật khẩu</h3>
+                  <p>Mật khẩu mới cần 6-32 ký tự, có chữ hoa và chữ thường.</p>
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <FormField label="Mật khẩu hiện tại">
+                  <input
+                    className="form-input"
+                    type="password"
+                    autoComplete="current-password"
+                    value={oldPassword}
+                    onChange={(e) => {
+                      setOldPassword(e.target.value);
+                      setPasswordError("");
+                    }}
+                    placeholder="Nhập mật khẩu hiện tại"
+                  />
+                </FormField>
+
+                <FormField label="Mật khẩu mới">
+                  <input
+                    className="form-input"
+                    type="password"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      setPasswordError("");
+                    }}
+                    placeholder="Nhập mật khẩu mới"
+                  />
+                </FormField>
+
+                <FormField label="Nhập lại mật khẩu mới">
+                  <input
+                    className="form-input"
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmNewPassword}
+                    onChange={(e) => {
+                      setConfirmNewPassword(e.target.value);
+                      setPasswordError("");
+                    }}
+                    placeholder="Nhập lại mật khẩu mới"
+                  />
+                </FormField>
+              </div>
+
+              {passwordError && <p className="profile-error">{passwordError}</p>}
+
+              <div className="profile-actions">
+                <button
+                  className={`primary-button ${passwordSaved ? "saved" : ""}`}
+                  type="submit"
+                  disabled={changingPassword}
+                >
+                  {changingPassword
+                    ? "Đang đổi..."
+                    : passwordSaved
+                      ? "Đã đổi!"
+                      : "Đổi mật khẩu"}
+                </button>
+              </div>
+            </form>
           </div>
         </section>
       </main>
@@ -452,4 +575,32 @@ function formatDateOfBirth(value: string) {
   if (!year || !month || !day) return value;
 
   return `${day}/${month}/${year}`;
+}
+
+function validatePasswordChange({
+  oldPassword,
+  newPassword,
+  confirmNewPassword,
+}: {
+  oldPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}) {
+  if (!oldPassword || !newPassword || !confirmNewPassword) {
+    return "Vui long nhap day du thong tin mat khau.";
+  }
+
+  if (newPassword.length < 6 || newPassword.length > 32) {
+    return "Mat khau moi phai tu 6 den 32 ky tu.";
+  }
+
+  if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword)) {
+    return "Mat khau moi phai co it nhat 1 chu hoa va 1 chu thuong.";
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    return "Mat khau moi khong khop.";
+  }
+
+  return "";
 }

@@ -1,6 +1,10 @@
 import { useLoginForm } from "../hooks/useLoginForm";
 
-export default function LoginForm() {
+type Props = {
+  onForgotPassword: () => void;
+};
+
+export default function LoginForm({ onForgotPassword }: Props) {
   const {
     register,
     handleSubmit,
@@ -104,6 +108,18 @@ export default function LoginForm() {
             })}
           </p>
         )}
+      </div>
+
+      <div className="w-full max-w-sm mt-2 text-right">
+        <button
+          type="button"
+          onClick={onForgotPassword}
+          className="text-xs font-medium text-slate-500 hover:text-yellow-600 hover:underline"
+        >
+          {t("common:auth.forgot_password", {
+            defaultValue: "Forgot password?",
+          })}
+        </button>
       </div>
 
       {/* GLOBAL ERROR */}

@@ -75,5 +75,12 @@ public class UserIdentityServiceImpl implements UserIdentityService {
         identity.setPassword(passwordEncoder.encode(rawPassword));
         userIdentityRepository.save(identity);
     }
+    @Override
+    public boolean matchesLocalPassword(User user, String rawPassword) {
+        UserIdentity identity = userIdentityRepository
+                .findByUserAndProvider(user, AuthProvider.LOCAL)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOCAL_IDENTITY_NOT_FOUND));
 
+        return passwordEncoder.matches(rawPassword, identity.getPassword());
+    }
 }

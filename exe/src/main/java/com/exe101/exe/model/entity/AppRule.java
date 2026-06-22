@@ -38,6 +38,7 @@ public class AppRule {
     @Column(name = "window_title_keyword", length = 255)
     private String windowTitleKeyword;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "rule_type", length = 20, nullable = false)
     private RuleType ruleType; // WHITELIST, BLACKLIST
 }

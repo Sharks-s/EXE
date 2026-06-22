@@ -34,7 +34,8 @@ public class AiCloudService {
                             new AiMessage("system", systemPrompt),
                             new AiMessage("user", userPrompt)
                     ),
-                    0.7
+                    0.7,
+                    aiCloudProperties.getMaxTokens()
             );
 
             AiChatResponse response = restClient.post()

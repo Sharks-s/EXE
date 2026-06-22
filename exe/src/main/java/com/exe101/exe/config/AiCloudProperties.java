@@ -12,4 +12,5 @@ public class AiCloudProperties {
     private String apiKey;
     private String model;
     private int timeoutSeconds;
+    private Integer maxTokens;
 }

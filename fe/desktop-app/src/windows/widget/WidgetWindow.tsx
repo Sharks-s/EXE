@@ -18,7 +18,7 @@ export default function WidgetWindow() {
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [isReady, setIsReady] = useState(false);
 
-  // 🌟 ĐỒNG BỘ: Cấu trúc lại State để hứng mốc thời gian tuyệt đối từ Main Window gửi qua
+  // Cấu trúc lại State để hứng mốc thời gian tuyệt đối từ Main Window gửi qua
   const [breakPrompt, setBreakPrompt] = useState<{
     isOpen: boolean;
     startedAtMs: number | null;
@@ -163,27 +163,38 @@ export default function WidgetWindow() {
     }
   };
 
-  // ── 🎯 ƯU TIÊN HIỂN THỊ BUBBLE HỎI NGHỈ LÊN TRÊN TIN NHẮN THƯỜNG CỦA STORE ──
-  const finalMessage = breakPrompt.isOpen
-    ? `Hết hiệp rồi! Bạn nghỉ tí không? (${breakPrompt.countdown}s)`
-    : botMessage || "";
+  // ── 🎯 CHUYỂN DỊCH TOÀN BỘ SANG TRẠNG THÁI ĐỘNG THUẦN TÚY TỪ AI/STORE ──
 
+  // 1. Câu thoại: Thuần chữ của AI trả về từ Store, không dính số giây đếm ngược kì cục nữa
+  const finalMessage = botMessage || "";
+
+  // 2. Độ hiển thị: Cứ hễ Store bảo hiện hoặc đang mở Prompt nghỉ thì bật Bubble lên
   const finalVisibility = breakPrompt.isOpen ? true : !!isBubbleVisible;
 
-  const finalActions = breakPrompt.isOpen
-    ? [
-        {
-          label: "Nghỉ ☕",
-          variant: "primary" as const,
-          onClick: () => emit("widget-click-accept-break"),
-        },
-        {
-          label: "Học tiếp 🎯",
-          variant: "secondary" as const,
-          onClick: () => emit("widget-click-reject-break"),
-        },
-      ]
-    : botActions;
+  // 3. Nút bấm Actions:
+  // Nếu đang mở Prompt nghỉ, ta giữ nguyên nhãn/style nút động của AI và map hàm onClick của hệ thống vào
+  // ── 3. Nút bấm Actions: Đảm bảo mọi nút truyền vào ChatBubble đều có cấu trúc hợp lệ ──
+  const finalActions =
+    breakPrompt.isOpen && botActions && botActions.length >= 2
+      ? [
+          {
+            ...botActions[0],
+            onClick: () => emit("widget-click-accept-break"),
+          },
+          {
+            ...botActions[1],
+            onClick: () => emit("widget-click-reject-break"),
+          },
+        ]
+      : botActions?.map((action) => ({
+          ...action,
+          // Nếu là câu mắng vi phạm thông thường có nút (hoặc sau này ông mở rộng),
+          // mặc định click vào nút đó chỉ là để tắt/clear bubble chat cho đỡ lỗi
+          onClick: () => {
+            // Ví dụ: click vào thì ẩn bubble chat đi
+            useFocusStore.setState({ isBubbleVisible: false });
+          },
+        })) || undefined;
 
   return (
     <div

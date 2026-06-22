@@ -4,6 +4,7 @@ import "./ActiveView.css";
 import { ProgressRing } from "../components/ProgressRing";
 import { StatCard } from "../components/StatCard";
 import { BreakPromptPopup } from "../../../shared/components/BreakPromptPopup";
+import { invoke } from "@tauri-apps/api/core";
 
 export function ActiveView() {
   const { session, violationCount } = useFocusStore();
@@ -59,30 +60,9 @@ export function ActiveView() {
 
   const handleBackToDashboard = async () => {
     try {
-      console.log("[ActiveView] Đang thu nhỏ về Widget...");
-
-      // 1. Import các module quản lý Webview của Tauri v2
-      const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-
-      // 2. Lấy cụ thể target window theo label
-      const widgetWindow = await WebviewWindow.getByLabel("widget");
-      const currentWindow = getCurrentWindow(); // Chính là thằng 'main' chứa ActiveView
-
-      if (widgetWindow) {
-        // 3. Hiện Widget lên và kéo nó lên trên cùng (set focus)
-        await widgetWindow.show();
-        await widgetWindow.unminimize();
-        await widgetWindow.setFocus();
-
-        // 4. Ẩn thằng 'main' (ActiveView) đi để nó chạy ngầm
-        await currentWindow.hide();
-        console.log("[ActiveView] Đã chuyển đổi cửa sổ thành công.");
-      } else {
-        console.error("Không tìm thấy label cửa sổ 'widget'!");
-      }
+      await invoke("back_to_widget");
     } catch (err) {
-      console.error("Lỗi điều khiển chuyển đổi WebviewWindow:", err);
+      console.error(err);
     }
   };
 

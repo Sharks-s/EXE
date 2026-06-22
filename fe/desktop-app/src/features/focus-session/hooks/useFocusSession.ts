@@ -8,8 +8,15 @@ import type { ViolationType } from "../types/focus.types";
 const PROMPT_DURATION_SECONDS = 60;
 
 export function useFocusSession() {
-  // 🌟 Lấy đúng các trạng thái cần thiết phục vụ cho việc check App
-  const { session, syncSession, appRules, allowedCache } = useFocusStore();
+  //  Lấy đúng các trạng thái cần thiết phục vụ cho việc check App
+  const {
+    session,
+    syncSession,
+    appRules,
+    allowedCache,
+    updateBotBubble,
+    clearBotBubble,
+  } = useFocusStore();
 
   const [elapsed, setElapsed] = useState<number>(0);
   const [isEnding, setIsEnding] = useState<boolean>(false);
@@ -61,10 +68,11 @@ export function useFocusSession() {
   const OBSERVE_WINDOW_SECONDS = 25;
   const CAMERA_CHECK_INTERVAL_SECONDS = 3 * 60;
 
-  // ── 🌟 CÁC BIẾN REF KIỂM SOÁT BỘ LỌC 5 GIÂY CHO APP/TAB WINDOWS (GIỮ NGUYÊN) ──
+  // ──  CÁC BIẾN REF KIỂM SOÁT BỘ LỌC 5 GIÂY CHO APP/TAB WINDOWS (GIỮ NGUYÊN) ──
   const currentDistractingAppRef = useRef<string | null>(null);
   const appDistractCounterRef = useRef<number>(0);
   const isHandlingAppViolationRef = useRef<boolean>(false);
+  const botBubbleTimerRef = useRef<number | null>(null);
 
   // Lắng nghe lệnh từ Widget gửi về
   useEffect(() => {
@@ -165,17 +173,47 @@ export function useFocusSession() {
       ) {
         try {
           console.log("[useFocusSession] Đủ 25 phút! Gọi completeCycle...");
+          // 1. Core logic: Chốt cycle lưu DB và nhận session mới cập nhật điểm
           const updatedSession = await focusApi.completeCycle(latestSession.id);
           syncSession(updatedSession);
 
           const secondsLeftInSession =
             latestSession.plannedDuration * 60 - currentElapsed;
+
           if (secondsLeftInSession > 0) {
             const startedAtMs = Date.now();
             promptStartedAtRef.current = startedAtMs;
             isPromptActiveRef.current = true;
             setIsPromptActive(true);
             setPromptCountdown(PROMPT_DURATION_SECONDS);
+
+            // LUỒNG AI: Gọi API riêng biệt xin câu thoại rủ rê nghỉ ngơi từ AI
+            focusApi
+              .getBreakPromptThoai(latestSession.id)
+              .then((breakData) => {
+                // Nạp thẳng câu thoại và mảng 2 nút bấm động do AI nghĩ ra vào Store
+                updateBotBubble(
+                  breakData.aiSpeech, // Chữ AI sinh ra (Ví dụ: "Hết hiệp rồi, làm cốc cafe không?")
+                  breakData.actions, // Mảng nút bấm động (Ví dụ: [{"label": "Đi luôn ☕"}, {"label": "Cày tiếp 🎯"}])
+                  true, // Hiện bubble lên Widget
+                );
+              })
+              .catch((aiErr) => {
+                console.error(
+                  "Lỗi lấy thoại nghỉ ngơi từ AI, dùng fallback:",
+                  aiErr,
+                );
+                updateBotBubble(
+                  "Hết hiệp rồi! Bạn nghỉ tí không?",
+                  [
+                    { label: "Nghỉ ☕", variant: "primary" },
+                    { label: "Học tiếp 🎯", variant: "secondary" },
+                  ],
+                  true,
+                );
+              });
+
+            // 3. Kích hoạt đếm ngược ngầm phát tín hiệu đồng bộ sang cho Widget
             emit("tauri-break-prompt", {
               isOpen: true,
               startedAtMs,
@@ -194,7 +232,7 @@ export function useFocusSession() {
         return;
       }
 
-      // ── 🌟 Ổ CẮM: BỘ ĐẾM QUÉT APP/TAB HOẠT ĐỘNG QUA TAURI (CHỐNG RUNG 5 GIÂY) ──
+      // ──  BỘ ĐẾM QUÉT APP/TAB HOẠT ĐỘNG QUA TAURI (CHỐNG RUNG 5 GIÂY) ──
       if (
         !isBreakingRef.current &&
         !isPromptActiveRef.current &&
@@ -266,8 +304,23 @@ export function useFocusSession() {
                     windowTitle: activeWindow.title,
                   })
                   .then((resData) => {
-                    // Chỉ syncSession lại dữ liệu phiên học, hoàn toàn không đụng tới aiSpeech
-                    syncSession(resData.focusSessionResponse);
+                    // 1. Đồng bộ session phiên học về Store chính
+                    syncSession(
+                      resData.focusSessionResponse,
+                      resData.violationCount,
+                    );
+
+                    // 2. Kích hoạt chú khỉ mắng bằng câu thoại AI real-time từ Spring Boot nhả về
+                    if (resData.aiSpeech) {
+                      updateBotBubble(resData.aiSpeech, [], true);
+
+                      // 3. Xử lý Timer: Tự lặn bubble sau 6 giây, chống nổ đè timer cũ
+                      if (botBubbleTimerRef.current)
+                        clearTimeout(botBubbleTimerRef.current);
+                      botBubbleTimerRef.current = setTimeout(() => {
+                        clearBotBubble();
+                      }, 6000);
+                    }
                   })
                   .catch((err) => {
                     console.error("Lỗi gửi phạt AppRule lên BE:", err);
@@ -315,133 +368,167 @@ export function useFocusSession() {
           return;
         }
 
+        // 2. Xử lý dữ liệu từ Camera đang chạy
         if (isCameraStartedRef.current) {
           try {
             const camStatus = await cameraApi.getStatus();
 
             if (camStatus) {
-              let penaltyViolation: "AWAY" | "LOOK_AWAY" | "TOO_CLOSE" | null =
-                null;
-              let healthViolation: "BAD_POSTURE" | "POOR_LIGHTING" | null =
-                null;
+              let penaltyViolation: "AWAY" | "LOOK_AWAY" | null = null;
+              let healthViolation:
+                | "TOO_CLOSE"
+                | "BAD_POSTURE"
+                | "POOR_LIGHTING"
+                | null = null;
 
+              // Phân loại theo thứ tự ưu tiên: penalty trước, health sau
               if (!camStatus.face_detected) {
                 penaltyViolation = "AWAY";
               } else if (
                 Math.abs(camStatus.yaw) > 25 ||
                 camStatus.pitch < -20
               ) {
+                boxSizing: "LOOK_AWAY";
                 penaltyViolation = "LOOK_AWAY";
               } else if (!camStatus.checks.close_enough) {
-                penaltyViolation = "TOO_CLOSE";
+                healthViolation = "TOO_CLOSE";
               } else if (!camStatus.checks.shoulders_visible) {
                 healthViolation = "BAD_POSTURE";
               } else if (!camStatus.checks.lighting_ok) {
                 healthViolation = "POOR_LIGHTING";
               }
-              const detectedViolation = penaltyViolation || healthViolation;
 
-              const HEALTH_REMINDER_TYPES = ["BAD_POSTURE", "POOR_LIGHTING"];
-              const isHealthReminder = detectedViolation
-                ? HEALTH_REMINDER_TYPES.includes(detectedViolation)
-                : false;
+              // ── KHU VỰC 1: NHÓM PHẠT THẬT (AWAY / LOOK_AWAY / TOO_CLOSE) ──
+              if (penaltyViolation) {
+                // Có lỗi phạt phạt thật → ĐẬP NÁT khung 25s quan sát về 0 ngay lập tức
+                observeWindowSecondsRef.current = 0;
 
-              if (detectedViolation) {
-                if (!isHealthReminder) {
-                  lastCameraActionAtRef.current = now;
-                  scanDurationRef.current = 25;
-                  observeWindowSecondsRef.current = 0;
-                }
-
-                if (currentViolationRef.current === detectedViolation) {
+                if (currentViolationRef.current === penaltyViolation) {
                   distractCounterRef.current += 1;
                 } else {
-                  currentViolationRef.current = detectedViolation;
+                  // Đổi loại lỗi → reset đếm liên tục, bắt đầu lại từ 1
+                  currentViolationRef.current = penaltyViolation;
                   distractCounterRef.current = 1;
                 }
 
-                const currentThreshold = isHealthReminder
-                  ? 10
-                  : penaltyThresholdRef.current;
-
-                if (distractCounterRef.current >= currentThreshold) {
+                if (distractCounterRef.current >= penaltyThresholdRef.current) {
                   const violationType = currentViolationRef.current;
                   distractCounterRef.current = 0;
                   currentViolationRef.current = null;
+                  penaltyCountInRowRef.current += 1;
 
-                  console.log(
-                    `[useFocusSession] ${isHealthReminder ? "Nhắc nhở" : "Vi phạm"} [${violationType}] tích lũy đủ ${currentThreshold}s! Gửi lên BE...`,
-                  );
+                  if (penaltyCountInRowRef.current <= 3) {
+                    // Chỉ trừ điểm tối đa 3 lần trong 1 đợt quét
+                    console.log(
+                      `[Camera Penalty] Vi phạm [${violationType}] lần ${penaltyCountInRowRef.current} trong đợt này. Gửi lên BE...`,
+                    );
 
-                  if (isHealthReminder) {
                     const resData = await focusApi.handleViolation(
                       latestSession.id,
                       {
                         type: violationType,
                         appName: "Camera Tracker",
-                        windowTitle:
-                          violationType === "BAD_POSTURE"
-                            ? "Sai tư thế gù lưng"
-                            : "Môi trường thiếu sáng",
+                        windowTitle: `Vi phạm bậc thang lần ${penaltyCountInRowRef.current}: ${violationType}`,
                       },
                     );
-                    syncSession(resData.focusSessionResponse);
-                    emit("widget-health-warning", { type: violationType });
-                  } else {
-                    penaltyCountInRowRef.current += 1;
+                    syncSession(
+                      resData.focusSessionResponse,
+                      resData.violationCount,
+                    );
 
-                    if (penaltyCountInRowRef.current === 1) {
-                      penaltyThresholdRef.current = 20;
-                      const resData = await focusApi.handleViolation(
-                        latestSession.id,
-                        {
-                          type: violationType,
-                          appName: "Camera Tracker",
-                          windowTitle: `Vi phạm lần 1 (10s liên tục): ${violationType}`,
-                        },
-                      );
-                      syncSession(resData.focusSessionResponse);
-                      observeWindowSecondsRef.current = 0;
-                    } else if (penaltyCountInRowRef.current === 2) {
-                      penaltyThresholdRef.current = 30;
-                      const resData = await focusApi.handleViolation(
-                        latestSession.id,
-                        {
-                          type: violationType,
-                          appName: "Camera Tracker",
-                          windowTitle: `Vi phạm lần 2 (20s liên tục): ${violationType}`,
-                        },
-                      );
-                      syncSession(resData.focusSessionResponse);
-                      observeWindowSecondsRef.current = 0;
-                    } else if (penaltyCountInRowRef.current >= 3) {
-                      console.error(
-                        "[useFocusSession] Vi phạm bậc thang mốc cuối (30s). Ép hủy phiên học!",
-                      );
+                    // 💬 LUỒNG AI: Đẩy lời mắng phạt từ AI lên Widget chú khỉ
+                    if (resData.aiSpeech) {
+                      updateBotBubble(resData.aiSpeech, [], true);
 
-                      await cameraApi.stop().catch(() => {});
-                      isCameraStartedRef.current = false;
-                      isScanningPeriodRef.current = false;
-
-                      const finalSession = await focusApi.endSession(
-                        latestSession.id,
-                        true,
-                      );
-                      syncSession(finalSession);
-                      return;
+                      if (botBubbleTimerRef.current)
+                        clearTimeout(botBubbleTimerRef.current);
+                      botBubbleTimerRef.current = window.setTimeout(() => {
+                        clearBotBubble();
+                      }, 6000);
                     }
+                  } else {
+                    // Lần 4 trở đi: đã đạt giới hạn đợt quét này, không trừ thêm
+                    console.log(
+                      `[Camera Penalty] Đã đạt tối đa 3 lần phạt trong đợt quét này. Bỏ qua.`,
+                    );
+                  }
+
+                  // Nâng ngưỡng bậc thang cho lần vi phạm kế tiếp trong đợt
+                  if (penaltyCountInRowRef.current === 1) {
+                    penaltyThresholdRef.current = 20; // lần 2 phải vi phạm liên tục 20s
+                  } else if (penaltyCountInRowRef.current >= 2) {
+                    penaltyThresholdRef.current = 30; // lần 3+ phải 30s
                   }
                 }
               } else {
+                // Không có lỗi phạt → reset bộ đếm nhóm phạt
                 if (distractCounterRef.current > 0)
                   distractCounterRef.current = 0;
                 currentViolationRef.current = null;
+              }
 
+              // ── KHU VỰC 2: NHÓM SỨC KHỎE (BAD_POSTURE / POOR_LIGHTING) ──
+              // Hoàn toàn độc lập với nhóm phạt, không ảnh hưởng khung 25s tắt cam
+              if (healthViolation) {
+                if (currentHealthViolationRef.current === healthViolation) {
+                  healthViolationCounterRef.current += 1;
+                } else {
+                  currentHealthViolationRef.current = healthViolation;
+                  healthViolationCounterRef.current = 1;
+                }
+
+                if (healthViolationCounterRef.current >= 10) {
+                  const hType = currentHealthViolationRef.current;
+                  healthViolationCounterRef.current = 0;
+                  currentHealthViolationRef.current = null;
+
+                  console.log(
+                    `[Camera Health] Nhắc nhở [${hType}] đủ 10s. Ghi log + nhắc Widget.`,
+                  );
+
+                  const resData = await focusApi.handleViolation(
+                    latestSession.id,
+                    {
+                      type: hType,
+                      appName: "Camera Tracker",
+                      windowTitle:
+                        hType === "BAD_POSTURE"
+                          ? "Sai tư thế gù lưng"
+                          : "Môi trường thiếu sáng",
+                    },
+                  );
+                  syncSession(
+                    resData.focusSessionResponse,
+                    resData.violationCount,
+                  );
+                  // emit("widget-health-warning", { type: hType });
+
+                  //  Đẩy lời nhắc nhở sức khỏe ấm áp từ AI lên Widget chú khỉ
+                  if (resData.aiSpeech) {
+                    updateBotBubble(resData.aiSpeech, [], true);
+
+                    if (botBubbleTimerRef.current)
+                      clearTimeout(botBubbleTimerRef.current);
+                    botBubbleTimerRef.current = window.setTimeout(() => {
+                      clearBotBubble();
+                    }, 6000);
+                  }
+                }
+              } else {
+                // Không có lỗi sức khỏe → reset bộ đếm nhóm sức khỏe
+                if (healthViolationCounterRef.current > 0)
+                  healthViolationCounterRef.current = 0;
+                currentHealthViolationRef.current = null;
+              }
+
+              // ── KHU VỰC 3: KIỂM TRA TẮT CAM (25S HOÀN TOÀN SẠCH LỖI PHẠT THẬT) ──
+              // Chỉ cần KHÔNG dính lỗi phạt thật là được tích lũy giây học nghiêm túc
+              if (!penaltyViolation) {
                 observeWindowSecondsRef.current += 1;
 
                 if (observeWindowSecondsRef.current >= OBSERVE_WINDOW_SECONDS) {
                   console.log(
-                    "[useFocusSession] Đủ 25s sạch sẽ, tắt camera bảo vệ tài nguyên.",
+                    "[useFocusSession] Đủ 25s học tập nghiêm túc. Tắt camera bảo vệ tài nguyên.",
                   );
                   await cameraApi.stop().catch(() => {});
 
@@ -450,6 +537,7 @@ export function useFocusSession() {
                   observeWindowSecondsRef.current = 0;
                   lastCameraOffAtRef.current = currentElapsed;
 
+                  // Reset toàn bộ bậc thang phạt — đợt quét sau bắt đầu lại từ đầu
                   penaltyThresholdRef.current = 10;
                   penaltyCountInRowRef.current = 0;
                 }

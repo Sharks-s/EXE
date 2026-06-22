@@ -36,7 +36,7 @@ fn toggle_windows_to_session(app_handle: tauri::AppHandle) -> Result<(), String>
 
     main_window.hide().map_err(|e| e.to_string())?;
     widget_window.show().map_err(|e| e.to_string())?;
-    widget_window.set_focus().map_err(|e| e.to_string())?;
+    widget_window.set_always_on_top(true).map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -54,11 +54,27 @@ fn get_active_window_info() -> Result<ActiveWindowInfo, String> {
     }
 }
 
+#[tauri::command]
+fn back_to_widget(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let main_window = app_handle.get_webview_window("main").unwrap();
+    let widget_window = app_handle.get_webview_window("widget").unwrap();
+
+    main_window.hide().map_err(|e| e.to_string())?;
+    widget_window.show().map_err(|e| e.to_string())?;
+    widget_window.set_always_on_top(true).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
         // 🔴 Đăng ký hàm mới vào invoke_handler
-        .invoke_handler(tauri::generate_handler![toggle_windows_to_session, get_active_window_info])
+        .invoke_handler(tauri::generate_handler![
+            toggle_windows_to_session,
+            get_active_window_info,
+            back_to_widget
+        ])
         .setup(|_app| {
             // ĐÃ XÓA LUỒNG QUÉT NGẦM CŨ Ở ĐÂY SẠCH SẼ!
             Ok(())

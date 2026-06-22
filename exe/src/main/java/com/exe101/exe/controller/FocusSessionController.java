@@ -3,6 +3,7 @@ package com.exe101.exe.controller;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.ApiResponse;
+import com.exe101.exe.dto.response.BreakPromptAiResponse;
 import com.exe101.exe.dto.response.FocusSessionResponse;
 import com.exe101.exe.dto.response.HandleViolationResponse;
 import com.exe101.exe.model.enums.ViolationType;
@@ -76,6 +77,17 @@ public class FocusSessionController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         FocusSessionResponse response = focusSessionService.resumeSession(sessionId, userDetails.getId(), minutesUsed);
+        return ApiResponse.success(response);
+    }
+
+    @GetMapping("/{sessionId}/break-prompt")
+    public ApiResponse<BreakPromptAiResponse> getBreakPrompt(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        BreakPromptAiResponse response =
+                focusSessionService.getBreakPrompt(sessionId, userDetails.getId());
+
         return ApiResponse.success(response);
     }
 }

@@ -64,6 +64,7 @@ public enum ErrorCode {
     // ===== PERSONALITY =====
     PERSONALITY_NOT_FOUND("PERSONALITY_001", HttpStatus.NOT_FOUND, "Personality not found"),
     PERSONALITY_CODE_ALREADY_EXISTS("PERSONALITY_002", HttpStatus.CONFLICT, "Personality code already exists"),
+    PERSONALITY_DES_NOT_FOUND("PERSONALITY_003", HttpStatus.NOT_FOUND, "Personality description not found"),
     // ===== FOCUS SESSION =====
     SESSION_NOT_FOUND("SESSION_001", HttpStatus.NOT_FOUND, "Session not found"),
     SESSION_ALREADY_ENDED("SESSION_002", HttpStatus.BAD_REQUEST, "Session already ended"),
@@ -87,6 +88,9 @@ public enum ErrorCode {
     USER_PET_ALREADY_EXISTS("PET_007", HttpStatus.CONFLICT, "User already owns this pet"),
 
     // ===== CLOUDINARY =====
+
+    // ===== AI =====
+    AI_CLOUD_PARSE_ERROR("AI_001", HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse AI response")
 
     ;
     private final String code;

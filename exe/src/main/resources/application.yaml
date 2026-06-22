@@ -94,7 +94,7 @@ app:
     default-pet-code: "MONKI"
     default-personality-code: "SWEET"
     daily-free-usage: 120
-    default-violation-minutes: 5
+    default-cycle-minutes: 5
     personalities:
       - code: "SWEET"
         name: "Sweet Assistant"
@@ -134,4 +134,5 @@ app:
     api-key: ${AI_CLOUD_API_KEY}
     model: "google/gemini-2.5-flash"
     timeout-seconds: 10
+    max-tokens: 300
 

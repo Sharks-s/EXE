@@ -20,6 +20,7 @@ export type ViolationType =
 export const NON_PENALTY_VIOLATION_TYPES: ViolationType[] = [
   "BAD_POSTURE",
   "POOR_LIGHTING",
+  "TOO_CLOSE",
 ];
 
 export type AssistantPersonality = "SWEET" | "STRICT" | "MEAN";
@@ -67,6 +68,8 @@ export interface HandleViolationResponse {
   focusSessionResponse: FocusSessionResponse;
   isPenalty: boolean;
   type: ViolationType;
+  aiSpeech: string;
+  violationCount: number;
 }
 
 // ── UI helper types ────────────────────────────────────
@@ -118,17 +121,20 @@ export interface FocusState {
 
   // Trạng thái hiển thị của Pet ở Widget
   botMessage: string | null;
-  botActions: BubbleAction[] | undefined;
+  botActions: AiBubbleAction[] | undefined;
   isBubbleVisible: boolean;
 
   // Actions
   setSession: (session: FocusSessionResponse) => void;
-  syncSession: (session: FocusSessionResponse) => void;
+  syncSession: (
+    session: FocusSessionResponse,
+    serverViolationCount?: number,
+  ) => void;
   clearSession: () => void;
   dismissSummary: () => void;
   updateBotBubble: (
     message: string | null,
-    actions?: BubbleAction[],
+    actions?: AiBubbleAction[],
     visible?: boolean,
   ) => void;
   clearBotBubble: () => void;
@@ -141,4 +147,14 @@ export interface FocusState {
 export interface AppRulesResponse {
   blacklist: string[];
   whitelist: string[];
+}
+
+export interface AiBubbleAction {
+  label: string;
+  variant?: "primary" | "secondary";
+}
+
+export interface BreakPromptAiResponse {
+  aiSpeech: string; // Câu rủ rê nghỉ ngơi của AI
+  actions: AiBubbleAction[];
 }

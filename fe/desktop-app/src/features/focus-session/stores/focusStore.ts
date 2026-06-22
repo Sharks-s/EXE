@@ -32,7 +32,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       isBubbleVisible: false,
     }),
 
-  syncSession: (session) => {
+  syncSession: (session, serverViolationCount) => {
     const isEnded =
       session.status === "COMPLETED" ||
       session.status === "ABORTED" ||
@@ -41,7 +41,6 @@ export const useFocusStore = create<FocusState>((set, get) => ({
     set((state) => {
       const hasPreviousSession = state.session !== null;
 
-      // Chỉ so sánh biến động ví khi có dữ liệu nền trước đó (tránh lỗi khi resume app)
       const isCompleteCycle =
         hasPreviousSession &&
         session.accumulatedReward > (state.session?.accumulatedReward ?? 0);
@@ -51,12 +50,21 @@ export const useFocusStore = create<FocusState>((set, get) => ({
         !isCompleteCycle &&
         session.potentialReward < (state.session?.potentialReward ?? 0);
 
+      let nextViolationCount = state.violationCount;
+      if (isEnded) {
+        nextViolationCount = state.violationCount;
+      } else if (serverViolationCount !== undefined) {
+        // Nếu API trả về số đếm chính xác trực tiếp từ DB -> Tin tưởng BE tuyệt đối
+        nextViolationCount = serverViolationCount;
+      } else {
+        // Các API khác không trả về số đếm (ví dụ completeCycle) -> Dùng logic cũ làm fallback
+        nextViolationCount = state.violationCount + (isViolation ? 1 : 0);
+      }
+
       return {
         session: isEnded ? null : session,
         lastCompletedSession: isEnded ? session : state.lastCompletedSession,
-        violationCount: isEnded
-          ? state.violationCount
-          : state.violationCount + (isViolation ? 1 : 0),
+        violationCount: nextViolationCount, //  Gán con số đã tính toán chuẩn vào đây
         botMessage: isEnded ? null : state.botMessage,
         botActions: isEnded ? undefined : state.botActions,
         isBubbleVisible: isEnded ? false : state.isBubbleVisible,

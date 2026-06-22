@@ -23,4 +23,6 @@ public interface PersonalityService {
     void delete(Long id);
 
     PersonalityDetailsResponse getDetails(Long personalityId);
+
+    String getPersonalityDescriptionByCode(String code);
 }

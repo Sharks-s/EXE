@@ -133,4 +133,16 @@ public class PersonalityServiceImpl implements PersonalityService {
                 .build();
     }
 
+    @Override
+    public String getPersonalityDescriptionByCode(String code) {
+        String personalityInstruction = personalityRepository
+                .findByCodeIgnoreCase(code)
+                .map(Personality::getDescription)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.PERSONALITY_DES_NOT_FOUND
+                ));
+
+        return personalityInstruction;
+    }
+
 }

@@ -17,7 +17,7 @@ public class AppSeedProperties {
     private String defaultPetCode;
     private String defaultPersonalityCode;
     private Integer dailyFreeUsage;
-    private Integer defaultViolationMinutes;
+    private Integer defaultCycleMinutes;
 
     @Getter
     @Setter
@@ -38,4 +38,12 @@ public class AppSeedProperties {
         private String imageUrl;
     }
 
+    public String getPetDescription(String code) {
+        if (pets == null) return "";
+        return pets.stream()
+                .filter(p -> p.getCode().equalsIgnoreCase(code))
+                .map(PetSeed::getDescription)
+                .findFirst()
+                .orElse("");
+    }
 }

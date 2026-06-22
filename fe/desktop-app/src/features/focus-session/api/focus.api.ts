@@ -7,6 +7,7 @@ import type {
   UserPetDetails,
   PersonalityDetails,
   AppRulesResponse,
+  BreakPromptAiResponse,
 } from "../types/focus.types";
 
 export const focusApi = {
@@ -78,6 +79,13 @@ export const focusApi = {
 
   getAppRules: async (): Promise<AppRulesResponse> => {
     const res = await api.get("/app-rules");
+    return res.data.data;
+  },
+
+  getBreakPromptThoai: async (
+    sessionId: number,
+  ): Promise<BreakPromptAiResponse> => {
+    const res = await api.get(`/focus-sessions/${sessionId}/break-prompt`);
     return res.data.data;
   },
 };

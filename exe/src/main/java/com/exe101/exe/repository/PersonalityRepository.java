@@ -11,4 +11,5 @@ public interface PersonalityRepository extends JpaRepository<Personality, Long> 
 
     boolean existsByCodeAndIdNot(String code, Long id);
 
+    Optional<Personality> findByCodeIgnoreCase(String code);
 }

@@ -3,12 +3,15 @@ package com.exe101.exe.service.impl;
 import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
+import com.exe101.exe.dto.response.AiBubbleAction;
+import com.exe101.exe.dto.response.BreakPromptAiResponse;
 import com.exe101.exe.dto.response.FocusSessionResponse;
 import com.exe101.exe.dto.response.HandleViolationResponse;
 import com.exe101.exe.model.entity.*;
 import com.exe101.exe.model.enums.ViolationType;
 import com.exe101.exe.repository.SubscriptionRepository;
 import com.exe101.exe.repository.UserPetRepository;
+import com.exe101.exe.service.AiCloudService;
 import com.exe101.exe.service.FocusSessionService;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
@@ -16,7 +19,9 @@ import com.exe101.exe.mapper.FocusSessionMapper;
 import com.exe101.exe.model.enums.SessionStatus;
 import com.exe101.exe.repository.FocusSessionRepository;
 import com.exe101.exe.repository.PersonalityRepository;
+import com.exe101.exe.service.PersonalityService;
 import com.exe101.exe.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,11 +46,16 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private final UserPetRepository userPetRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final AppSeedProperties appSeedProperties;
+    private final AiCloudService aiCloudService;
+    private final PersonalityService personalityService;
+
 
     private static final Set<ViolationType> NON_PENALTY_TYPES = Set.of(
             ViolationType.BAD_POSTURE,
-            ViolationType.POOR_LIGHTING
+            ViolationType.POOR_LIGHTING,
+            ViolationType.TOO_CLOSE
     );
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -152,9 +162,10 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         // Xác định mốc gốc để tính toán (Hiệp trước đó hoặc lúc vừa start phiên)
         Instant baseTime = session.getLastCycleAt() != null ? session.getLastCycleAt() : session.getStartedAt();
 
-        // Chặn chống spam API (Phải học ít nhất 24 phút kể từ mốc gốc)
-        Instant minimumCallTime = baseTime.plus(24, ChronoUnit.MINUTES);
-        if (now.isBefore(minimumCallTime)) {
+        // Chặn chống spam API bằng cách kiểm tra thời gian hiện tại đã đủ 25 phút kể từ mốc baseTime chưa
+        Instant expectedCycleEnd = baseTime.plus(25, ChronoUnit.MINUTES);
+        // Cho phép lệch tối đa 30 giây
+        if (now.plusSeconds(30).isBefore(expectedCycleEnd)) {
             throw new BusinessException(ErrorCode.SESSION_CYCLE_NOT_COMPLETED_YET);
         }
 
@@ -163,14 +174,14 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.setLastCycleAt(baseTime.plus(25, ChronoUnit.MINUTES));
 
         // Dịch chuyển dòng tiền thưởng giải lao
-        int amountToMove = Math.min(appSeedProperties.getDefaultViolationMinutes(), session.getPotentialReward());
+        int amountToMove = Math.min(appSeedProperties.getDefaultCycleMinutes(), session.getPotentialReward());
         session.setPotentialReward(session.getPotentialReward() - amountToMove);
         session.setAccumulatedReward(session.getAccumulatedReward() + amountToMove);
 
-        // Cộng dồn hạn mức ngày cho User
-        User user = userService.findById(userId);
-        user.setDailyUsedMinutes(user.getDailyUsedMinutes() + 25);
-        userService.save(user);
+//        // Cộng dồn hạn mức ngày cho User
+//        User user = userService.findById(userId);
+//        user.setDailyUsedMinutes(user.getDailyUsedMinutes() + 25);
+//        userService.save(user);
 
         FocusSession savedSession = focusSessionRepository.save(session);
         return focusSessionMapper.toResponse(savedSession);
@@ -244,8 +255,6 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 session.setAccumulatedReward(Math.max(0, session.getAccumulatedReward() - remainingPenalty));
             }
         }
-        // Nhóm nhắc nhở (BAD_POSTURE, POOR_LIGHTING) -> không đụng vào potentialReward/accumulatedReward,
-        // chỉ ghi lại Violation để có log/thống kê, không phải lỗi nên không throw.
 
         Violation violation = Violation.builder()
                 .session(session)
@@ -258,10 +267,41 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         FocusSession savedSession = focusSessionRepository.save(session);
 
+        int violationCount = savedSession.getViolations() != null ? savedSession.getViolations().size() : 0;
+
+        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "SWEET";
+        String pName = session.getUserPet() != null ? session.getUserPet().getCustomName() : "Khỉ";
+        String pPet = session.getUserPet() != null ? session.getUserPet().getPet().getName() : "Khỉ";
+        String language = "vi"; //tạm
+
+        String personalityInstruction = personalityService.getPersonalityDescriptionByCode(pCode);
+
+        String systemPrompt = String.format("""
+                Bạn là thú cưng ảo hỗ trợ học tập tên là %s, là một con pet %s, có tính cách đặc trưng là [%s]: %s
+                Bối cảnh: Người dùng đang trong phiên học tập nhưng vừa bị hệ thống bắt quả tang lỗi hành vi: [%s]. 
+                Chi tiết: Ứng dụng "%s" - Tiêu đề "%s" áp dụng khi người dùng sài app nếu không có thì là các lỗi khác.
+                User sài máy tính hoặc laptop
+                Nhiệm vụ: Hãy đưa ra 1 câu phản hồi duy nhất phù hợp hoàn hảo với cá tính [%s] của bạn dựa trên hướng dẫn hành vi trên.
+                Lưu ý đặc biệt: 
+                - Nếu lỗi thuộc nhóm sức khỏe (BAD_POSTURE - gù lưng, POOR_LIGHTING - thiếu sáng), hãy nhắc nhở điều chỉnh một cách tự nhiên theo đúng cá tính chứ không mắng phạt.
+                - Câu thoại phải dưới 25 từ, ngắn gọn, súc tích, tác động mạnh vào tâm lý người dùng, tuyệt đối không giải thích dông dài hay chào hỏi thừa thãi. Ngôn ngữ là [%s]
+                """, pName, pPet , pCode, personalityInstruction , request.type().name(), request.appName(),
+                request.windowTitle(), pCode,
+                language);
+        String userPrompt = "Hãy nói một câu với tôi đi!";
+        String aiSpeech = aiCloudService.requestAiSpeech(systemPrompt, userPrompt);
+
+        // Fallback an toàn nếu AI bị nghẽn mạch
+        if (aiSpeech == null || aiSpeech.isEmpty()) {
+            aiSpeech = isPenalty ? "Tập trung lại nào, đừng để tôi phải nhắc nhé!" : "Chú ý tư thế và ánh sáng kìa bạn ơi!";
+        }
+
         return HandleViolationResponse.builder()
                 .focusSessionResponse(focusSessionMapper.toResponse(savedSession))
                 .isPenalty(isPenalty)
                 .type(request.type())
+                .aiSpeech(aiSpeech)
+                .violationCount(violationCount)
                 .build();
     }
 
@@ -297,7 +337,10 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         //Không tính Duration.between nữa, tin tưởng hoàn toàn vào số phút FE gửi lên
         // Bọc thêm Math.min để chống trường hợp FE gửi bậy số phút lớn hơn ví hiện có
-        int minutesConsumed = Math.min(minutesUsedByFrontEnd, session.getAccumulatedReward());
+        int minutesConsumed = Math.max(
+                0,
+                Math.min(minutesUsedByFrontEnd, session.getAccumulatedReward())
+        );
 
         // Khấu trừ vào ví nghỉ thưởng
         session.setAccumulatedReward(session.getAccumulatedReward() - minutesConsumed);
@@ -311,6 +354,65 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         FocusSession savedSession = focusSessionRepository.save(session);
         return focusSessionMapper.toResponse(savedSession);
     }
+
+    @Override
+    public BreakPromptAiResponse getBreakPrompt(Long sessionId, Long userId) {
+        FocusSession session = focusSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+
+        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "SWEET";
+        String pName = session.getUserPet() != null ? session.getUserPet().getCustomName() : "Khỉ";
+        String pPet = session.getUserPet() != null ? session.getUserPet().getPet().getName() : "Khỉ";
+        String language = "vi"; //tạm
+
+        String personalityInstruction= personalityService.getPersonalityDescriptionByCode(pCode);
+
+        String systemPrompt = String.format("""
+                Bạn là thú cưng ảo hỗ trợ học tập tên là %s, là một con pet %s, có tính cách đặc trưng là [%s].
+                
+                Bối cảnh: Người dùng vừa hoàn thành xuất sắc 1 phiên học tập tập trung 25 phút mà không bỏ cuộc. User sài máy tính hoặc laptop
+                
+                Nhiệm vụ: Hãy đưa ra 1 câu hỏi rủ rê họ nghỉ ngơi ngắn một cách sinh động, thể hiện rõ chất giọng ứng với hướng dẫn hành vi: [%s].
+                
+                BẮT BUỘC trả về kết quả dưới dạng một JSON Object duy nhất, không kèm ký tự tạo khối markdown ```json, không giải thích dông dài.
+                Cấu trúc JSON bắt buộc:
+                {
+                  "aiSpeech": "Câu thoại rủ rê ngọt ngào/nghiêm túc/đá đểu tùy theo tính cách của bạn (dưới 20 từ)",
+                  "actions": [
+                    { "label": "Nhãn cho nút Đồng ý nghỉ (Ví dụ: 'Nghỉ thôi cậu 💖' hoặc 'Chấp hành lệnh 🎖️' hoặc 'Nghỉ đi kẻo sập 🙄')", "variant": "primary" },
+                    { "label": "Nhãn cho nút Từ chối để cày tiếp (Ví dụ: 'Học tiếp cơ 💪' hoặc 'Tiếp tục quy trình 🎯' hoặc 'Thách đấy, cày tiếp! 🔥')", "variant": "secondary" }
+                  ]
+                }
+                Ngôn ngữ: [%s]
+                """,pName, pPet , pCode, personalityInstruction,language);
+
+        String userPrompt = "Hãy gợi ý lời thoại nghỉ ngơi cho tôi dưới dạng JSON.";
+
+        try {
+            String rawJsonFromAi = aiCloudService.requestAiSpeech(systemPrompt, userPrompt);
+            if (rawJsonFromAi != null && !rawJsonFromAi.isEmpty()) {
+                // Làm sạch chuỗi nếu AI tự ý bọc khối code markdown
+                String cleanJson = rawJsonFromAi.replaceAll("```json|```", "").trim();
+                return objectMapper.readValue(cleanJson, BreakPromptAiResponse.class);
+            }
+        } catch (Exception e) {
+            System.err.println("[FocusSessionService] Lỗi parse JSON thoại nghỉ ngơi từ AI, dùng fallback: " + e.getMessage());
+        }
+
+        // Fallback an toàn nếu AI Cloud có sự cố
+        return BreakPromptAiResponse.builder()
+                .aiSpeech("Hết hiệp 25 phút rồi! Bạn muốn nghỉ ngơi một chút chứ?")
+                .actions(List.of(
+                        new AiBubbleAction("Nghỉ ngơi ☕", "primary"),
+                        new AiBubbleAction("Cày tiếp 🎯", "secondary")
+                ))
+                .build();
+    }
+
     // Helper
 
     private FocusSession loadOwnedSession(Long sessionId, Long userId) {

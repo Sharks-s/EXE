@@ -196,7 +196,7 @@ export default function VerifyForm({
             className={`w-11 h-11 sm:w-14 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-lg border bg-white focus:outline-none transition ${
               error
                 ? "border-red-400 focus:ring-2 focus:ring-red-400/30 text-red-600"
-                : "border-slate-300 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30 text-slate-700"
+                : "border-slate-300 focus:border-[#9fd6fa] focus:ring-2 focus:ring-[#9fd6fa]/30 text-slate-700"
             }`}
           />
         ))}
@@ -209,10 +209,10 @@ export default function VerifyForm({
       <button
         type="submit"
         disabled={loading || otp.length < 6}
-        className={`px-10 py-3 rounded-xl text-sm font-semibold uppercase bg-yellow-400 text-black transition ${
+        className={`px-10 py-3 rounded-xl text-sm font-semibold uppercase bg-[#9fd6fa] text-[#0f172a] transition ${
           loading || otp.length < 6
             ? "opacity-60 cursor-not-allowed"
-            : "hover:shadow-[0_0_25px_rgba(250,204,21,0.7)]"
+            : "hover:bg-[#7bc3f7] hover:shadow-[0_0_25px_rgba(159,214,250,0.65)]"
         }`}
       >
         {loading
@@ -230,7 +230,7 @@ export default function VerifyForm({
           type="button"
           onClick={handleResend}
           disabled={remaining > 0 || loading}
-          className="text-yellow-600 font-medium disabled:opacity-40 hover:underline"
+          className="text-[#0f8fd8] font-medium disabled:opacity-40 hover:underline"
         >
           {t("common:auth.btn_resend", { defaultValue: "Resend OTP" })}
         </button>

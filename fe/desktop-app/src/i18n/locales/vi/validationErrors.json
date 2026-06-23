@@ -9,5 +9,8 @@
     "min": "Mật khẩu tối thiểu {{min}} ký tự",
     "max": "Mật khẩu tối đa {{max}} ký tự",
     "pattern": "Mật khẩu phải chứa ít nhất 1 chữ hoa và 1 chữ thường"
+  },
+  "confirmPassword": {
+    "message": "Mật khẩu không trùng khớp!!"
   }
 }

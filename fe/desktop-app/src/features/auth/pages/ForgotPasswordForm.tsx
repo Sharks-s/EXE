@@ -73,7 +73,7 @@ export default function ForgotPasswordForm({ onSuccess, onBack }: Props) {
 
       <p className="text-sm text-slate-500 mb-6">
         {t("common:auth.forgot_subtitle", {
-          defaultValue: "Nhập email của bạn và tôi sẽ gửi OTP cho bạn",
+          defaultValue: "Nhập email của bạn và chúng tôi sẽ gửi OTP cho bạn",
         })}
       </p>
 
@@ -112,10 +112,10 @@ export default function ForgotPasswordForm({ onSuccess, onBack }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className={`mt-3 px-10 py-3 rounded-xl text-sm font-semibold uppercase bg-yellow-400 text-black transition ${
+        className={`mt-3 px-10 py-3 rounded-xl text-sm font-semibold uppercase bg-[#9fd6fa] text-[#0f172a] transition ${
           loading
             ? "opacity-60 cursor-wait"
-            : "hover:shadow-[0_0_25px_rgba(250,204,21,0.7)]"
+            : "hover:bg-[#7bc3f7] hover:shadow-[0_0_25px_rgba(159,214,250,0.65)]"
         }`}
       >
         {loading

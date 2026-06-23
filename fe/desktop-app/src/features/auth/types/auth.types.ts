@@ -15,6 +15,10 @@ export interface RegisterInitRequest {
   email: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
 export interface VerifyOtpRequest {
   verifyId: string;
   otp: string;
@@ -26,10 +30,21 @@ export interface CompleteRegisterRequest {
   password: string;
 }
 
+export interface ResetPasswordRequest {
+  sessionToken: string;
+  password: string;
+}
+
 // ── Responses ─────────────────────────────────────────
 export interface RegisterResponse {
   email: string;
   status: string;
+  expiresInSeconds: number;
+  verifyId: string;
+}
+
+export interface ForgotPasswordResponse {
+  email: string;
   expiresInSeconds: number;
   verifyId: string;
 }

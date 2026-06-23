@@ -4,9 +4,12 @@ import type {
   LoginResponse,
   RegisterInitRequest,
   RegisterResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
   VerifyOtpRequest,
   VerifyRegisterResponse,
   CompleteRegisterRequest,
+  ResetPasswordRequest,
   ExchangeResponse,
   RefreshResponse,
 } from "../types/auth.types";
@@ -41,6 +44,11 @@ export const authApi = {
       .post<ApiResponse<RegisterResponse>>("/auth/register/init", data)
       .then((r) => r.data.data),
 
+  forgotPassword: (data: ForgotPasswordRequest) =>
+    api
+      .post<ApiResponse<ForgotPasswordResponse>>("/auth/password/forgot", data)
+      .then((r) => r.data.data),
+
   verifyOtp: (data: VerifyOtpRequest) =>
     api
       .post<ApiResponse<VerifyRegisterResponse>>("/auth/verify", data)
@@ -50,4 +58,7 @@ export const authApi = {
     api
       .post<ApiResponse<LoginResponse>>("/auth/register/complete", data)
       .then((r) => r.data.data),
+
+  resetPassword: (data: ResetPasswordRequest) =>
+    api.post<ApiResponse<null>>("/auth/password/reset", data).then((r) => r.data),
 };

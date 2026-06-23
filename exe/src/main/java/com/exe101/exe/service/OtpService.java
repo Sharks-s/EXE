@@ -7,4 +7,5 @@ import com.exe101.exe.model.enums.OtpType;
 public interface OtpService {
     String generateRegisterOtp(Long userId, String email);
     OtpRedis verifyRegisterOtp(String verifyId, String otpInput);
+
 }

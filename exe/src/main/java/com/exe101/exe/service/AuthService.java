@@ -1,9 +1,6 @@
 package com.exe101.exe.service;
 
-import com.exe101.exe.dto.request.CompleteRegisterRequest;
-import com.exe101.exe.dto.request.LoginRequest;
-import com.exe101.exe.dto.request.RegisterInitRequest;
-import com.exe101.exe.dto.request.VerifyRegisterRequest;
+import com.exe101.exe.dto.request.*;
 import com.exe101.exe.dto.response.*;
 import com.exe101.exe.model.enums.AuthProvider;
 import com.exe101.exe.security.oauth.OAuthUserPayload;
@@ -15,8 +12,6 @@ public interface AuthService {
 
     RegisterResponse registerInit(RegisterInitRequest request);
 
-    VerifyRegisterResponse verifyRegister(VerifyRegisterRequest request);
-
     LoginResult completeRegister(CompleteRegisterRequest request);
 
     RefreshTokenResponse refreshToken(String refreshToken);
@@ -24,4 +19,10 @@ public interface AuthService {
     void logout(String refresh);
 
     ExchangeResponse exchangeRefreshForAccess(String refreshToken);
+
+    RegisterResponse forgotPassword(ForgotPasswordRequest request);
+
+    VerifyRegisterResponse verifyOtp(VerifyRegisterRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
 }

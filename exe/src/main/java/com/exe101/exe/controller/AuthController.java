@@ -1,9 +1,6 @@
 package com.exe101.exe.controller;
 
-import com.exe101.exe.dto.request.CompleteRegisterRequest;
-import com.exe101.exe.dto.request.LoginRequest;
-import com.exe101.exe.dto.request.RegisterInitRequest;
-import com.exe101.exe.dto.request.VerifyRegisterRequest;
+import com.exe101.exe.dto.request.*;
 import com.exe101.exe.dto.response.*;
 import com.exe101.exe.security.CookieUtil;
 import com.exe101.exe.service.AuthService;
@@ -41,7 +38,7 @@ public class AuthController {
     public ApiResponse<VerifyRegisterResponse> verify(
             @Valid @RequestBody VerifyRegisterRequest request
     ) {
-        return ApiResponse.success(authService.verifyRegister(request));
+        return ApiResponse.success(authService.verifyOtp(request));
     }
 
     @PostMapping("/register/complete")
@@ -93,5 +90,20 @@ public class AuthController {
                 authService.exchangeRefreshForAccess(refreshToken);
 
         return ApiResponse.success(exchangeResponse);
+    }
+
+    @PostMapping("/password/forgot")
+    public ApiResponse<RegisterResponse> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+        return ApiResponse.success(authService.forgotPassword(request));
+    }
+
+    @PostMapping("/password/reset")
+    public ApiResponse<Void> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+        authService.resetPassword(request);
+        return ApiResponse.success(null);
     }
 }

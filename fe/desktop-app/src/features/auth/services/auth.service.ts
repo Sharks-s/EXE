@@ -5,6 +5,8 @@ import type {
   LoginRequest,
   RegisterInitRequest,
   CompleteRegisterRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
   User,
 } from "../types/auth.types";
 
@@ -30,6 +32,26 @@ export async function verifyOtpService(data: {
     ...data,
     type: "REGISTER",
   });
+}
+
+export async function forgotPasswordService(data: ForgotPasswordRequest) {
+  return authApi.forgotPassword(data);
+}
+
+export async function verifyResetPasswordOtpService(data: {
+  verifyId: string;
+  otp: string;
+}) {
+  return authApi.verifyOtp({
+    ...data,
+    type: "RESET_PASSWORD",
+  });
+}
+
+export async function resetPasswordService(
+  data: ResetPasswordRequest,
+): Promise<void> {
+  await authApi.resetPassword(data);
 }
 
 export async function completeRegisterService(

@@ -305,6 +305,35 @@
   gap: 12px;
 }
 
+.password-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.password-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.password-panel-header h3 {
+  margin: 0 0 6px;
+  font-family: "Quicksand", sans-serif;
+  font-size: clamp(18px, 1.6vw, 22px);
+  font-weight: 700;
+  color: #0b1c30;
+}
+
+.password-panel-header p {
+  margin: 0;
+  font-family: "Quicksand", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7685;
+}
+
 .secondary-button,
 .primary-button {
   min-height: 44px;

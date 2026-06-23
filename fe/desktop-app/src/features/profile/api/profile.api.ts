@@ -9,6 +9,11 @@ import type {
 
 const PROFILE_ENDPOINT = "/users/me";
 
+type ChangePasswordRequest = {
+  oldPassword: string;
+  newPassword: string;
+};
+
 export const profileApi = {
   getMyProfile: () =>
     api
@@ -43,4 +48,9 @@ export const profileApi = {
     )
     .then((r) => r.data.data);
 },
+
+  changePassword: (data: ChangePasswordRequest) =>
+    api
+      .put<ApiResponse<null>>(`${PROFILE_ENDPOINT}/password`, data)
+      .then((r) => r.data),
 };

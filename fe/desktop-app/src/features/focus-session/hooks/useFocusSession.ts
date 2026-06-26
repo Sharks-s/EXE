@@ -4,19 +4,13 @@ import { focusApi } from "../api/focus.api";
 import { cameraApi } from "../api/cameraApi";
 import { emit, listen } from "@tauri-apps/api/event";
 import type { ViolationType } from "../types/focus.types";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 const PROMPT_DURATION_SECONDS = 60;
 
 export function useFocusSession() {
   //  Lấy đúng các trạng thái cần thiết phục vụ cho việc check App
-  const {
-    session,
-    syncSession,
-    appRules,
-    allowedCache,
-    updateBotBubble,
-    clearBotBubble,
-  } = useFocusStore();
+  const { session, syncSession, appRules, allowedCache } = useFocusStore();
 
   const [elapsed, setElapsed] = useState<number>(0);
   const [isEnding, setIsEnding] = useState<boolean>(false);
@@ -88,6 +82,30 @@ export function useFocusSession() {
     };
   }, []);
 
+  async function showBotBubble(
+    message: string,
+    actions: any[] = [],
+    action?: string,
+    durationMs = 6000,
+  ) {
+    await emit("bot-bubble-update", {
+      message,
+      actions,
+      isVisible: true,
+      action,
+    });
+
+    if (botBubbleTimerRef.current) clearTimeout(botBubbleTimerRef.current);
+    botBubbleTimerRef.current = window.setTimeout(async () => {
+      await emit("bot-bubble-update", {
+        message: null,
+        actions: undefined,
+        isVisible: false,
+        action: undefined,
+      });
+    }, durationMs);
+  }
+
   // Bộ đếm trung tâm điều khiển toàn bộ hệ thống
   useEffect(() => {
     if (!sessionRef.current) {
@@ -157,7 +175,7 @@ export function useFocusSession() {
       const latestSession = sessionRef.current;
       if (!latestSession) return;
 
-      // ── BỘ ĐẾM 1: KIỂM TRA HIỆP 25 PHÚT ──
+      // ── BỘ ĐẾM 1: KIỂM TRA PHIÊN 25 PHÚT ──
       const lastCycleAt = latestSession.lastCycleAt
         ? new Date(latestSession.lastCycleAt).getTime()
         : startedAt;
@@ -191,26 +209,25 @@ export function useFocusSession() {
             focusApi
               .getBreakPromptThoai(latestSession.id)
               .then((breakData) => {
-                // Nạp thẳng câu thoại và mảng 2 nút bấm động do AI nghĩ ra vào Store
-                updateBotBubble(
-                  breakData.aiSpeech, // Chữ AI sinh ra (Ví dụ: "Hết hiệp rồi, làm cốc cafe không?")
-                  breakData.actions, // Mảng nút bấm động (Ví dụ: [{"label": "Đi luôn ☕"}, {"label": "Cày tiếp 🎯"}])
-                  true, // Hiện bubble lên Widget
-                );
+                emit("bot-bubble-update", {
+                  message: breakData.aiSpeech,
+                  actions: breakData.actions,
+                  isVisible: true,
+                });
               })
               .catch((aiErr) => {
                 console.error(
                   "Lỗi lấy thoại nghỉ ngơi từ AI, dùng fallback:",
                   aiErr,
                 );
-                updateBotBubble(
-                  "Hết hiệp rồi! Bạn nghỉ tí không?",
-                  [
+                emit("bot-bubble-update", {
+                  message: "Hết phiên rồi! Bạn nghỉ tí không?",
+                  actions: [
                     { label: "Nghỉ ☕", variant: "primary" },
                     { label: "Học tiếp 🎯", variant: "secondary" },
                   ],
-                  true,
-                );
+                  isVisible: true,
+                });
               });
 
             // 3. Kích hoạt đếm ngược ngầm phát tín hiệu đồng bộ sang cho Widget
@@ -223,7 +240,7 @@ export function useFocusSession() {
 
           breakSecondsSinceLastCycleRef.current = 0;
         } catch (err) {
-          console.error("Lỗi hoàn thành hiệp:", err);
+          console.error("Lỗi hoàn thành phiên:", err);
         }
       }
 
@@ -287,7 +304,7 @@ export function useFocusSession() {
                 appDistractCounterRef.current = 1;
               }
 
-              // ⏱️ Đủ 5 giây thử thách -> Bắt đầu nổ phạt!
+              //  Đủ 5 giây thử thách -> Bắt đầu nổ phạt!
               if (appDistractCounterRef.current >= 5) {
                 console.log(
                   `[AppRule] Phát hiện mở App giải trí liên tục 5s: ${currentTarget}. Gửi phạt...`,
@@ -312,21 +329,14 @@ export function useFocusSession() {
 
                     // 2. Kích hoạt chú khỉ mắng bằng câu thoại AI real-time từ Spring Boot nhả về
                     if (resData.aiSpeech) {
-                      updateBotBubble(resData.aiSpeech, [], true);
-
-                      // 3. Xử lý Timer: Tự lặn bubble sau 6 giây, chống nổ đè timer cũ
-                      if (botBubbleTimerRef.current)
-                        clearTimeout(botBubbleTimerRef.current);
-                      botBubbleTimerRef.current = setTimeout(() => {
-                        clearBotBubble();
-                      }, 6000);
+                      showBotBubble(resData.aiSpeech);
                     }
                   })
                   .catch((err) => {
                     console.error("Lỗi gửi phạt AppRule lên BE:", err);
                   })
                   .finally(() => {
-                    isHandlingAppViolationRef.current = false; // Mở khóa mạch cấu trúc quét
+                    isHandlingAppViolationRef.current = false;
                   });
               }
             } else {
@@ -436,15 +446,9 @@ export function useFocusSession() {
                       resData.violationCount,
                     );
 
-                    // 💬 LUỒNG AI: Đẩy lời mắng phạt từ AI lên Widget chú khỉ
+                    //  Đẩy lời nhắc phạt từ AI lên Widget
                     if (resData.aiSpeech) {
-                      updateBotBubble(resData.aiSpeech, [], true);
-
-                      if (botBubbleTimerRef.current)
-                        clearTimeout(botBubbleTimerRef.current);
-                      botBubbleTimerRef.current = window.setTimeout(() => {
-                        clearBotBubble();
-                      }, 6000);
+                      showBotBubble(resData.aiSpeech);
                     }
                   } else {
                     // Lần 4 trở đi: đã đạt giới hạn đợt quét này, không trừ thêm
@@ -501,17 +505,10 @@ export function useFocusSession() {
                     resData.focusSessionResponse,
                     resData.violationCount,
                   );
-                  // emit("widget-health-warning", { type: hType });
 
-                  //  Đẩy lời nhắc nhở sức khỏe ấm áp từ AI lên Widget chú khỉ
+                  //  Đẩy lời nhắc nhở sức khỏe ấm áp từ AI lên Widget
                   if (resData.aiSpeech) {
-                    updateBotBubble(resData.aiSpeech, [], true);
-
-                    if (botBubbleTimerRef.current)
-                      clearTimeout(botBubbleTimerRef.current);
-                    botBubbleTimerRef.current = window.setTimeout(() => {
-                      clearBotBubble();
-                    }, 6000);
+                    showBotBubble(resData.aiSpeech);
                   }
                 }
               } else {
@@ -616,6 +613,11 @@ export function useFocusSession() {
     setIsPromptActive(false);
     setPromptCountdown(PROMPT_DURATION_SECONDS);
     emit("tauri-break-prompt", { isOpen: false });
+    emit("bot-bubble-update", {
+      message: null,
+      actions: undefined,
+      isVisible: false,
+    });
   };
 
   const handleAcceptBreak = async () => {
@@ -630,6 +632,11 @@ export function useFocusSession() {
       breakStartedAtRef.current = Date.now();
       promptStartedAtRef.current = null;
       emit("tauri-break-prompt", { isOpen: false });
+      emit("bot-bubble-update", {
+        message: null,
+        actions: undefined,
+        isVisible: false,
+      });
 
       initialBreakMinutesRef.current = updatedSession.accumulatedReward;
 
@@ -647,6 +654,11 @@ export function useFocusSession() {
       await cameraApi.stop().catch(() => {});
       isCameraStartedRef.current = false;
       distractCounterRef.current = 0;
+
+      const mainWindow = await WebviewWindow.getByLabel("main");
+      const widgetWindow = await WebviewWindow.getByLabel("widget");
+      await mainWindow?.show();
+      await widgetWindow?.hide();
     } catch (err) {
       console.error("Lỗi khi bắt đầu nghỉ giải lao:", err);
     }

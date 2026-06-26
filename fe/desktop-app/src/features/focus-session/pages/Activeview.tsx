@@ -61,6 +61,9 @@ export function ActiveView() {
   const handleBackToDashboard = async () => {
     try {
       await invoke("back_to_widget");
+
+      const { emit } = await import("@tauri-apps/api/event");
+      await emit("widget-active-state", { active: true });
     } catch (err) {
       console.error(err);
     }
@@ -80,9 +83,6 @@ export function ActiveView() {
           <h1>Đang tập trung 🔥</h1>
           <p>{session.goal || "Không có mục tiêu cụ thể"}</p>
         </div>
-        <button className="btn-back-dashboard" onClick={handleBackToDashboard}>
-          ← Widget
-        </button>
       </div>
 
       {/* MAIN TIMER */}
@@ -109,11 +109,11 @@ export function ActiveView() {
         </ProgressRing>
 
         <div className="timer-bars-container">
-          {/* Hiệp hiện tại */}
+          {/* phiên hiện tại */}
           <div>
             <div className="bar-row-header">
               <span className="title">
-                Hiệp {currentCycle}/{totalCycles}
+                Phiên {currentCycle}/{totalCycles}
               </span>
               <span className="sub-info">
                 {formatTime(cycleRemaining)} còn lại
@@ -186,7 +186,7 @@ export function ActiveView() {
               className="btn-minimize-widget"
               onClick={handleBackToDashboard}
             >
-              Thu nhỏ về Widget 🗖
+              Thu nhỏ về Widget
             </button>
           </>
         ) : (

@@ -1,15 +1,23 @@
 import { useEffect, useRef, useState } from "react";
+import { listen, emit } from "@tauri-apps/api/event";
 import {
   WebviewWindow,
   getCurrentWebviewWindow,
 } from "@tauri-apps/api/webviewWindow";
-import { listen, emit } from "@tauri-apps/api/event";
-import { ChatBubble } from "../../shared/components/ChatBubble";
-import { useFocusStore } from "../../features/focus-session/stores/focusStore";
 
-const FRAME_COUNT = 10;
 const ANIMATION_SPEED_FPS = 10;
-const getFramePath = (index: number) => `/monkeyFrames/bot_${index}.png`;
+
+const ACTION_FRAME_COUNTS: Record<string, number> = {
+  khingu: 10,
+  khichamhoi: 10,
+  khinhacnho: 10,
+  khiposture: 9,
+  khiquaotucgian: 10,
+  khiworking: 9,
+};
+
+const BACKGROUND_ACTIONS = ["khiworking", "khingu"] as const;
+const BACKGROUND_INTERVAL_MS = 60_000;
 
 export default function WidgetWindow() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,86 +25,69 @@ export default function WidgetWindow() {
   const animationFrameIdRef = useRef<number | null>(null);
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [petCode, setPetCode] = useState<string>("monkey");
+  const [backgroundAction, setBackgroundAction] = useState<string>(
+    BACKGROUND_ACTIONS[0],
+  );
+  const [overrideAction, setOverrideAction] = useState<string | null>(null);
 
-  // Cấu trúc lại State để hứng mốc thời gian tuyệt đối từ Main Window gửi qua
-  const [breakPrompt, setBreakPrompt] = useState<{
-    isOpen: boolean;
-    startedAtMs: number | null;
-    durationSeconds: number;
-    countdown: number;
-  }>({ isOpen: false, startedAtMs: null, durationSeconds: 60, countdown: 60 });
+  const currentAction = overrideAction ?? backgroundAction;
+  const frameCount = ACTION_FRAME_COUNTS[currentAction] ?? 10;
 
-  const { botMessage, botActions, isBubbleVisible } = useFocusStore();
-
-  // ── 🎯 LẮNG NGHE TÍN HIỆU MỞ/ĐÓNG TỪ MAIN WINDOW (KÈM MỐC THỜI GIAN THỰC) ──
   useEffect(() => {
-    const unlistenPrompt = listen<{
-      isOpen: boolean;
-      startedAtMs?: number;
-      durationSeconds?: number;
-    }>("tauri-break-prompt", (event) => {
-      if (event.payload.isOpen) {
-        setBreakPrompt({
-          isOpen: true,
-          startedAtMs: event.payload.startedAtMs ?? Date.now(),
-          durationSeconds: event.payload.durationSeconds ?? 60,
-          countdown: event.payload.durationSeconds ?? 60,
-        });
-      } else {
-        setBreakPrompt({
-          isOpen: false,
-          startedAtMs: null,
-          durationSeconds: 60,
-          countdown: 60,
-        });
-      }
-    });
-
+    const unlisten = listen<{ petCode: string }>(
+      "widget-pet-update",
+      (event) => {
+        setPetCode(event.payload.petCode.trim());
+      },
+    );
     return () => {
-      unlistenPrompt.then((f) => f());
+      unlisten.then((f) => f());
     };
   }, []);
 
-  // ── 🎯 TỰ ĐỘNG TÍNH LÙI THEO PHÉP TRỪ MỐC TUYỆT ĐỐI (Chạy song song hoàn hảo) ────
+  const getFramePath = (index: number) =>
+    `/pet/${petCode}/${currentAction}/bot_${index}.png`;
+
+  // ── TẦNG NỀN: luân phiên work/sleep mỗi 1 phút ──
   useEffect(() => {
-    if (!breakPrompt.isOpen || !breakPrompt.startedAtMs) return;
-
-    // Quét chu kỳ nhanh (500ms) giúp con số hiển thị khít khao mili-giây với Main Window
-    const timer = setInterval(() => {
-      const elapsedSeconds = Math.floor(
-        (Date.now() - breakPrompt.startedAtMs!) / 1000,
+    const interval = setInterval(() => {
+      setBackgroundAction((prev) =>
+        prev === BACKGROUND_ACTIONS[0]
+          ? BACKGROUND_ACTIONS[1]
+          : BACKGROUND_ACTIONS[0],
       );
-      const remaining = breakPrompt.durationSeconds - elapsedSeconds;
+    }, BACKGROUND_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
 
-      if (remaining <= 0) {
-        setBreakPrompt({
-          isOpen: false,
-          startedAtMs: null,
-          durationSeconds: 60,
-          countdown: 60,
-        });
+  // ── TẦNG OVERRIDE: nhận action từ main qua bot-bubble-update ──
+  useEffect(() => {
+    const unlisten = listen<{
+      action?: string;
+      isVisible: boolean;
+    }>("bot-bubble-update", (event) => {
+      if (event.payload.isVisible && event.payload.action) {
+        setOverrideAction(event.payload.action);
       } else {
-        setBreakPrompt((prev) => ({ ...prev, countdown: remaining }));
+        setOverrideAction(null);
       }
-    }, 500);
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
 
-    return () => clearInterval(timer);
-  }, [
-    breakPrompt.isOpen,
-    breakPrompt.startedAtMs,
-    breakPrompt.durationSeconds,
-  ]);
-
-  // ── 1. PRELOAD FRAMES (Thuần hiển thị) ─────────────────────────────────
+  // ── PRELOAD FRAMES ─────────────────────────────────
   useEffect(() => {
     const loadedImages: HTMLImageElement[] = [];
     let loadedCount = 0;
-    for (let i = 0; i < FRAME_COUNT; i++) {
+    for (let i = 0; i < frameCount; i++) {
       const img = new Image();
       img.src = getFramePath(i);
       img.onload = () => {
         loadedCount++;
-        if (loadedCount === FRAME_COUNT) {
+        if (loadedCount === frameCount) {
           setImages(loadedImages);
           setIsReady(true);
         }
@@ -107,9 +98,9 @@ export default function WidgetWindow() {
       if (animationFrameIdRef.current !== null)
         cancelAnimationFrame(animationFrameIdRef.current);
     };
-  }, []);
+  }, [petCode, currentAction, frameCount]); // 👈 thêm frameCount vào deps cho chính xác
 
-  // ── 2. ANIMATION LOOP (Thuần hiển thị) ─────────────────────────────────
+  // ── ANIMATION LOOP ─────────────────────────────────
   useEffect(() => {
     if (!isReady || !canvasRef.current || images.length === 0) return;
     const canvas = canvasRef.current;
@@ -137,7 +128,7 @@ export default function WidgetWindow() {
             dH,
           );
         }
-        currentFrameRef.current = (currentFrameRef.current + 1) % FRAME_COUNT;
+        currentFrameRef.current = (currentFrameRef.current + 1) % frameCount;
       }
       animationFrameIdRef.current = requestAnimationFrame(animate);
     };
@@ -146,84 +137,51 @@ export default function WidgetWindow() {
       if (animationFrameIdRef.current)
         cancelAnimationFrame(animationFrameIdRef.current);
     };
-  }, [isReady, images]);
+  }, [isReady, images, frameCount]);
 
-  // ── 3. CLICK VÀO CHÚ KHỈ → LUÔN CHO QUAY LẠI DASHBOARD (ĐÃ MỞ CHẶN CLICK) ──
+  // ── CLICK VÀO CHÚ KHỈ → QUAY LẠI DASHBOARD ──
   const handleClick = async () => {
     const currentWin = getCurrentWebviewWindow();
     console.log("[WidgetWindow] click on:", currentWin.label);
     const mainWindow = await WebviewWindow.getByLabel("main");
     const widgetWindow = await WebviewWindow.getByLabel("widget");
+    const bubbleWindow = await WebviewWindow.getByLabel("widget-bubble");
     if (!mainWindow || !widgetWindow) return;
     try {
       await mainWindow.show();
-      await widgetWindow.hide();
+      await emit("widget-active-state", { active: false });
+      await widgetWindow?.hide();
+      await bubbleWindow?.hide();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // ── 🎯 CHUYỂN DỊCH TOÀN BỘ SANG TRẠNG THÁI ĐỘNG THUẦN TÚY TỪ AI/STORE ──
-
-  // 1. Câu thoại: Thuần chữ của AI trả về từ Store, không dính số giây đếm ngược kì cục nữa
-  const finalMessage = botMessage || "";
-
-  // 2. Độ hiển thị: Cứ hễ Store bảo hiện hoặc đang mở Prompt nghỉ thì bật Bubble lên
-  const finalVisibility = breakPrompt.isOpen ? true : !!isBubbleVisible;
-
-  // 3. Nút bấm Actions:
-  // Nếu đang mở Prompt nghỉ, ta giữ nguyên nhãn/style nút động của AI và map hàm onClick của hệ thống vào
-  // ── 3. Nút bấm Actions: Đảm bảo mọi nút truyền vào ChatBubble đều có cấu trúc hợp lệ ──
-  const finalActions =
-    breakPrompt.isOpen && botActions && botActions.length >= 2
-      ? [
-          {
-            ...botActions[0],
-            onClick: () => emit("widget-click-accept-break"),
-          },
-          {
-            ...botActions[1],
-            onClick: () => emit("widget-click-reject-break"),
-          },
-        ]
-      : botActions?.map((action) => ({
-          ...action,
-          // Nếu là câu mắng vi phạm thông thường có nút (hoặc sau này ông mở rộng),
-          // mặc định click vào nút đó chỉ là để tắt/clear bubble chat cho đỡ lỗi
-          onClick: () => {
-            // Ví dụ: click vào thì ẩn bubble chat đi
-            useFocusStore.setState({ isBubbleVisible: false });
-          },
-        })) || undefined;
-
   return (
     <div
-      onClick={handleClick}
       style={{
         width: "100vw",
         height: "100vh",
         display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-end",
-        justifyContent: "flex-end",
+        alignItems: "center",
+        justifyContent: "center",
         background: "transparent",
-        cursor: "pointer",
         userSelect: "none",
         overflow: "hidden",
         boxSizing: "border-box",
       }}
     >
-      <ChatBubble
-        message={finalMessage}
-        isVisible={finalVisibility}
-        actions={finalActions}
-      />
-
       <canvas
         ref={canvasRef}
+        onClick={handleClick}
         width={160}
         height={160}
-        style={{ width: 130, height: 130, background: "transparent" }}
+        style={{
+          width: 130,
+          height: 130,
+          background: "transparent",
+          cursor: "pointer",
+        }}
       />
 
       {!isReady && (

@@ -27,7 +27,6 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
     streamUrl,
   } = useCameraSetup(true);
 
-  const { setSession } = useFocusStore();
   const [streamError, setStreamError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -47,6 +46,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
 
     setIsSubmitting(true);
     setSubmitError(null);
+    const { emit } = await import("@tauri-apps/api/event");
 
     try {
       // BƯỚC 1: Gọi thẳng API Backend tạo Session
@@ -56,8 +56,18 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
       });
 
       // BƯỚC 2: Lưu Session vào Store
-      setSession(newSession);
+      await useFocusStore.getState().initializeSessionConfig(newSession);
       await tauriStore.set("active_session", newSession);
+
+      // BƯỚC 2.5: Báo cho Widget biết pet nào đang active
+      const { currentPet } = useFocusStore.getState();
+      console.log("[CameraSetupModal] currentPet before emit:", currentPet);
+      if (currentPet) {
+        const { emit } = await import("@tauri-apps/api/event");
+        await emit("widget-pet-update", {
+          petCode: currentPet.code,
+        });
+      }
 
       // BƯỚC 3: Đóng modal an toàn trước.
       // Khi onClose() chạy -> isOpen thành false -> Hook tự dọn dẹp, tự tắt cam ngầm chuẩn chỉ!
@@ -68,6 +78,10 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
 
       // BƯỚC 4: Gọi Rust Tauri hoán đổi sang cửa sổ Widget
       await invoke("toggle_windows_to_session");
+
+      // BƯỚC 5: Báo cho Bubble biết Widget đang active — để bubble được phép hiện
+      const { emit } = await import("@tauri-apps/api/event");
+      await emit("widget-active-state", { active: true });
     } catch (err: any) {
       console.error("[Start Focus Error]:", err);
       setSubmitError(err.message || "Không thể tạo phiên làm việc.");

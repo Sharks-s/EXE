@@ -52,11 +52,11 @@ export const focusApi = {
     return res.data.data;
   },
 
-  // GET /api/personalities/{personalityId}
+  // GET /personalities/{personalityId}
   getPersonalityDetails: async (
     personalityId: number,
   ): Promise<PersonalityDetails> => {
-    const res = await api.get(`/api/personalities/${personalityId}`);
+    const res = await api.get(`/personalities/${personalityId}`);
     return res.data.data;
   },
 

@@ -30,8 +30,8 @@
       {
         "label": "widget",
         "title": "FocusBuddy Widget",
-        "width": 200,
-        "height": 260,
+        "width": 130,
+        "height": 130,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
@@ -56,6 +56,21 @@
         "maximizable": false,
         "minimizable": false,
         "skipTaskbar": true,
+        "shadow": false
+      },
+      {
+        "label": "widget-bubble",
+        "title": "FocusBuddy Bubble",
+        "width": 180,
+        "height": 180,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "skipTaskbar": true,
+        "resizable": false,
+        "maximizable": false,
+        "minimizable": false,
         "shadow": false
       }
     ],

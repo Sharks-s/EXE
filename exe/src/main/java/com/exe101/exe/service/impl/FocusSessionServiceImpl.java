@@ -159,7 +159,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
         }
 
-        // Xác định mốc gốc để tính toán (Hiệp trước đó hoặc lúc vừa start phiên)
+        // Xác định mốc gốc để tính toán (Phiên trước đó hoặc lúc vừa start phiên)
         Instant baseTime = session.getLastCycleAt() != null ? session.getLastCycleAt() : session.getStartedAt();
 
         // Chặn chống spam API bằng cách kiểm tra thời gian hiện tại đã đủ 25 phút kể từ mốc baseTime chưa
@@ -169,7 +169,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_CYCLE_NOT_COMPLETED_YET);
         }
 
-        // TỐI ƯU: Neo cứng mốc cycle đúng bằng thời gian chuẩn của hiệp (baseTime + 25p)
+        // TỐI ƯU: Neo cứng mốc cycle đúng bằng thời gian chuẩn của Phiên (baseTime + 25p)
         // Cách này giúp triệt tiêu hoàn toàn sai số do lag mạng hoặc delay bấm nút của user
         session.setLastCycleAt(baseTime.plus(25, ChronoUnit.MINUTES));
 
@@ -277,16 +277,23 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         String personalityInstruction = personalityService.getPersonalityDescriptionByCode(pCode);
 
         String systemPrompt = String.format("""
-                Bạn là thú cưng ảo hỗ trợ học tập tên là %s, là một con pet %s, có tính cách đặc trưng là [%s]: %s
-                Bối cảnh: Người dùng đang trong phiên học tập nhưng vừa bị hệ thống bắt quả tang lỗi hành vi: [%s]. 
-                Chi tiết: Ứng dụng "%s" - Tiêu đề "%s" áp dụng khi người dùng sài app nếu không có thì là các lỗi khác.
-                User sài máy tính hoặc laptop
-                Nhiệm vụ: Hãy đưa ra 1 câu phản hồi duy nhất phù hợp hoàn hảo với cá tính [%s] của bạn dựa trên hướng dẫn hành vi trên.
-                Lưu ý đặc biệt: 
-                - Nếu lỗi thuộc nhóm sức khỏe (BAD_POSTURE - gù lưng, POOR_LIGHTING - thiếu sáng), hãy nhắc nhở điều chỉnh một cách tự nhiên theo đúng cá tính chứ không mắng phạt.
-                - Câu thoại phải dưới 25 từ, ngắn gọn, súc tích, tác động mạnh vào tâm lý người dùng, tuyệt đối không giải thích dông dài hay chào hỏi thừa thãi. Ngôn ngữ là [%s]
-                """, pName, pPet , pCode, personalityInstruction , request.type().name(), request.appName(),
-                request.windowTitle(), pCode,
+        Bạn là thú cưng ảo hỗ trợ học tập tên là %s, là một con pet %s, có tính cách đặc trưng là [%s]: %s
+        Bối cảnh: Người dùng đang trong phiên học tập nhưng vừa bị hệ thống bắt quả tang lỗi hành vi: [%s].
+        Chi tiết: Ứng dụng "%s" - Tiêu đề "%s" áp dụng khi người dùng sài app nếu không có thì là các lỗi khác.
+        User sài máy tính hoặc laptop
+        Nhiệm vụ: Hãy đưa ra 1 câu phản hồi duy nhất phù hợp hoàn hảo với cá tính [%s] của bạn dựa trên hướng dẫn hành vi trên.
+
+        QUAN TRỌNG NHẤT - Đây là lời NHẮC NHỞ/CẢNH BÁO vì user đang VI PHẠM, KHÔNG phải lời động viên/cổ vũ:
+        - TUYỆT ĐỐI KHÔNG dùng các từ như "cố lên", "tiếp tục cố gắng", "bạn làm được", "cố gắng lên nào" — đây là lỗi nghiêm trọng vì user đang SAI, không phải đang nỗ lực đúng hướng.
+        - Hãy chỉ thẳng vào hành vi sai (ví dụ: đang mất tập trung, đang dùng app giải trí, đang nhìn đi chỗ khác) và yêu cầu họ quay lại NGAY, theo đúng tông giọng của cá tính [%s].
+        - Ví dụ ĐÚNG tinh thần: "Lại lo ra rồi đó! Quay lại làm việc ngay!" hoặc "Mở app đó làm gì, tắt đi và tập trung lại!"
+        - Ví dụ SAI tinh thần (TUYỆT ĐỐI TRÁNH): "Cố lên, bạn làm được!" hoặc "Đừng bỏ cuộc nha!"
+
+        Lưu ý đặc biệt:
+        - Nếu lỗi thuộc nhóm sức khỏe (BAD_POSTURE - gù lưng, POOR_LIGHTING - thiếu sáng), hãy nhắc nhở điều chỉnh một cách tự nhiên theo đúng cá tính chứ không mắng phạt.
+        - Câu thoại phải dưới 20 từ, ngắn gọn, súc tích, tác động mạnh vào tâm lý người dùng, tuyệt đối không giải thích dông dài hay chào hỏi thừa thãi. Ngôn ngữ là [%s]
+        """, pName, pPet, pCode, personalityInstruction, request.type().name(), request.appName(),
+                request.windowTitle(), pCode, pCode,
                 language);
         String userPrompt = "Hãy nói một câu với tôi đi!";
         String aiSpeech = aiCloudService.requestAiSpeech(systemPrompt, userPrompt);
@@ -405,7 +412,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         // Fallback an toàn nếu AI Cloud có sự cố
         return BreakPromptAiResponse.builder()
-                .aiSpeech("Hết hiệp 25 phút rồi! Bạn muốn nghỉ ngơi một chút chứ?")
+                .aiSpeech("Hết phiên 25 phút rồi! Bạn muốn nghỉ ngơi một chút chứ?")
                 .actions(List.of(
                         new AiBubbleAction("Nghỉ ngơi ☕", "primary"),
                         new AiBubbleAction("Cày tiếp 🎯", "secondary")

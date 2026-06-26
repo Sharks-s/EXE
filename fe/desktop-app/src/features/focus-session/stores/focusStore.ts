@@ -120,10 +120,12 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       }
     } catch (err) {
       console.error("[Store Error] Failed to fetch config:", err);
-      set({
-        botMessage:
+      const { emit } = await import("@tauri-apps/api/event");
+      await emit("bot-bubble-update", {
+        message:
           "Hệ thống nạp Pet gặp sự cố, nhưng ta vẫn sẽ giám sát ngươi! 👁️",
-        isBubbleVisible: true,
+        actions: [],
+        isVisible: true,
       });
     }
   },

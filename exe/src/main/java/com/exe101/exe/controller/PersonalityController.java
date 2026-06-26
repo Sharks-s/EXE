@@ -25,9 +25,14 @@ public class PersonalityController {
         return ResponseEntity.ok(ApiResponse.success(personalityService.getAll()));
     }
 
-    @GetMapping("/{code}")
+    @GetMapping("/code/{code}")
     public ResponseEntity<ApiResponse<PersonalityResponse>> getByCode(@PathVariable String code) {
         return ResponseEntity.ok(ApiResponse.success(personalityService.getByCode(code)));
+    }
+
+    @GetMapping("/{personalityId}")
+    public ResponseEntity<ApiResponse<PersonalityResponse>> getById(@PathVariable Long personalityId) {
+        return ResponseEntity.ok(ApiResponse.success(personalityService.getById(personalityId)));
     }
 
     @PostMapping

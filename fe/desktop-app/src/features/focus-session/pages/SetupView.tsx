@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CameraSetupModal } from "../components/CameraSetupModal";
-import { SliderTrack } from "../components/SideTrack";
 import type { GoalPresetItem } from "../types/focus.types";
 import "./SetupView.css";
 
@@ -13,6 +12,26 @@ const PRESET_GOALS: GoalPresetItem[] = [
   { key: "writing", labelKey: "common:goals.writing" },
 ];
 
+interface DurationLevel {
+  minutes: number;
+  label: string;
+  hint: string;
+  recommended?: boolean;
+}
+
+const DURATION_LEVELS: DurationLevel[] = [
+  { minutes: 5, label: "Mới bắt đầu", hint: "Làm quen nhịp tập trung" },
+  {
+    minutes: 25,
+    label: "Tập trung",
+    hint: "1 vòng Pomodoro chuẩn",
+    recommended: true,
+  },
+  { minutes: 50, label: "Sâu", hint: "2 vòng liên tiếp" },
+  { minutes: 90, label: "Chuyên sâu", hint: "Việc cần mạch suy nghĩ dài" },
+  { minutes: 120, label: "Bền bỉ", hint: "Tối đa cho 1 phiên" },
+];
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Chào buổi sáng";
@@ -20,7 +39,6 @@ function getGreeting() {
   return "Chào buổi tối";
 }
 
-// Render hiển thị chuỗi thời gian thân thiện
 function formatDuration(min: number) {
   if (min < 60) return `${min} phút`;
   const h = Math.floor(min / 60);
@@ -28,9 +46,30 @@ function formatDuration(min: number) {
   return m === 0 ? `${h} giờ` : `${h}g ${m}p`;
 }
 
+// Break bank: mỗi 25 phút làm việc hoàn thành sẽ được +5 phút nghỉ tích luỹ
 function getBreakBank(min: number) {
   const rounds = Math.floor(min / 25);
   return { rounds, minutes: rounds * 5 };
+}
+
+interface LevelCardProps {
+  level: DurationLevel;
+  isActive: boolean;
+  onSelect: () => void;
+}
+
+function LevelCard({ level, isActive, onSelect }: LevelCardProps) {
+  return (
+    <button
+      onClick={onSelect}
+      className={`levelCard ${isActive ? "levelCardActive" : ""}`}
+    >
+      {level.recommended && <span className="levelBadge">Đề xuất</span>}
+      <span className="levelMinutes">{formatDuration(level.minutes)}</span>
+      <span className="levelLabel">{level.label}</span>
+      <span className="levelHint">{level.hint}</span>
+    </button>
+  );
 }
 
 export function SetupView() {
@@ -38,7 +77,7 @@ export function SetupView() {
 
   const [selectedPreset, setSelectedPreset] = useState<string | null>("coding");
   const [customGoal, setCustomGoal] = useState("");
-  const [duration, setDuration] = useState(50);
+  const [duration, setDuration] = useState(25);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
 
@@ -50,16 +89,13 @@ export function SetupView() {
 
   return (
     <div className="container">
-      {/* SIMPLE GREETING HEADER */}
       <div className="header">
         <h1 className="title">{getGreeting()} 👋</h1>
-        <p className="subtitle">
-          Thiết lập mục tiêu và thời gian để bắt đầu phiên làm việc.
-        </p>
+        <p className="subtitle">Chọn mục tiêu và thời gian để bắt đầu</p>
       </div>
 
       {/* GOAL SECTION */}
-      <div>
+      <div className="block">
         <label className="sectionLabel">Hôm nay bạn cần làm gì?</label>
         <div className="presetContainer">
           {PRESET_GOALS.map((g) => {
@@ -92,25 +128,32 @@ export function SetupView() {
         />
       </div>
 
-      {/* DURATION SECTION */}
-      <div>
+      {/* DURATION / LEVEL SECTION */}
+      <div className="block">
         <div className="durationHeader">
-          <label className="sectionLabel">Thời gian phiên</label>
+          <label className="sectionLabel">Mức độ tập trung</label>
           <div className="durationBadge">{formatDuration(duration)}</div>
         </div>
 
-        {/* Thanh trượt đã tách component */}
-        <SliderTrack value={duration} onChange={setDuration} />
+        <div className="levelGroup levelGroupShort">
+          {DURATION_LEVELS.slice(0, 3).map((lvl) => (
+            <LevelCard
+              key={lvl.minutes}
+              level={lvl}
+              isActive={duration === lvl.minutes}
+              onSelect={() => setDuration(lvl.minutes)}
+            />
+          ))}
+        </div>
 
-        <div className="quickTimeContainer">
-          {[25, 50, 90, 120].map((m) => (
-            <button
-              key={m}
-              onClick={() => setDuration(m)}
-              className={`quickTimeBtn ${duration === m ? "quickTimeBtnActive" : ""}`}
-            >
-              {m}p
-            </button>
+        <div className="levelGroup levelGroupLong">
+          {DURATION_LEVELS.slice(3).map((lvl) => (
+            <LevelCard
+              key={lvl.minutes}
+              level={lvl}
+              isActive={duration === lvl.minutes}
+              onSelect={() => setDuration(lvl.minutes)}
+            />
           ))}
         </div>
       </div>
@@ -119,10 +162,25 @@ export function SetupView() {
       <div className="breakBankCard">
         <div className="breakBankIcon">💰</div>
         <div>
-          <div className="breakBankTitle">+{breakMinutes} phút break bank</div>
-          <div className="breakBankSubtitle">
-            {rounds} hiệp × 5 phút — hoàn thành để tích luỹ
-          </div>
+          {rounds > 0 ? (
+            <>
+              <div className="breakBankTitle">
+                Hoàn thành phiên này, bạn có {breakMinutes} phút nghỉ
+              </div>
+              <div className="breakBankSubtitle">
+                Cứ 25 phút tập trung xong sẽ cộng thêm 5 phút nghỉ
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="breakBankTitle">
+                Phiên ngắn, chưa cộng phút nghỉ
+              </div>
+              <div className="breakBankSubtitle">
+                Từ 25 phút trở lên sẽ bắt đầu tích phút nghỉ
+              </div>
+            </>
+          )}
         </div>
       </div>
 

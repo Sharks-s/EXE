@@ -5,6 +5,7 @@ import WidgetWindow from "./windows/widget/WidgetWindow";
 import WarningWindow from "./windows/warning/WarningWindow";
 import ToastContainer from "./shared/components/Toastcontainer";
 import "./App.css";
+import BubbleWindow from "./windows/bubble/BubbleWindow";
 
 export default function App() {
   const [windowLabel, setWindowLabel] = useState<string>("");
@@ -22,6 +23,7 @@ export default function App() {
       </>
     );
   if (windowLabel === "widget") return <WidgetWindow />;
+  if (windowLabel === "widget-bubble") return <BubbleWindow />;
   if (windowLabel === "warning") return <WarningWindow />;
 
   return null;

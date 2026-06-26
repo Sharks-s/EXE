@@ -59,7 +59,7 @@ export const BreakPromptPopup: React.FC<BreakPromptPopupProps> = ({
             margin: 0,
           }}
         >
-          HẾT HIỆP 25 PHÚT! ⏰
+          HẾT PHIÊN 25 PHÚT! ⏰
         </h2>
 
         {/* Nội dung hỏi */}

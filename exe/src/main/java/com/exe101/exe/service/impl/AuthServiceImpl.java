@@ -181,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
         } else {
             userIdentityService.updateLocalPassword(user, request.password());
         }
-
+        user.setAvatarUrl("https://res.cloudinary.com/dlkcf2b8w/image/upload/v1782566522/png-transparent-default-avatar_armtvw.png");
         // Activate user
         userService.activateUser(user.getId());
 
@@ -195,7 +195,7 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), deviceId);
         refreshTokenService.create(user.getId(), refreshToken, deviceId);
 
-        user = userService.findById(user.getId());
+        user = userService.findByIdWithRoles(user.getId());
 
         return LoginResult.builder()
                 .refreshToken(refreshToken)
@@ -229,7 +229,7 @@ public class AuthServiceImpl implements AuthService {
     public ExchangeResponse exchangeRefreshForAccess(String refreshToken) {
         RefreshToken refresh = refreshTokenService.verify(refreshToken);
 
-        User user = userService.findById(refresh.getUser().getId());
+        User user = userService.findByIdWithRoles(refresh.getUser().getId());
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
 
@@ -307,4 +307,5 @@ public class AuthServiceImpl implements AuthService {
                 .expiresInSeconds(600L)
                 .build();
     }
+
 }

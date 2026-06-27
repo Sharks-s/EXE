@@ -9,6 +9,7 @@ import com.exe101.exe.model.enums.UserStatus;
 import com.exe101.exe.repository.*;
 import com.exe101.exe.security.SecurityConfig;
 
+import com.exe101.exe.service.AppRuleService;
 import com.exe101.exe.service.PersonalityService;
 import com.exe101.exe.service.PetService;
 import jakarta.transaction.Transactional;
@@ -37,6 +38,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UserIdentityRepository userIdentityRepository;
     private final PersonalityService personalityService;
     private final PetService petService;
+    private final AppRuleService appRuleService;
 
     @Override
     @Transactional
@@ -80,6 +82,7 @@ public class DataInitializer implements CommandLineRunner {
                                 .user(adminUser)
                                 .provider(AuthProvider.LOCAL)
                                 .password(securityConfig.passwordEncoder().encode(adminPassword))
+                                .passwordUpdatedAt(Instant.now())
                                 .build()
                 ));
 
@@ -100,6 +103,9 @@ public class DataInitializer implements CommandLineRunner {
         personalityService.seedDefaultPersonalities();
         //--------Init default pets-----------
         petService.seedDefaultPets();
+        //--------Init default app rules-----------
+        appRuleService.seedDefaultAppRules();
+
     }
 }
 

@@ -3,8 +3,6 @@ package com.exe101.exe.service;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.exe101.exe.dto.response.CloudinaryUploadResponse;
-import com.exe101.exe.exception.BusinessException;
-import com.exe101.exe.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,7 +12,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class CloudinaryService {
+public class ImageService {
 
     private final Cloudinary cloudinary;
 

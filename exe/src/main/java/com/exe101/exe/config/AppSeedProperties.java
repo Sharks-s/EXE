@@ -1,9 +1,11 @@
 package com.exe101.exe.config;
 
+import com.exe101.exe.model.enums.RuleType;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
 import java.util.List;
 
 @Configuration
@@ -14,6 +16,7 @@ public class AppSeedProperties {
 
     private List<PersonalitySeed> personalities;
     private List<PetSeed> pets;
+    private List<AppRuleSeed> appRules;
     private String defaultPetCode;
     private String defaultPersonalityCode;
     private Integer dailyFreeUsage;
@@ -36,6 +39,14 @@ public class AppSeedProperties {
         private String description;
         private boolean premium;
         private String imageUrl;
+    }
+
+    @Getter
+    @Setter
+    public static class AppRuleSeed {
+        private String appName;
+        private String windowTitleKeyword;
+        private RuleType ruleType;
     }
 
     public String getPetDescription(String code) {

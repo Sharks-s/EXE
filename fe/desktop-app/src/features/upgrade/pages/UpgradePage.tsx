@@ -65,13 +65,18 @@ export default function UpgradePage()
 
   return (
     <div className="upgrade-page">
-      <header className="upgrade-header">
-        <div>
-          <h1>Nâng cấp Focus Buddy</h1>
+      <header className="upgrade-header app-page-header">
+        <div className="app-page-title">
+          <div className="app-page-title-row">
+            <span className="app-page-title-icon">
+              <span className="material-symbols-outlined">workspace_premium</span>
+            </span>
+            <h1>Nâng cấp Focus Buddy</h1>
+          </div>
           <p>Mở khóa các tính năng nâng cao để tối ưu hiệu suất tập trung.</p>
         </div>
 
-        <div className="current-plan-badge">
+        <div className="current-plan-badge app-page-actions">
           <span>{currentPlanLabel}</span>
         </div>
       </header>

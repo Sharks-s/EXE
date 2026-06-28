@@ -50,6 +50,7 @@ export function ActiveView() {
 
 function ActiveViewContent() {
   const { session, violationCount } = useFocusStore();
+  const [isAbortConfirmOpen, setIsAbortConfirmOpen] = useState(false);
 
   // Triệu hồi Hook quản lý thời gian gốc
   const {
@@ -213,17 +214,29 @@ function ActiveViewContent() {
             {/* Nếu ĐANG học: Giữ nguyên 2 nút Từ bỏ và Thu nhỏ cũ của bạn */}
             <button
               className={`btn-abort-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
-              onClick={() => handleEndSession(true)}
+              onClick={() => setIsAbortConfirmOpen(true)}
               disabled={isEnding}
             >
-              Từ bỏ (-50% XP) 🏳️
+              <span className="action-button-icon danger">
+                <span className="material-symbols-outlined">flag</span>
+              </span>
+              <span className="action-button-copy">
+                <strong>Từ bỏ phiên</strong>
+                <small>-50% XP</small>
+              </span>
             </button>
 
             <button
               className="btn-minimize-widget"
               onClick={handleBackToDashboard}
             >
-              Thu nhỏ về Widget
+              <span className="action-button-icon primary">
+                <span className="material-symbols-outlined">picture_in_picture_alt</span>
+              </span>
+              <span className="action-button-copy">
+                <strong>Thu nhỏ</strong>
+                <small>Về Widget</small>
+              </span>
             </button>
           </>
         ) : (
@@ -247,6 +260,54 @@ function ActiveViewContent() {
         onAccept={handleAcceptBreak}
         onReject={handleRejectBreak}
       />
+
+      {isAbortConfirmOpen && (
+        <div
+          className="abort-confirm-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="abort-confirm-title"
+          onClick={() => {
+            if (!isEnding) setIsAbortConfirmOpen(false);
+          }}
+        >
+          <div
+            className="abort-confirm-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="abort-confirm-icon">
+              <span className="material-symbols-outlined">flag</span>
+            </div>
+
+            <div className="abort-confirm-copy">
+              <h2 id="abort-confirm-title">Từ bỏ phiên tập trung?</h2>
+              <p>
+                Phiên hiện tại sẽ kết thúc ngay và phần thưởng XP bị giảm 50%.
+                Bạn vẫn có thể bắt đầu phiên mới sau đó.
+              </p>
+            </div>
+
+            <div className="abort-confirm-actions">
+              <button
+                className="abort-confirm-secondary"
+                type="button"
+                disabled={isEnding}
+                onClick={() => setIsAbortConfirmOpen(false)}
+              >
+                Tiếp tục học
+              </button>
+              <button
+                className="abort-confirm-danger"
+                type="button"
+                disabled={isEnding}
+                onClick={() => handleEndSession(true)}
+              >
+                {isEnding ? "Đang kết thúc..." : "Xác nhận từ bỏ"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

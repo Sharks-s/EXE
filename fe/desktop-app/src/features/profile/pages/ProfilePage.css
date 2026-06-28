@@ -73,12 +73,16 @@ button {
 }
 
 .page-grid {
-  width: min(100%, 1440px);
+  width: min(100%, 1280px);
   margin: 0 auto;
-  padding: 48px 32px 0;
+  padding: 24px 32px 32px;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 24px;
+}
+
+.profile-page-header {
+  margin-bottom: 0;
 }
 
 .grid-full {
@@ -878,7 +882,7 @@ button {
   }
 
   .page-grid {
-    padding: 24px 16px 0;
+    padding: 24px 16px;
   }
 
   .hero-card,

@@ -607,7 +607,6 @@ export function useFocusSession() {
   const handleEndSession = async (isAborted: boolean) => {
     const latestSession = sessionRef.current;
     if (!latestSession) return;
-    if (isAborted && !window.confirm("Bạn có chắc muốn bỏ cuộc không?")) return;
 
     setIsEnding(true);
     stopOrchestrator();

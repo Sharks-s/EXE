@@ -16,6 +16,7 @@ export type Page =
 interface SidebarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
+  isLocked?: boolean;
 }
 
 // ── NavItem ───────────────────────────────────────────
@@ -27,6 +28,7 @@ function NavItem({
   onNavigate,
   collapsed,
   variant = "default",
+  disabled = false,
 }: {
   page: Page;
   label: string;
@@ -35,12 +37,14 @@ function NavItem({
   onNavigate: (page: Page) => void;
   collapsed: boolean;
   variant?: "default" | "upgrade";
+  disabled?: boolean;
 }) {
   const isActive = currentPage === page;
 
   const baseClasses = `
     w-full flex items-center px-3 py-2.5 rounded-xl
     text-sm transition-colors duration-200 overflow-hidden
+    ${disabled ? "opacity-40 cursor-not-allowed" : ""}
   `;
 
   const variantClasses =
@@ -53,7 +57,14 @@ function NavItem({
   return (
     <button
       onClick={() => onNavigate(page)}
-      title={collapsed ? label : undefined}
+      disabled={disabled}
+      title={
+        collapsed
+          ? label
+          : disabled
+            ? "Đang trong phiên tập trung hãy kết thúc phiên trước"
+            : undefined
+      }
       className={`${baseClasses} ${variantClasses}`}
     >
       <span className="shrink-0 w-[18px] h-[18px] flex items-center justify-center">
@@ -72,7 +83,11 @@ function NavItem({
 }
 
 // ── Sidebar ───────────────────────────────────────────
-export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
+export default function Sidebar({
+  currentPage,
+  onNavigate,
+  isLocked = false,
+}: SidebarProps) {
   const { t } = useTranslation("common");
   const { logout, user } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
@@ -121,6 +136,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           currentPage={currentPage}
           onNavigate={onNavigate}
           collapsed={collapsed}
+          disabled={isLocked}
         />
         <NavItem
           page="settings"
@@ -129,6 +145,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           currentPage={currentPage}
           onNavigate={onNavigate}
           collapsed={collapsed}
+          disabled={isLocked}
         />
         <NavItem
           page="pet"
@@ -137,6 +154,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           currentPage={currentPage}
           onNavigate={onNavigate}
           collapsed={collapsed}
+          disabled={isLocked}
         />
 
         {/* Divider */}
@@ -150,6 +168,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           onNavigate={onNavigate}
           collapsed={collapsed}
           variant="upgrade"
+          disabled={isLocked}
         />
       </nav>
 
@@ -164,6 +183,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           currentPage={currentPage}
           onNavigate={onNavigate}
           collapsed={collapsed}
+          disabled={isLocked}
         />
 
         <button

@@ -21,4 +21,8 @@ public interface FocusSessionService {
     FocusSessionResponse resumeSession(Long sessionId, Long userId, int minutesUsedByFrontEnd);
 
     BreakPromptAiResponse getBreakPrompt(Long sessionId, Long userId);
+
+    FocusSessionResponse getActiveSessionByUserId(Long userId);
+
+    void recordHeartbeat(Long sessionId);
 }

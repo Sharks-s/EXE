@@ -2,10 +2,22 @@ import { useEffect, useState } from "react";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { ChatBubble } from "../../shared/components/ChatBubble";
-import { useFocusStore } from "../../features/focus-session/stores/focusStore";
+
+interface BubbleContent {
+  message: string | null;
+  actions: any[] | undefined;
+  isVisible: boolean;
+}
 
 export default function BubbleWindow() {
   const [isWidgetActive, setIsWidgetActive] = useState(true);
+
+  // Quản lý nội dung hiển thị của Bubble hoàn toàn qua local state nhận từ Event
+  const [bubbleContent, setBubbleContent] = useState<BubbleContent>({
+    message: null,
+    actions: undefined,
+    isVisible: false,
+  });
 
   const [breakPrompt, setBreakPrompt] = useState<{
     isOpen: boolean;
@@ -14,9 +26,7 @@ export default function BubbleWindow() {
     countdown: number;
   }>({ isOpen: false, startedAtMs: null, durationSeconds: 60, countdown: 60 });
 
-  const { botMessage, botActions, isBubbleVisible } = useFocusStore();
-
-  // ── LẮNG NGHE TRẠNG THÁI ACTIVE/INACTIVE CỦA WIDGET ──
+  // ── 1. LẮNG NGHE TRẠNG THÁI ACTIVE/INACTIVE CỦA WIDGET ──
   useEffect(() => {
     const unlistenActive = listen<{ active: boolean }>(
       "widget-active-state",
@@ -29,7 +39,7 @@ export default function BubbleWindow() {
     };
   }, []);
 
-  // ── LẮNG NGHE TÍN HIỆU MỞ/ĐÓNG TỪ MAIN WINDOW ──
+  // ── 2. LẮNG NGHE TÍN HIỆU MỞ/ĐÓNG POPUP HỎI NGHỈ ──
   useEffect(() => {
     const unlistenPrompt = listen<{
       isOpen: boolean;
@@ -58,26 +68,25 @@ export default function BubbleWindow() {
     };
   }, []);
 
-  // ── LẮNG NGHE CẬP NHẬT MESSAGE/ACTIONS TỪ MAIN WINDOW ──
+  // ── 3. LẮNG NGHE CẬP NHẬT CÂU THOẠI AI (Đồng bộ trực tiếp vào local state) ──
   useEffect(() => {
-    const unlistenBubble = listen<{
-      message: string | null;
-      actions: any[] | undefined;
-      isVisible: boolean;
-    }>("bot-bubble-update", (event) => {
-      useFocusStore.setState({
-        botMessage: event.payload.message,
-        botActions: event.payload.actions,
-        isBubbleVisible: event.payload.isVisible,
-      });
-    });
+    const unlistenBubble = listen<BubbleContent>(
+      "bot-bubble-update",
+      (event) => {
+        setBubbleContent({
+          message: event.payload.message,
+          actions: event.payload.actions,
+          isVisible: event.payload.isVisible,
+        });
+      },
+    );
 
     return () => {
       unlistenBubble.then((f) => f());
     };
   }, []);
 
-  // ── TỰ ĐỘNG TÍNH LÙI THEO MỐC THỜI GIAN TUYỆT ĐỐI ──
+  // ── 4. TỰ ĐỘNG TÍNH LÙI THEO MỐC THỜI GIAN TUYỆT ĐỐI ──
   useEffect(() => {
     if (!breakPrompt.isOpen || !breakPrompt.startedAtMs) return;
 
@@ -106,37 +115,45 @@ export default function BubbleWindow() {
     breakPrompt.durationSeconds,
   ]);
 
-  // ── SHOW/HIDE WINDOW THEO TRẠNG THÁI HIỂN THỊ ──
+  // ── 5. QUYẾT ĐỊNH ẨN / HIỆN WINDOW CHUẨN XÁC ──
+  // Cửa sổ hiện khi: Widget đang active VÀ (đang trong trạng thái prompt hỏi nghỉ HOẶC AI đang hiển thị lời thoại)
   const finalVisibility =
-    isWidgetActive && (breakPrompt.isOpen ? true : !!isBubbleVisible); // 👈 thêm điều kiện isWidgetActive
+    isWidgetActive && (breakPrompt.isOpen || bubbleContent.isVisible);
 
   useEffect(() => {
     const win = getCurrentWebviewWindow();
     if (finalVisibility) {
-      win.show().catch((err) => console.error("Bubble show error:", err));
+      win
+        .show()
+        .then(() => win.setFocus())
+        .catch((err) => console.error("Bubble show error:", err));
     } else {
       win.hide().catch((err) => console.error("Bubble hide error:", err));
     }
   }, [finalVisibility]);
 
-  const finalMessage = botMessage || "";
+  // ── 6. XỬ LÝ ACTIONS (Nút bấm) TRÁNH LỆCH PHA DỮ LIỆU ──
+  const finalMessage = bubbleContent.message || "";
 
   const finalActions =
-    breakPrompt.isOpen && botActions && botActions.length >= 2
+    breakPrompt.isOpen &&
+    bubbleContent.actions &&
+    bubbleContent.actions.length >= 2
       ? [
           {
-            ...botActions[0],
+            ...bubbleContent.actions[0],
+            label: `${bubbleContent.actions[0].label} (${breakPrompt.countdown}s)`, // Hiển thị đếm ngược lên nút bấm nghỉ ngơi nếu muốn
             onClick: () => emit("widget-click-accept-break"),
           },
           {
-            ...botActions[1],
+            ...bubbleContent.actions[1],
             onClick: () => emit("widget-click-reject-break"),
           },
         ]
-      : botActions?.map((action) => ({
+      : bubbleContent.actions?.map((action) => ({
           ...action,
           onClick: () => {
-            useFocusStore.setState({ isBubbleVisible: false });
+            setBubbleContent((prev) => ({ ...prev, isVisible: false }));
           },
         })) || undefined;
 

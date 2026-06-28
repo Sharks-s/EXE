@@ -124,6 +124,8 @@ export interface FocusState {
   botActions: AiBubbleAction[] | undefined;
   isBubbleVisible: boolean;
 
+  isResumeConfirmPending: boolean;
+
   // Actions
   setSession: (session: FocusSessionResponse) => void;
   syncSession: (
@@ -142,6 +144,7 @@ export interface FocusState {
   fetchAppRules: () => Promise<void>;
   addToAllowedCache: (appOrTitle: string) => void;
   clearAppRules: () => void;
+  setResumeConfirmPending: (pending: boolean) => void;
 }
 
 export interface AppRulesResponse {

@@ -5,14 +5,17 @@ import { cameraApi } from "../api/cameraApi";
 import { emit, listen } from "@tauri-apps/api/event";
 import type { ViolationType } from "../types/focus.types";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { invoke } from "@tauri-apps/api/core";
 
 const PROMPT_DURATION_SECONDS = 60;
+const HEARTBEAT_INTERVAL_SECONDS = 60;
 
 export function useFocusSession() {
   //  Lấy đúng các trạng thái cần thiết phục vụ cho việc check App
   const { session, syncSession, appRules, allowedCache } = useFocusStore();
 
   const [elapsed, setElapsed] = useState<number>(0);
+  const [cycleElapsed, setCycleElapsed] = useState<number>(0);
   const [isEnding, setIsEnding] = useState<boolean>(false);
   const [isPromptActive, setIsPromptActive] = useState<boolean>(false);
   const [isBreaking, setIsBreaking] = useState<boolean>(false);
@@ -68,6 +71,8 @@ export function useFocusSession() {
   const isHandlingAppViolationRef = useRef<boolean>(false);
   const botBubbleTimerRef = useRef<number | null>(null);
 
+  const lastHeartbeatElapsedRef = useRef<number>(0);
+
   // Lắng nghe lệnh từ Widget gửi về
   useEffect(() => {
     const unlistenAccept = listen("widget-click-accept-break", () =>
@@ -118,6 +123,7 @@ export function useFocusSession() {
     breakSecondsSinceLastCycleRef.current = 0;
     breakStartedAtRef.current = null;
     promptStartedAtRef.current = null;
+    lastHeartbeatElapsedRef.current = 0;
     isBreakingRef.current = false;
     isPromptActiveRef.current = false;
     breakRemainingRef.current = 0;
@@ -167,22 +173,41 @@ export function useFocusSession() {
         return;
       }
 
+      const latestSession = sessionRef.current;
+      if (!latestSession) return;
+
       // 2. Tính tổng thời gian học thực tế (elapsed)
       const currentElapsed =
         Math.floor((now - startedAt) / 1000) - totalBreakSecondsRef.current;
       setElapsed(currentElapsed);
 
-      const latestSession = sessionRef.current;
-      if (!latestSession) return;
+      // ── HEARTBEAT: báo BE còn sống + cộng dailyUsedMinutes theo thời gian thực ──
+      if (
+        currentElapsed - lastHeartbeatElapsedRef.current >=
+        HEARTBEAT_INTERVAL_SECONDS
+      ) {
+        lastHeartbeatElapsedRef.current = currentElapsed;
+        focusApi.heartbeat(latestSession.id).catch((err) => {
+          console.error(
+            "[useFocusSession] Heartbeat thất bại (có thể do mất mạng):",
+            err,
+          );
+        });
+      }
 
       // ── BỘ ĐẾM 1: KIỂM TRA PHIÊN 25 PHÚT ──
       const lastCycleAt = latestSession.lastCycleAt
         ? new Date(latestSession.lastCycleAt).getTime()
         : startedAt;
 
-      const elapsedSecondsFromLastCycle =
+      const currentCycleElapsed = Math.max(
         Math.floor((now - lastCycleAt) / 1000) -
-        breakSecondsSinceLastCycleRef.current;
+          breakSecondsSinceLastCycleRef.current,
+        0,
+      );
+      setCycleElapsed(currentCycleElapsed);
+
+      const elapsedSecondsFromLastCycle = currentCycleElapsed;
 
       if (
         !isBreakingRef.current &&
@@ -213,6 +238,7 @@ export function useFocusSession() {
                   message: breakData.aiSpeech,
                   actions: breakData.actions,
                   isVisible: true,
+                  action: "khingu",
                 });
               })
               .catch((aiErr) => {
@@ -227,6 +253,7 @@ export function useFocusSession() {
                     { label: "Học tiếp 🎯", variant: "secondary" },
                   ],
                   isVisible: true,
+                  action: "khingu",
                 });
               });
 
@@ -257,13 +284,10 @@ export function useFocusSession() {
       ) {
         try {
           // 1. Gọi Rust thông qua Tauri lấy thông tin cửa sổ hiện tại
-          const activeWindow = await import("@tauri-apps/api/core")
-            .then((m) =>
-              m.invoke<{ app_name: string; title: string }>(
-                "get_active_window_info",
-              ),
-            )
-            .catch(() => null);
+          const activeWindow = await invoke<{
+            app_name: string;
+            title: string;
+          }>("get_active_window_info").catch(() => null);
 
           if (activeWindow) {
             const appNameLower = activeWindow.app_name.toLowerCase().trim();
@@ -329,7 +353,7 @@ export function useFocusSession() {
 
                     // 2. Kích hoạt chú khỉ mắng bằng câu thoại AI real-time từ Spring Boot nhả về
                     if (resData.aiSpeech) {
-                      showBotBubble(resData.aiSpeech);
+                      showBotBubble(resData.aiSpeech, [], "khichamhoi");
                     }
                   })
                   .catch((err) => {
@@ -398,7 +422,6 @@ export function useFocusSession() {
                 Math.abs(camStatus.yaw) > 25 ||
                 camStatus.pitch < -20
               ) {
-                boxSizing: "LOOK_AWAY";
                 penaltyViolation = "LOOK_AWAY";
               } else if (!camStatus.checks.close_enough) {
                 healthViolation = "TOO_CLOSE";
@@ -448,7 +471,7 @@ export function useFocusSession() {
 
                     //  Đẩy lời nhắc phạt từ AI lên Widget
                     if (resData.aiSpeech) {
-                      showBotBubble(resData.aiSpeech);
+                      showBotBubble(resData.aiSpeech, [], "khiquaotucgian");
                     }
                   } else {
                     // Lần 4 trở đi: đã đạt giới hạn đợt quét này, không trừ thêm
@@ -508,7 +531,7 @@ export function useFocusSession() {
 
                   //  Đẩy lời nhắc nhở sức khỏe ấm áp từ AI lên Widget
                   if (resData.aiSpeech) {
-                    showBotBubble(resData.aiSpeech);
+                    showBotBubble(resData.aiSpeech, [], "khinhacnho");
                   }
                 }
               } else {
@@ -617,6 +640,7 @@ export function useFocusSession() {
       message: null,
       actions: undefined,
       isVisible: false,
+      action: undefined,
     });
   };
 
@@ -636,6 +660,7 @@ export function useFocusSession() {
         message: null,
         actions: undefined,
         isVisible: false,
+        action: undefined,
       });
 
       initialBreakMinutesRef.current = updatedSession.accumulatedReward;
@@ -659,6 +684,7 @@ export function useFocusSession() {
       const widgetWindow = await WebviewWindow.getByLabel("widget");
       await mainWindow?.show();
       await widgetWindow?.hide();
+      await emit("widget-active-state", { active: false });
     } catch (err) {
       console.error("Lỗi khi bắt đầu nghỉ giải lao:", err);
     }
@@ -723,5 +749,6 @@ export function useFocusSession() {
     handleRejectBreak,
     handleAcceptBreak,
     handleResumeSession,
+    cycleElapsed,
   };
 }

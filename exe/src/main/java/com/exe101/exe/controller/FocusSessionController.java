@@ -31,6 +31,22 @@ public class FocusSessionController {
         return ApiResponse.success(response);
     }
 
+    @GetMapping("/active")
+    public ApiResponse<FocusSessionResponse> getActiveSession(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        FocusSessionResponse activeSession = focusSessionService.getActiveSessionByUserId(userDetails.getId());
+        if (activeSession == null) {
+            return ApiResponse.success(null);
+        }
+        return ApiResponse.success(activeSession);
+    }
+
+    @PostMapping("/{id}/heartbeat")
+    public ApiResponse<Void> heartbeat(@PathVariable Long id) {
+        focusSessionService.recordHeartbeat(id);
+        return ApiResponse.success(null);
+    }
+
     @PostMapping("/{sessionId}/cycle")
     public ApiResponse<FocusSessionResponse> completeCycle(
             @PathVariable Long sessionId,

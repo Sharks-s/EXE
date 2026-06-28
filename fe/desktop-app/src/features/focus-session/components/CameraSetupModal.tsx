@@ -46,8 +46,6 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
 
     setIsSubmitting(true);
     setSubmitError(null);
-    const { emit } = await import("@tauri-apps/api/event");
-
     try {
       // BƯỚC 1: Gọi thẳng API Backend tạo Session
       const newSession = await focusApi.createSession({

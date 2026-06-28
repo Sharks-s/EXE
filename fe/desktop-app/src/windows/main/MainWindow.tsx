@@ -6,7 +6,6 @@ import { toast } from "../../shared/store/toastStore";
 import Sidebar, { type Page } from "../../shared/components/Sidebar";
 import Auth from "../../features/auth/pages/Auth";
 import { focusApi } from "../../features/focus-session/api/focus.api";
-import { useTranslation } from "react-i18next";
 import CompleteProfileModal from "../../shared/components/CompleteProfileModal";
 import { profileApi } from "../../features/profile/api/profile.api";
 
@@ -36,7 +35,6 @@ export default function MainWindow() {
   };
   // Lấy user object trực tiếp để dùng làm dependency (isAuthenticated là function, không reactive)
   const user = useAuthStore((s) => s.user);
-  const [currentPage, setCurrentPage] = useState<Page>("dashboard");
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Xử lý kết quả redirect từ OAuth (nếu có) RỒI MỚI bootstrap.
@@ -141,8 +139,8 @@ export default function MainWindow() {
         isLocked={isSessionActive}
       />
 
-      <main className="flex-1 overflow-auto bg-slate-50">
-        {currentPage === "dashboard" && <Dashboard />}
+      <main className="app-main flex-1 overflow-auto bg-slate-50">
+        {currentPage === "dashboard" && <Dashboard onNavigate={handleNavigate} />}
         {currentPage === "analytics" && <AnalyticsPage />}
         {currentPage === "settings" && <SettingsPage />}
         {currentPage === "profile" && <ProfilePage />}

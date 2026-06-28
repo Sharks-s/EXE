@@ -142,16 +142,15 @@ export default function PetsPage() {
 
 function PetHeader() {
   return (
-    <header className="pet-header">
-      <div className="pet-title-wrap">
-        <div className="pet-logo">
-          <PetLogoIcon />
-        </div>
-
-        <div>
+    <header className="pet-header app-page-header">
+      <div className="pet-title-wrap app-page-title">
+        <div className="app-page-title-row">
+          <span className="app-page-title-icon">
+            <span className="material-symbols-outlined">pets</span>
+          </span>
           <h1>Thú cưng của tôi</h1>
-          <p>Quản lý, trang bị và nâng cấp thú cưng đồng hành.</p>
         </div>
+        <p>Quản lý, trang bị và nâng cấp thú cưng đồng hành.</p>
       </div>
 
     </header>
@@ -562,34 +561,4 @@ function getPetTheme(code: string) {
   if (lowerCode.includes("fish")) return "theme-yellow";
 
   return "theme-blue";
-}
-function PetLogoIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-
-      <ellipse cx="10" cy="8" rx="1.2" ry="1.8" fill="currentColor" />
-      <ellipse cx="14.5" cy="8" rx="1.2" ry="1.8" fill="currentColor" />
-      <ellipse cx="6.5" cy="11" rx="1.2" ry="1.8" fill="currentColor" />
-      <ellipse cx="18" cy="11" rx="1.2" ry="1.8" fill="currentColor" />
-
-      <path
-        d="
-          M12 11
-          C9 11 7.5 13 7.5 15.5
-          C7.5 18 9.2 19.5 12 19.5
-          C14.8 19.5 16.5 18 16.5 15.5
-          C16.5 13 15 11 12 11
-        "
-        fill="currentColor"
-      />
-    </svg>
-  );
 }

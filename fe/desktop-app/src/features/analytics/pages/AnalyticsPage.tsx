@@ -249,14 +249,19 @@ export default function StatisticsPage() {
   return (
     <div className="statistics-page">
       <main className="statistics-main">
-        <header className="page-header">
-          <div>
-            <h1>Phân tích hiệu suất</h1>
+        <header className="page-header app-page-header">
+          <div className="app-page-title">
+            <div className="app-page-title-row">
+              <span className="app-page-title-icon">
+                <span className="material-symbols-outlined">query_stats</span>
+              </span>
+              <h1>Phân tích hiệu suất</h1>
+            </div>
             <p>Theo dõi tiến độ và tối ưu hóa thời gian tập trung</p>
             {error && <p className="analytics-error">{error}</p>}
           </div>
 
-          <div className="time-tabs" role="tablist" aria-label="Bộ lọc thời gian">
+          <div className="time-tabs app-page-actions" role="tablist" aria-label="Bộ lọc thời gian">
             {rangeLabels.map((item) => (
               <button
                 key={item.range}

@@ -1,198 +1,452 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { CameraSetupModal } from "../components/CameraSetupModal";
-import type { GoalPresetItem } from "../types/focus.types";
+import { useEffect, useMemo, useState } from "react";
 import "./SetupView.css";
+import { CameraSetupModal } from "../components/CameraSetupModal";
+import { analyticsApi } from "../../analytics/api/analytics.api";
+import type {
+  AnalyticsSummary,
+  FocusTimeAnalytics,
+  HourlyAnalytics,
+} from "../../analytics/types/analytics.types";
+import { petApi } from "../../pet/api/petApi";
+import type { UserPet } from "../../pet/types/pet.type";
+import type { Page } from "../../../shared/components/Sidebar";
 
-const PRESET_GOALS: GoalPresetItem[] = [
-  { key: "coding", labelKey: "common:goals.coding" },
-  { key: "assignment", labelKey: "common:goals.assignment" },
-  { key: "study", labelKey: "common:goals.study" },
-  { key: "meeting", labelKey: "common:goals.meeting" },
-  { key: "writing", labelKey: "common:goals.writing" },
-];
+const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
+const presets = [5, 25, 50, 90, 120];
 
-interface DurationLevel {
-  minutes: number;
-  label: string;
-  hint: string;
-  recommended?: boolean;
-}
+const formatMinutes = (minutes?: number) => {
+  if (!minutes) return "0m";
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (!hours) return `${rest}m`;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+};
 
-const DURATION_LEVELS: DurationLevel[] = [
-  { minutes: 5, label: "Mới bắt đầu", hint: "Làm quen nhịp tập trung" },
-  {
-    minutes: 25,
-    label: "Tập trung",
-    hint: "1 vòng Pomodoro chuẩn",
-    recommended: true,
-  },
-  { minutes: 50, label: "Sâu", hint: "2 vòng liên tiếp" },
-  { minutes: 90, label: "Chuyên sâu", hint: "Việc cần mạch suy nghĩ dài" },
-  { minutes: 120, label: "Bền bỉ", hint: "Tối đa cho 1 phiên" },
-];
+const formatHourRange = (hour?: number | null) => {
+  if (hour === undefined || hour === null) return "Chưa có dữ liệu";
+  const endHour = (hour + 1) % 24;
+  return `${String(hour).padStart(2, "0")}:00 - ${String(endHour).padStart(
+    2,
+    "0",
+  )}:00`;
+};
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Chào buổi sáng";
-  if (h < 18) return "Chào buổi chiều";
-  return "Chào buổi tối";
-}
+const formatRecentDate = (dateValue?: string) => {
+  if (!dateValue) return "";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return dateValue;
+  return new Intl.DateTimeFormat("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+  }).format(date);
+};
 
-function formatDuration(min: number) {
-  if (min < 60) return `${min} phút`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return m === 0 ? `${h} giờ` : `${h}g ${m}p`;
-}
-
-// Break bank: mỗi 25 phút làm việc hoàn thành sẽ được +5 phút nghỉ tích luỹ
-function getBreakBank(min: number) {
-  const rounds = Math.floor(min / 25);
-  return { rounds, minutes: rounds * 5 };
-}
-
-interface LevelCardProps {
-  level: DurationLevel;
-  isActive: boolean;
-  onSelect: () => void;
-}
-
-function LevelCard({ level, isActive, onSelect }: LevelCardProps) {
+function MaterialIcon({
+  name,
+  filled = false,
+  className = "",
+}: {
+  name: string;
+  filled?: boolean;
+  className?: string;
+}) {
   return (
-    <button
-      onClick={onSelect}
-      className={`levelCard ${isActive ? "levelCardActive" : ""}`}
+    <span
+      className={`material-symbols-outlined ${filled ? "icon-filled" : ""
+        } ${className}`}
     >
-      {level.recommended && <span className="levelBadge">Đề xuất</span>}
-      <span className="levelMinutes">{formatDuration(level.minutes)}</span>
-      <span className="levelLabel">{level.label}</span>
-      <span className="levelHint">{level.hint}</span>
-    </button>
+      {name}
+    </span>
   );
 }
 
-export function SetupView() {
-  const { t } = useTranslation("common");
+type SetupViewProps = {
+  onNavigate?: (page: Page) => void;
+};
 
-  const [selectedPreset, setSelectedPreset] = useState<string | null>("coding");
+export function SetupView({ onNavigate }: SetupViewProps) {
+  const [duration, setDuration] = useState(50);
+  const [selectedPreset, setSelectedPreset] = useState(50);
+  const [selectedGoal, setSelectedGoal] = useState("Coding");
   const [customGoal, setCustomGoal] = useState("");
-  const [duration, setDuration] = useState(25);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
+  const [isCameraSetupOpen, setIsCameraSetupOpen] = useState(false);
+  const [daySummary, setDaySummary] = useState<AnalyticsSummary | null>(null);
+  const [weekSummary, setWeekSummary] = useState<AnalyticsSummary | null>(null);
+  const [yearSummary, setYearSummary] = useState<AnalyticsSummary | null>(null);
+  const [weeklyFocusTime, setWeeklyFocusTime] =
+    useState<FocusTimeAnalytics | null>(null);
+  const [hourly, setHourly] = useState<HourlyAnalytics | null>(null);
+  const [equippedPet, setEquippedPet] = useState<UserPet | null>(null);
 
-  const { rounds, minutes: breakMinutes } = getBreakBank(duration);
+  const focusGoal = useMemo(
+    () => customGoal.trim() || selectedGoal,
+    [customGoal, selectedGoal],
+  );
 
-  const resolvedGoal =
-    customGoal.trim() ||
-    t(`goals.${selectedPreset}`, { defaultValue: selectedPreset ?? "" });
+  const recentFocusItem = useMemo(() => {
+    const items = weeklyFocusTime?.items ?? [];
+    return [...items].reverse().find((item) => item.focusMinutes > 0) ?? null;
+  }, [weeklyFocusTime]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDashboardData = async () => {
+      const [
+        dayResult,
+        weekResult,
+        yearResult,
+        focusTimeResult,
+        hourlyResult,
+        petsResult,
+      ] = await Promise.allSettled([
+        analyticsApi.getSummary({ range: "DAY" }),
+        analyticsApi.getSummary({ range: "WEEK" }),
+        analyticsApi.getSummary({ range: "YEAR" }),
+        analyticsApi.getFocusTime({ range: "WEEK" }),
+        analyticsApi.getHourly({ range: "WEEK" }),
+        petApi.getMyPets(),
+      ]);
+
+      if (cancelled) return;
+
+      if (dayResult.status === "fulfilled") setDaySummary(dayResult.value);
+      if (weekResult.status === "fulfilled") setWeekSummary(weekResult.value);
+      if (yearResult.status === "fulfilled") setYearSummary(yearResult.value);
+      if (focusTimeResult.status === "fulfilled") {
+        setWeeklyFocusTime(focusTimeResult.value);
+      }
+      if (hourlyResult.status === "fulfilled") setHourly(hourlyResult.value);
+      if (petsResult.status === "fulfilled") {
+        setEquippedPet(
+          petsResult.value.find((pet) => pet.equipped) ??
+          petsResult.value[0] ??
+          null,
+        );
+      }
+    };
+
+    loadDashboardData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleDurationChange = (value: number) => {
+    setDuration(value);
+    setSelectedPreset(0);
+  };
+
+  const handlePresetClick = (value: number) => {
+    setDuration(value);
+    setSelectedPreset(value);
+  };
+
+  const handleStart = () => {
+    if (!focusGoal) return;
+    setIsCameraSetupOpen(true);
+  };
+
+  const handleNavigate = (page: Page) => {
+    onNavigate?.(page);
+  };
 
   return (
-    <div className="container">
-      <div className="header">
-        <h1 className="title">{getGreeting()} 👋</h1>
-        <p className="subtitle">Chọn mục tiêu và thời gian để bắt đầu</p>
-      </div>
+    <div className="focus-dashboard">
+      <main className="dashboard-main">
+        <header className="top-header app-page-header">
+          <div className="app-page-title">
+            <div className="app-page-title-row">
+              <span className="app-page-title-icon">
+                <MaterialIcon name="dashboard" />
+              </span>
+              <h2>Chào buổi chiều 👋</h2>
+            </div>
+            <p>Bạn muốn tập trung vào điều gì hôm nay?</p>
+          </div>
 
-      {/* GOAL SECTION */}
-      <div className="block">
-        <label className="sectionLabel">Hôm nay bạn cần làm gì?</label>
-        <div className="presetContainer">
-          {PRESET_GOALS.map((g) => {
-            const isSelected = selectedPreset === g.key && !customGoal;
-            return (
-              <button
-                key={g.key}
-                onClick={() => {
-                  setSelectedPreset(g.key);
-                  setCustomGoal("");
-                }}
-                className={`presetBtn ${isSelected ? "presetBtnActive" : ""}`}
-              >
-                {t(`goals.${g.key}`, { defaultValue: g.key })}
+          <div className="header-actions app-page-actions">
+            <div className="ready-status">
+              <span className="status-dot" />
+              <span>Sẵn sàng tập trung</span>
+            </div>
+
+            <button
+              className="notification-btn"
+              type="button"
+              aria-label="Thông báo"
+            >
+              <MaterialIcon name="notifications" />
+            </button>
+          </div>
+        </header>
+
+        <div className="dashboard-grid">
+          <div className="main-column">
+            <section className="bento-card goal-card">
+              <div className="section-title">
+                <div className="title-icon">
+                  <MaterialIcon name="track_changes" />
+                </div>
+                <h3>Mục tiêu tập trung</h3>
+              </div>
+
+              <div className="goal-controls">
+                <div className="goal-list">
+                  {[goals.slice(0, 3), goals.slice(3)].map((row, rowIndex) => (
+                    <div className="goal-row" key={rowIndex}>
+                      {row.map((goal) => (
+                        <button
+                          key={goal}
+                          type="button"
+                          className={`goal-chip ${selectedGoal === goal && !customGoal.trim()
+                            ? "active"
+                            : ""
+                            }`}
+                          onClick={() => {
+                            setSelectedGoal(goal);
+                            setCustomGoal("");
+                          }}
+                        >
+                          {goal}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="goal-input-wrap">
+                  <MaterialIcon name="edit_note" />
+                  <input
+                    placeholder="Hoặc nhập mục tiêu cụ thể của bạn..."
+                    type="text"
+                    value={customGoal}
+                    onChange={(event) => setCustomGoal(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    aria-label="Dùng mục tiêu tùy chỉnh"
+                    onClick={() => setCustomGoal(customGoal.trim())}
+                  >
+                    <MaterialIcon name="add" />
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section className="bento-card duration-card">
+              <div className="duration-header">
+                <div className="section-title no-margin">
+                  <div className="title-icon">
+                    <MaterialIcon name="timer" />
+                  </div>
+                  <h3>Thời gian phiên</h3>
+                </div>
+
+                <div className="duration-value">
+                  <strong>{duration}</strong>
+                  <span>phút</span>
+                </div>
+              </div>
+
+              <div className="slider-wrap">
+                <input
+                  className="custom-slider"
+                  max={240}
+                  min={25}
+                  step={5}
+                  type="range"
+                  value={duration}
+                  onChange={(event) =>
+                    handleDurationChange(Number(event.target.value))
+                  }
+                />
+                <div className="slider-labels">
+                  <span>25 phút</span>
+                  <span>4 giờ</span>
+                </div>
+              </div>
+
+              <div className="preset-grid">
+                {presets.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={`preset-btn ${selectedPreset === preset ? "active" : ""
+                      }`}
+                    onClick={() => handlePresetClick(preset)}
+                  >
+                    {preset}p
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <div className="reward-row">
+              <div className="reward-card bento-card">
+                <MaterialIcon name="stars" className="reward-watermark" />
+                <div className="reward-icon">
+                  <MaterialIcon name="savings" filled />
+                </div>
+                <div className="reward-content">
+                  <div className="reward-title">
+                    <h4>+10 phút nghỉ</h4>
+                    <span>Hot</span>
+                  </div>
+                  <p>Hoàn thành 2 hiệp 50 phút</p>
+                  <div className="reward-progress">
+                    <span />
+                  </div>
+                </div>
+              </div>
+
+              <button className="start-btn" type="button" onClick={handleStart}>
+                <span className="start-shine" />
+                <span>Bắt đầu phiên</span>
+                <MaterialIcon name="arrow_forward" />
               </button>
-            );
-          })}
-        </div>
-        <input
-          type="text"
-          placeholder="Hoặc nhập mục tiêu cụ thể..."
-          value={customGoal}
-          onChange={(e) => {
-            setCustomGoal(e.target.value);
-            setSelectedPreset(null);
-          }}
-          onFocus={() => setInputFocused(true)}
-          onBlur={() => setInputFocused(false)}
-          className={`customInput ${inputFocused ? "customInputFocused" : ""}`}
-        />
-      </div>
+            </div>
+          </div>
 
-      {/* DURATION / LEVEL SECTION */}
-      <div className="block">
-        <div className="durationHeader">
-          <label className="sectionLabel">Mức độ tập trung</label>
-          <div className="durationBadge">{formatDuration(duration)}</div>
-        </div>
-
-        <div className="levelGroup levelGroupShort">
-          {DURATION_LEVELS.slice(0, 3).map((lvl) => (
-            <LevelCard
-              key={lvl.minutes}
-              level={lvl}
-              isActive={duration === lvl.minutes}
-              onSelect={() => setDuration(lvl.minutes)}
-            />
-          ))}
-        </div>
-
-        <div className="levelGroup levelGroupLong">
-          {DURATION_LEVELS.slice(3).map((lvl) => (
-            <LevelCard
-              key={lvl.minutes}
-              level={lvl}
-              isActive={duration === lvl.minutes}
-              onSelect={() => setDuration(lvl.minutes)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* BREAK BANK PREVIEW */}
-      <div className="breakBankCard">
-        <div className="breakBankIcon">💰</div>
-        <div>
-          {rounds > 0 ? (
-            <>
-              <div className="breakBankTitle">
-                Hoàn thành phiên này, bạn có {breakMinutes} phút nghỉ
+          <div className="side-column">
+            <section className="bento-card summary-card">
+              <div className="summary-header">
+                <h3>Thống kê</h3>
+                <button
+                  className="header-icon-button"
+                  type="button"
+                  aria-label="Mở trang thống kê"
+                  onClick={() => handleNavigate("analytics")}
+                >
+                  <MaterialIcon name="query_stats" />
+                </button>
               </div>
-              <div className="breakBankSubtitle">
-                Cứ 25 phút tập trung xong sẽ cộng thêm 5 phút nghỉ
+
+              <div className="summary-grid">
+                <div className="stat-box">
+                  <p>Thời gian</p>
+                  <strong className="primary-text">
+                    {formatMinutes(daySummary?.totalFocusMinutes)}
+                  </strong>
+                </div>
+                <div className="stat-box">
+                  <p>Phiên</p>
+                  <div className="stat-inline">
+                    <strong>{daySummary?.completedSessions ?? 0}</strong>
+                    <span>/{daySummary?.totalSessions ?? 0}</span>
+                  </div>
+                </div>
+                <div className="stat-box streak-box">
+                  <p>Chuỗi ngày</p>
+                  <div className="fire-row">
+                    <strong>{yearSummary?.currentStreakDays ?? 0}</strong>
+                    <MaterialIcon name="local_fire_department" filled />
+                  </div>
+                </div>
+                <div className="stat-box performance-box">
+                  <p>Hiệu suất</p>
+                  <strong>
+                    {Math.round(weekSummary?.completionRate ?? 0)}%
+                  </strong>
+                </div>
               </div>
-            </>
-          ) : (
-            <>
-              <div className="breakBankTitle">
-                Phiên ngắn, chưa cộng phút nghỉ
+            </section>
+
+            <section
+              className="bento-card mascot-card clickable-card"
+              role="button"
+              tabIndex={0}
+              aria-label="Mở trang thú cưng"
+              onClick={() => handleNavigate("pet")}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleNavigate("pet");
+                }
+              }}
+            >
+              <div className="mascot-row">
+                <div className="mascot-avatar">
+                  <img
+                    src={equippedPet?.imageUrl || "/pet/MONKI/khiworking/bot_0.png"}
+                    alt={equippedPet?.customName || "Monki"}
+                  />
+                </div>
+                <div className="mascot-info">
+                  <div>
+                    <h4>{equippedPet?.customName || "Chưa trang bị"}</h4>
+                    <span>LVL {equippedPet?.level ?? 0}</span>
+                  </div>
+                  <div className="level-bar">
+                    <span />
+                  </div>
+                </div>
               </div>
-              <div className="breakBankSubtitle">
-                Từ 25 phút trở lên sẽ bắt đầu tích phút nghỉ
+
+              <div className="mascot-message">
+                <p>
+                  {equippedPet
+                    ? `${equippedPet.customName} đang đồng hành cùng bạn hôm nay.`
+                    : "Trang bị một thú cưng để có bạn đồng hành trong phiên tập trung."}
+                </p>
               </div>
-            </>
-          )}
+            </section>
+
+            <section className="bento-card ai-card">
+              <div>
+                <span>AI Buddy Insights</span>
+                <MaterialIcon name="auto_awesome" />
+              </div>
+              <p>
+                Khung giờ hiệu quả nhất của bạn là{" "}
+                <strong>{formatHourRange(hourly?.bestHour)}</strong>. Hãy duy
+                trì nhịp độ này!
+              </p>
+            </section>
+
+            <section className="bento-card recent-card">
+              <div className="recent-header">
+                <h3>Vừa hoàn thành</h3>
+                <button type="button">Tất cả</button>
+              </div>
+
+              <div className="session-item">
+                <div className="session-icon">
+                  <MaterialIcon name="terminal" />
+                </div>
+                <div className="session-content">
+                  <h5>
+                    {recentFocusItem
+                      ? "Phiên tập trung gần đây"
+                      : "Chưa có phiên gần đây"}
+                  </h5>
+                  <p>
+                    {recentFocusItem
+                      ? `${formatRecentDate(recentFocusItem.date)} - ${formatMinutes(
+                        recentFocusItem.focusMinutes,
+                      )}`
+                      : "Bắt đầu một phiên để ghi nhận dữ liệu"}
+                  </p>
+                </div>
+                <div className="xp-badge">
+                  {recentFocusItem
+                    ? `${recentFocusItem.completedSessions} phiên`
+                    : "0 phiên"}
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
+      </main>
 
-      <button onClick={() => setIsCameraOpen(true)} className="submitBtn">
-        Bắt đầu tập trung →
-      </button>
-
-      {isCameraOpen && (
+      {isCameraSetupOpen && (
         <CameraSetupModal
-          goal={resolvedGoal}
+          goal={focusGoal}
           durationMinutes={duration}
-          onClose={() => setIsCameraOpen(false)}
+          onClose={() => setIsCameraSetupOpen(false)}
         />
       )}
     </div>

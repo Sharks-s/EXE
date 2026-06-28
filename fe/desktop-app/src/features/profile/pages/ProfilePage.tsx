@@ -441,11 +441,23 @@ export default function ProfilePage() {
       <main className="main-content">
         <header className="mobile-header">
           <span className="material-symbols-outlined mobile-menu-icon">menu</span>
-          <h1>Cài đặt</h1>
+          <h1>Hồ sơ người dùng</h1>
           <div className="mobile-header-spacer" />
         </header>
 
         <div className="page-grid">
+          <header className="app-page-header profile-page-header grid-full">
+            <div className="app-page-title">
+              <div className="app-page-title-row">
+                <span className="app-page-title-icon">
+                  <span className="material-symbols-outlined">manage_accounts</span>
+                </span>
+                <h1>Hồ sơ người dùng</h1>
+              </div>
+              <p>Quản lý hồ sơ, hiệu suất và bảo mật tài khoản.</p>
+            </div>
+          </header>
+
           <section className="hero-card grid-full">
             <div className="hero-blob" />
 

@@ -4,6 +4,8 @@ import com.exe101.exe.model.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(
         name = "user_identities",
@@ -46,4 +48,7 @@ public class UserIdentity {
 
     @Column(name = "password")
     private String password;
+
+    @Column(name = "password_updated_at")
+    private Instant passwordUpdatedAt;
 }

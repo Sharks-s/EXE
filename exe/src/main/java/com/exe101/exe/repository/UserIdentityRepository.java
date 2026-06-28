@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface UserIdentityRepository extends JpaRepository<UserIdentity, Long> {
     Optional<UserIdentity> findByProviderAndProviderId(AuthProvider provider, String providerId);
 
+    void deleteAllByUserId(Long userId);
+
     Optional<UserIdentity> findByUserAndProvider(User user, AuthProvider provider);
 
     @Query("""

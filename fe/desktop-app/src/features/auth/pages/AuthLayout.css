@@ -7,6 +7,16 @@
   align-items: center;
   justify-content: center;
 }
+.auth-container {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.45)),
+    url("../../../assets/Background-img.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+}
+
 .auth-card {
   position: relative;
   overflow: hidden;

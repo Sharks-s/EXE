@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -32,6 +33,7 @@ public class UserIdentityServiceImpl implements UserIdentityService {
                         .user(user)
                         .provider(AuthProvider.LOCAL)
                         .password(passwordEncoder.encode(rawPassword))
+                        .passwordUpdatedAt(Instant.now())
                         .build()
         );
     }
@@ -73,7 +75,15 @@ public class UserIdentityServiceImpl implements UserIdentityService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.IDENTITY_NOT_FOUND));
 
         identity.setPassword(passwordEncoder.encode(rawPassword));
+        identity.setPasswordUpdatedAt(Instant.now());
         userIdentityRepository.save(identity);
     }
+    @Override
+    public boolean matchesLocalPassword(User user, String rawPassword) {
+        UserIdentity identity = userIdentityRepository
+                .findByUserAndProvider(user, AuthProvider.LOCAL)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOCAL_IDENTITY_NOT_FOUND));
 
+        return passwordEncoder.matches(rawPassword, identity.getPassword());
+    }
 }

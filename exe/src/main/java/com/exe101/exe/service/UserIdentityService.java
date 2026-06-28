@@ -17,4 +17,6 @@ public interface UserIdentityService {
     boolean hasLocalIdentity(User user);
 
     void updateLocalPassword(User user, String rawPassword);
+
+    boolean matchesLocalPassword(User user, String rawPassword);
 }

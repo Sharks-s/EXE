@@ -1,10 +1,7 @@
 package com.exe101.exe.service.impl;
 
 import com.exe101.exe.config.OtpProperties;
-import com.exe101.exe.dto.request.CompleteRegisterRequest;
-import com.exe101.exe.dto.request.LoginRequest;
-import com.exe101.exe.dto.request.RegisterInitRequest;
-import com.exe101.exe.dto.request.VerifyRegisterRequest;
+import com.exe101.exe.dto.request.*;
 import com.exe101.exe.dto.response.*;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
@@ -12,6 +9,7 @@ import com.exe101.exe.mapper.UserMapper;
 import com.exe101.exe.model.entity.*;
 
 import com.exe101.exe.model.enums.AuthProvider;
+import com.exe101.exe.model.enums.OtpType;
 import com.exe101.exe.model.enums.RegisterStatus;
 import com.exe101.exe.repository.RegisterSessionStore;
 import com.exe101.exe.security.CustomUserDetails;
@@ -168,31 +166,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public VerifyRegisterResponse verifyRegister(VerifyRegisterRequest request) {
-        OtpRedis otp = otpService.verifyRegisterOtp(
-                request.verifyId(),
-                request.otp()
-        );
-
-        String sessionToken = UUID.randomUUID().toString();
-        registerSessionStore.save(
-                sessionToken,
-                RegisterSession.builder()
-                        .userId(otp.getUserId())
-                        .email(otp.getEmail())
-                        .expiresAt(Instant.now().plus(10, ChronoUnit.MINUTES))
-                        .build(),
-                Duration.ofMinutes(10)
-        );
-
-        return VerifyRegisterResponse.builder()
-                .sessionToken(sessionToken)
-                .expiresInSeconds(600L)
-                .build();
-    }
-
-    @Override
-    @Transactional
     public LoginResult completeRegister(CompleteRegisterRequest request) {
         RegisterSession session = registerSessionStore.get(request.sessionToken())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_EXPIRED));
@@ -208,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
         } else {
             userIdentityService.updateLocalPassword(user, request.password());
         }
-
+        user.setAvatarUrl("https://res.cloudinary.com/dlkcf2b8w/image/upload/v1782566522/png-transparent-default-avatar_armtvw.png");
         // Activate user
         userService.activateUser(user.getId());
 
@@ -222,7 +195,7 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), deviceId);
         refreshTokenService.create(user.getId(), refreshToken, deviceId);
 
-        user = userService.findById(user.getId());
+        user = userService.findByIdWithRoles(user.getId());
 
         return LoginResult.builder()
                 .refreshToken(refreshToken)
@@ -256,13 +229,82 @@ public class AuthServiceImpl implements AuthService {
     public ExchangeResponse exchangeRefreshForAccess(String refreshToken) {
         RefreshToken refresh = refreshTokenService.verify(refreshToken);
 
-        User user = userService.findById(refresh.getUser().getId());
+        User user = userService.findByIdWithRoles(refresh.getUser().getId());
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
 
         return ExchangeResponse.builder()
                 .accessToken(accessToken)
                 .user(userMapper.toSummary(user))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public RegisterResponse forgotPassword(ForgotPasswordRequest request) {
+        User user = userService.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
+
+        if (!userIdentityService.hasLocalIdentity(user)) {
+            throw new BusinessException(ErrorCode.LOCAL_IDENTITY_NOT_FOUND);
+        }
+
+        String verifyId = otpService.generateRegisterOtp(
+                user.getId(),
+                user.getEmail()
+        );
+
+        return RegisterResponse.builder()
+                .email(maskUtil.maskEmail(user.getEmail()))
+                .expiresInSeconds((long) otpProperties.getExpireMinutes() * 60)
+                .verifyId(verifyId)
+                .build();
+    }
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        RegisterSession session = registerSessionStore.get(request.sessionToken())
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_EXPIRED));
+
+        if (session.getType() != OtpType.RESET_PASSWORD) {
+            throw new BusinessException(ErrorCode.SESSION_EXPIRED);
+        }
+
+        registerSessionStore.delete(request.sessionToken());
+
+        User user = userService.findById(session.getUserId());
+
+        if (!userIdentityService.hasLocalIdentity(user)) {
+            throw new BusinessException(ErrorCode.LOCAL_IDENTITY_NOT_FOUND);
+        }
+
+        userIdentityService.updateLocalPassword(user, request.password());
+    }
+
+    @Override
+    @Transactional
+    public VerifyRegisterResponse verifyOtp(VerifyRegisterRequest request) {
+        OtpRedis otp = otpService.verifyRegisterOtp(
+                request.verifyId(),
+                request.otp()
+        );
+
+        String sessionToken = UUID.randomUUID().toString();
+
+        registerSessionStore.save(
+                sessionToken,
+                RegisterSession.builder()
+                        .userId(otp.getUserId())
+                        .email(otp.getEmail())
+                        .type(request.type())
+                        .expiresAt(Instant.now().plus(10, ChronoUnit.MINUTES))
+                        .build(),
+                Duration.ofMinutes(10)
+        );
+
+        return VerifyRegisterResponse.builder()
+                .sessionToken(sessionToken)
+                .expiresInSeconds(600L)
                 .build();
     }
 

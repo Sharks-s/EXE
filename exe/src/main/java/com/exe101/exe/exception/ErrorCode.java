@@ -65,6 +65,12 @@ public enum ErrorCode {
     PERSONALITY_NOT_FOUND("PERSONALITY_001", HttpStatus.NOT_FOUND, "Personality not found"),
     PERSONALITY_CODE_ALREADY_EXISTS("PERSONALITY_002", HttpStatus.CONFLICT, "Personality code already exists"),
     PERSONALITY_DES_NOT_FOUND("PERSONALITY_003", HttpStatus.NOT_FOUND, "Personality description not found"),
+
+    // ===== LOCATION =====
+    PROVINCE_NOT_FOUND("LOCATION_001", HttpStatus.NOT_FOUND, "Province not found"),
+    WARD_NOT_FOUND("LOCATION_002", HttpStatus.NOT_FOUND, "Ward not found"),
+    INVALID_ADDRESS("LOCATION_003", HttpStatus.BAD_REQUEST, "Invalid address"),
+
     // ===== FOCUS SESSION =====
     SESSION_NOT_FOUND("SESSION_001", HttpStatus.NOT_FOUND, "Session not found"),
     SESSION_ALREADY_ENDED("SESSION_002", HttpStatus.BAD_REQUEST, "Session already ended"),

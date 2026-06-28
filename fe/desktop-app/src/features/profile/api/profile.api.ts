@@ -8,6 +8,10 @@ import type {
 } from "../types/profile.types";
 
 const PROFILE_ENDPOINT = "/users/me";
+type ChangePasswordRequest = {
+  oldPassword: string;
+  newPassword: string;
+};
 
 export const profileApi = {
   getMyProfile: () =>
@@ -18,7 +22,7 @@ export const profileApi = {
   saveProfile: (data: SaveProfileRequest) =>
     api
       .put<ApiResponse<UserSummary>>(`${PROFILE_ENDPOINT}/basic-profile`, data)
-      .then((r) => r.data.data),  
+      .then((r) => r.data.data),
 
   getProfileCompletion: () =>
     api
@@ -28,19 +32,27 @@ export const profileApi = {
       .then((r) => r.data.data),
 
   updateAvatar: (data: UpdateAvatarRequest) => {
-  const formData = new FormData();
-  formData.append("avatar", data.avatar);
+    const formData = new FormData();
+    formData.append("avatar", data.avatar);
 
-  return api
-    .put<ApiResponse<UserSummary>>(
-      `${PROFILE_ENDPOINT}/avatar`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
+    return api
+      .put<ApiResponse<UserSummary>>(
+        `${PROFILE_ENDPOINT}/avatar`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      },
-    )
-    .then((r) => r.data.data);
-},
+      )
+      .then((r) => r.data.data);
+  },
+
+  changePassword: (data: ChangePasswordRequest) =>
+    api
+      .put<ApiResponse<null>>(`${PROFILE_ENDPOINT}/password`, data)
+      .then((r) => r.data),
+
+  deleteMyAccount: () =>
+    api.delete<ApiResponse<null>>(PROFILE_ENDPOINT).then((r) => r.data),
 };

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useUserPets } from "../hooks/useUserPets";
-import type { UserPet , ShopPet } from "../types/pet.type";
+import type { UserPet, ShopPet } from "../types/pet.type";
 import { usePetShop } from "../hooks/usePetShop";
 
 import "./PetsPage.css";
@@ -205,7 +205,7 @@ function PetStats({ totalPets, equippedPet, premiumCount }: PetStatsProps) {
       <div className="pet-stat-card">
         <div className="stat-icon green">🛡</div>
         <div>
-          <strong>{equippedPet?.customName ?? "Chưa có"}</strong>
+          <strong>{equippedPet?.code ?? "Chưa có"}</strong>
           <span>Đang trang bị</span>
           {equippedPet && <small>Cấp {equippedPet.level}</small>}
         </div>
@@ -320,14 +320,13 @@ function PetCard({
       </div>
 
       <div className="pet-card-body">
-        <h3>{pet.customName}</h3>
-        <p>{formatPetCode(pet.code)}</p>
+        <h3>{pet.code}</h3>
+        <p>{formatPetCode(pet.customName)}</p>
 
         <div className="level-line">
           <div style={{ width: `${Math.min(pet.level * 4, 100)}%` }} />
         </div>
 
-        <small>ID #{pet.userPetId}</small>
 
         <div className="pet-card-actions">
           <button
@@ -564,7 +563,7 @@ function getPetTheme(code: string) {
 
   return "theme-blue";
 }
-  function PetLogoIcon() {
+function PetLogoIcon() {
   return (
     <svg
       width="22"

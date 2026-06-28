@@ -1,5 +1,6 @@
 package com.exe101.exe.service.impl;
 
+import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
 import com.exe101.exe.dto.response.CloudinaryUploadResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
@@ -7,11 +8,18 @@ import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.mapper.UserMapper;
 import com.exe101.exe.model.entity.Personality;
+import com.exe101.exe.model.entity.Province;
 import com.exe101.exe.model.entity.User;
+import com.exe101.exe.model.entity.Ward;
 import com.exe101.exe.model.enums.UserStatus;
 import com.exe101.exe.repository.PersonalityRepository;
+import com.exe101.exe.repository.ProvinceRepository;
+import com.exe101.exe.repository.RefreshTokenRepository;
+import com.exe101.exe.repository.UserIdentityRepository;
 import com.exe101.exe.repository.UserRepository;
-import com.exe101.exe.service.CloudinaryService;
+import com.exe101.exe.repository.WardRepository;
+import com.exe101.exe.service.ImageService;
+import com.exe101.exe.service.UserIdentityService;
 import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,8 +36,13 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PersonalityRepository personalityRepository;
+    private final ProvinceRepository provinceRepository;
+    private final WardRepository wardRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final UserIdentityRepository userIdentityRepository;
     private final UserMapper userMapper;
-    private final CloudinaryService cloudinaryService;
+    private final ImageService cloudinaryService;
+    private final UserIdentityService userIdentityService;
 
     @Override
     public User createLocalUser(String email) {
@@ -152,6 +165,30 @@ public class UserServiceImpl implements UserService {
         user.setPhoneNumber(hasText(request.phoneNumber()) ? request.phoneNumber().trim() : null);
         user.setDateOfBirth(request.dateOfBirth());
         user.setGender(request.gender());
+        user.setAddressLine(hasText(request.addressLine()) ? request.addressLine().trim() : null);
+
+        Province province = null;
+        if (request.provinceCode() != null) {
+            province = provinceRepository.findById(request.provinceCode())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PROVINCE_NOT_FOUND));
+        }
+
+        Ward ward = null;
+        if (request.wardCode() != null) {
+            ward = wardRepository.findById(request.wardCode())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.WARD_NOT_FOUND));
+
+            if (province != null && !ward.getProvince().getCode().equals(province.getCode())) {
+                throw new BusinessException(ErrorCode.INVALID_ADDRESS);
+            }
+
+            if (province == null) {
+                province = ward.getProvince();
+            }
+        }
+
+        user.setProvince(province);
+        user.setWard(ward);
 
         if (request.personalityId() != null) {
             Personality personality = personalityRepository.findById(request.personalityId())
@@ -159,11 +196,61 @@ public class UserServiceImpl implements UserService {
             user.setPersonality(personality);
         }
 
-        user.setProfileCompleted(true);
+        user.setProfileCompleted(getMissingRequiredFields(user).isEmpty());
         userRepository.save(user);
 
         return findByIdWithRoles(userId);
     }
+
+    @Override
+    @Transactional
+    public User changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_ID_NOT_FOUND));
+
+        if (!userIdentityService.hasLocalIdentity(user)) {
+            throw new BusinessException(ErrorCode.LOCAL_IDENTITY_NOT_FOUND);
+        }
+
+        if (!userIdentityService.matchesLocalPassword(user, request.oldPassword())) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        userIdentityService.updateLocalPassword(user, request.newPassword());
+
+        return findByIdWithRoles(userId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMyAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_ID_NOT_FOUND));
+
+        if (hasText(user.getAvatarPublicId())) {
+            cloudinaryService.deleteImage(user.getAvatarPublicId());
+        }
+
+        refreshTokenRepository.revokeAllByUserId(userId);
+        userIdentityRepository.deleteAllByUserId(userId);
+
+        user.setStatus(UserStatus.DEACTIVATED);
+        user.setEmail(buildDeletedEmail(userId));
+        user.setFullName("Deleted User");
+        user.setAvatarUrl(null);
+        user.setAvatarPublicId(null);
+        user.setProfileCompleted(false);
+        user.setPhoneNumber(null);
+        user.setGender(null);
+        user.setDateOfBirth(null);
+        user.setAddressLine(null);
+        user.setProvince(null);
+        user.setWard(null);
+        user.setPersonality(null);
+
+        userRepository.save(user);
+    }
+
     @Override
     @Transactional
     public User updateAvatar(Long userId, MultipartFile avatar) {
@@ -203,10 +290,26 @@ public class UserServiceImpl implements UserService {
             fields.add("fullName");
         }
 
+        if (!hasText(user.getAddressLine())) {
+            fields.add("addressLine");
+        }
+
+        if (user.getProvince() == null) {
+            fields.add("provinceCode");
+        }
+
+        if (user.getWard() == null) {
+            fields.add("wardCode");
+        }
+
         return fields;
     }
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private String buildDeletedEmail(Long userId) {
+        return "deleted_" + userId + "_" + Instant.now().toEpochMilli() + "@deleted.local";
     }
 }

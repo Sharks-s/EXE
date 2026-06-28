@@ -7,8 +7,9 @@ import Sidebar, { type Page } from "../../shared/components/Sidebar";
 import Auth from "../../features/auth/pages/Auth";
 import { focusApi } from "../../features/focus-session/api/focus.api";
 import { useTranslation } from "react-i18next";
+import CompleteProfileModal from "../../shared/components/CompleteProfileModal";
+import { profileApi } from "../../features/profile/api/profile.api";
 
-// Pages
 import Dashboard from "../../features/focus-session/pages/Dashboard";
 import AnalyticsPage from "../../features/analytics/pages/AnalyticsPage";
 import SettingsPage from "../../features/settings/pages/SettingsPage";
@@ -17,7 +18,6 @@ import UpgradePage from "../../features/upgrade/pages/UpgradePage";
 import Pet from "../../features/pet/pages/PetsPage";
 
 export default function MainWindow() {
-  const { t } = useTranslation("common");
   const { bootstrap, isInitializing, isAuthenticated } = useAuthStore();
   const { session } = useFocusStore();
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
@@ -34,6 +34,10 @@ export default function MainWindow() {
     }
     setCurrentPage(page);
   };
+  // Lấy user object trực tiếp để dùng làm dependency (isAuthenticated là function, không reactive)
+  const user = useAuthStore((s) => s.user);
+  const [currentPage, setCurrentPage] = useState<Page>("dashboard");
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Xử lý kết quả redirect từ OAuth (nếu có) RỒI MỚI bootstrap.
   // Backend không gọi được tauriStore.set() ở phía JS, nên frontend phải tự
@@ -67,6 +71,7 @@ export default function MainWindow() {
     const handleSessionExpired = () => {
       useAuthStore.setState({ user: null });
     };
+
     window.addEventListener("auth:session-expired", handleSessionExpired);
     return () =>
       window.removeEventListener("auth:session-expired", handleSessionExpired);
@@ -92,6 +97,34 @@ export default function MainWindow() {
     }
     checkActiveSession();
   }, [isInitializing, isAuthenticated]);
+  // Kiểm tra profile completion MỖI LẦN user đăng nhập (user.id thay đổi).
+  // Chỉ dựa vào profileCompleted/profile_completed/completed:
+  // false thì hiện popup, true thì không hiện.
+  useEffect(() => {
+    if (!user) return; // chưa đăng nhập → bỏ qua
+
+    let cancelled = false;
+
+    const checkProfile = async () => {
+      try {
+        const result = await profileApi.getProfileCompletion();
+        const profileCompleted =
+          result.profileCompleted ?? result.profile_completed ?? result.completed;
+
+        if (!cancelled) {
+          setShowProfileModal(profileCompleted === false);
+        }
+      } catch {
+        // Bỏ qua lỗi network, không chặn user vào app.
+      }
+    };
+
+    checkProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // Đang check session → không render gì để tránh flash
   if (isInitializing || isCheckingActiveSession) return null;
@@ -116,6 +149,13 @@ export default function MainWindow() {
         {currentPage === "upgrade" && <UpgradePage />}
         {currentPage === "pet" && <Pet />}
       </main>
+
+      {/* Popup nhập thông tin cá nhân nếu chưa hoàn thiện */}
+      <CompleteProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onCompleted={() => setShowProfileModal(false)}
+      />
     </div>
   );
 }

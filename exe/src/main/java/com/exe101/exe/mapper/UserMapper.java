@@ -21,6 +21,18 @@ public interface UserMapper {
     )
     @Mapping(target = "personalityId", source = "personality.id")
     @Mapping(target = "personalityCode", source = "personality.code")
+    @Mapping(target = "provinceCode", source = "province.code")
+    @Mapping(target = "provinceName", source = "province.name")
+    @Mapping(target = "wardCode", source = "ward.code")
+    @Mapping(target = "wardName", source = "ward.name")
+    @Mapping(
+            target = "passwordUpdatedAt",
+            expression = "java(user.getIdentities().stream()" +
+                    ".filter(identity -> identity.getProvider() == com.exe101.exe.model.enums.AuthProvider.LOCAL)" +
+                    ".findFirst()" +
+                    ".map(com.exe101.exe.model.entity.UserIdentity::getPasswordUpdatedAt)" +
+                    ".orElse(null))"
+    )
 
     UserSummary toSummary(User user);
 

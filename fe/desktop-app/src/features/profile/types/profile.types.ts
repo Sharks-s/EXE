@@ -7,10 +7,13 @@ export interface SaveProfileRequest {
   dateOfBirth?: string;
   dob?: string;
   personalityId?: number;
+  addressLine?: string;
+  provinceCode?: number;
+  wardCode?: number;
 }
 
 export interface UpdateAvatarRequest {
-   avatar: File;
+  avatar: File;
 
 }
 
@@ -20,8 +23,15 @@ export interface UserSummary {
   fullName: string;
   avatarUrl?: string;
   phoneNumber?: string;
+  addressLine?: string | null;
+  provinceCode?: number | null;
+  provinceName?: string | null;
+  wardCode?: number | null;
+  wardName?: string | null;
   gender: Gender;
   dob?: string | null;
+  createdAt?: string;
+  passwordUpdatedAt?: string;
   dateOfBirth?: string | null;
   profileCompleted?: boolean;
   personalityId?: number | string;
@@ -30,6 +40,14 @@ export interface UserSummary {
 }
 
 export interface ProfileCompletionResponse {
-  completed: boolean;
+  completed?: boolean;
+  profileCompleted?: boolean;
+  profile_completed?: boolean;
   missingFields?: string[];
+}
+
+export interface LocationOption {
+  code: number;
+  codeName: string;
+  name: string;
 }

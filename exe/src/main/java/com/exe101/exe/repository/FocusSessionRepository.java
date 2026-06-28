@@ -5,6 +5,7 @@ import com.exe101.exe.model.entity.FocusSession;
 import com.exe101.exe.model.enums.SessionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +15,10 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
     List<FocusSession> findByUserIdAndStatus(Long userId, SessionStatus status);
 
     Optional<FocusSession> findFirstByUserIdAndStatusOrderByStartedAtDesc(Long userId, SessionStatus status);
+}
+    List<FocusSession> findByUserIdAndStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(
+            Long userId,
+            Instant from,
+            Instant to
+    );
 }

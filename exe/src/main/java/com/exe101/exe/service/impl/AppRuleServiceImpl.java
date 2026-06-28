@@ -1,5 +1,6 @@
 package com.exe101.exe.service.impl;
 
+import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.response.AppRulesResponse;
 import com.exe101.exe.model.entity.AppRule;
 import com.exe101.exe.model.enums.RuleType;
@@ -19,7 +20,33 @@ import java.util.function.Consumer;
 @Transactional(readOnly = true)
 public class AppRuleServiceImpl implements AppRuleService {
 
+    private final AppSeedProperties appSeedProperties;
     private final AppRuleRepository appRuleRepository;
+
+    @Override
+    @Transactional
+    public void seedDefaultAppRules() {
+        if (appSeedProperties.getAppRules() == null) return;
+
+        for (AppSeedProperties.AppRuleSeed seed : appSeedProperties.getAppRules()) {
+            if (appRuleRepository.existsByUserIsNullAndAppNameAndWindowTitleKeywordAndRuleType(
+                    seed.getAppName(),
+                    seed.getWindowTitleKeyword(),
+                    seed.getRuleType()
+            )) {
+                continue;
+            }
+
+            AppRule appRule = AppRule.builder()
+                    .user(null)
+                    .appName(seed.getAppName())
+                    .windowTitleKeyword(seed.getWindowTitleKeyword())
+                    .ruleType(seed.getRuleType())
+                    .build();
+
+            appRuleRepository.save(appRule);
+        }
+    }
 
     @Override
     public AppRulesResponse getRulesForUserSession(Long userId) {

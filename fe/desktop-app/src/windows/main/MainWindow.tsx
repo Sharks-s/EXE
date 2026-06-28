@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../../features/auth/stores/authStore";
 import { authSession } from "../../features/auth/services/auth.session";
+import { useFocusStore } from "../../features/focus-session/stores/focusStore";
 import { toast } from "../../shared/store/toastStore";
 import Sidebar, { type Page } from "../../shared/components/Sidebar";
 import Auth from "../../features/auth/pages/Auth";
+import { focusApi } from "../../features/focus-session/api/focus.api";
+import { useTranslation } from "react-i18next";
 import CompleteProfileModal from "../../shared/components/CompleteProfileModal";
 import { profileApi } from "../../features/profile/api/profile.api";
 
@@ -16,6 +19,21 @@ import Pet from "../../features/pet/pages/PetsPage";
 
 export default function MainWindow() {
   const { bootstrap, isInitializing, isAuthenticated } = useAuthStore();
+  const { session } = useFocusStore();
+  const [currentPage, setCurrentPage] = useState<Page>("dashboard");
+  const [isCheckingActiveSession, setIsCheckingActiveSession] = useState(true);
+
+  const isSessionActive = !!session;
+
+  const handleNavigate = (page: Page) => {
+    if (isSessionActive && page !== "dashboard") {
+      toast.error(
+        "Đang trong phiên tập trung, hãy kết thúc phiên trước khi chuyển trang",
+      );
+      return;
+    }
+    setCurrentPage(page);
+  };
   // Lấy user object trực tiếp để dùng làm dependency (isAuthenticated là function, không reactive)
   const user = useAuthStore((s) => s.user);
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
@@ -59,6 +77,26 @@ export default function MainWindow() {
       window.removeEventListener("auth:session-expired", handleSessionExpired);
   }, []);
 
+  useEffect(() => {
+    async function checkActiveSession() {
+      if (isInitializing || !isAuthenticated()) {
+        setIsCheckingActiveSession(false);
+        return;
+      }
+      try {
+        const activeSession = await focusApi.getActiveSession();
+        if (activeSession) {
+          useFocusStore.getState().setSession(activeSession);
+          useFocusStore.getState().setResumeConfirmPending(true);
+        }
+      } catch (err) {
+        console.error("[MainWindow] Lỗi khi check session đang active:", err);
+      } finally {
+        setIsCheckingActiveSession(false);
+      }
+    }
+    checkActiveSession();
+  }, [isInitializing, isAuthenticated]);
   // Kiểm tra profile completion MỖI LẦN user đăng nhập (user.id thay đổi).
   // Chỉ dựa vào profileCompleted/profile_completed/completed:
   // false thì hiện popup, true thì không hiện.
@@ -89,7 +127,7 @@ export default function MainWindow() {
   }, [user?.id]);
 
   // Đang check session → không render gì để tránh flash
-  if (isInitializing) return null;
+  if (isInitializing || isCheckingActiveSession) return null;
 
   // Chưa đăng nhập → Auth page
   if (!isAuthenticated()) return <Auth />;
@@ -97,7 +135,12 @@ export default function MainWindow() {
   // Đã đăng nhập → Dashboard
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <Sidebar
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
+        isLocked={isSessionActive}
+      />
+
       <main className="flex-1 overflow-auto bg-slate-50">
         {currentPage === "dashboard" && <Dashboard />}
         {currentPage === "analytics" && <AnalyticsPage />}

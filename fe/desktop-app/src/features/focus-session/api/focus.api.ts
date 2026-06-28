@@ -88,4 +88,15 @@ export const focusApi = {
     const res = await api.get(`/focus-sessions/${sessionId}/break-prompt`);
     return res.data.data;
   },
+
+  // GET /focus-sessions/active
+  getActiveSession: async (): Promise<FocusSessionResponse | null> => {
+    const res = await api.get("/focus-sessions/active");
+    return res.data.data;
+  },
+
+  // POST /focus-sessions/{id}/heartbeat
+  heartbeat: async (sessionId: number): Promise<void> => {
+    await api.post(`/focus-sessions/${sessionId}/heartbeat`);
+  },
 };

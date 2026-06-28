@@ -18,6 +18,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   botMessage: null,
   botActions: undefined,
   isBubbleVisible: false,
+  isResumeConfirmPending: false,
 
   // ── ACTIONS ──────────────────────────────────────────────────────
   setSession: (session) =>
@@ -30,7 +31,11 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       botMessage: null,
       botActions: undefined,
       isBubbleVisible: false,
+      isResumeConfirmPending: false,
     }),
+
+  setResumeConfirmPending: (pending) =>
+    set({ isResumeConfirmPending: pending }),
 
   syncSession: (session, serverViolationCount) => {
     const isEnded =
@@ -83,6 +88,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       botMessage: null,
       botActions: undefined,
       isBubbleVisible: false,
+      isResumeConfirmPending: false,
     }),
 
   dismissSummary: () => set({ lastCompletedSession: null }),

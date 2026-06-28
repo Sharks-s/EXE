@@ -1,12 +1,54 @@
+import { useState } from "react";
 import { useFocusStore } from "../stores/focusStore";
 import { useFocusSession } from "../hooks/useFocusSession";
 import "./ActiveView.css";
 import { ProgressRing } from "../components/ProgressRing";
 import { StatCard } from "../components/StatCard";
 import { BreakPromptPopup } from "../../../shared/components/BreakPromptPopup";
+import { ResumeConfirmPopup } from "../../../shared/components/ResumeConfirmPopup";
+import { focusApi } from "../api/focus.api";
 import { invoke } from "@tauri-apps/api/core";
 
 export function ActiveView() {
+  const { session, isResumeConfirmPending } = useFocusStore();
+  const [isResuming, setIsResuming] = useState(false);
+
+  if (!session) return null;
+
+  // Đang chờ xác nhận khôi phục phiên cũ -> chặn render orchestrator thật
+  if (isResumeConfirmPending) {
+    return (
+      <ResumeConfirmPopup
+        session={session}
+        isProcessing={isResuming}
+        onContinue={async () => {
+          setIsResuming(true);
+          try {
+            await useFocusStore.getState().initializeSessionConfig(session);
+            useFocusStore.getState().setResumeConfirmPending(false);
+          } finally {
+            setIsResuming(false);
+          }
+        }}
+        onEnd={async () => {
+          setIsResuming(true);
+          try {
+            await focusApi.endSession(session.id, true);
+            useFocusStore.getState().clearSession();
+          } catch (err) {
+            console.error("Lỗi khi kết thúc phiên cũ:", err);
+          } finally {
+            setIsResuming(false);
+          }
+        }}
+      />
+    );
+  }
+
+  return <ActiveViewContent />;
+}
+
+function ActiveViewContent() {
   const { session, violationCount } = useFocusStore();
 
   // Triệu hồi Hook quản lý thời gian gốc
@@ -21,6 +63,7 @@ export function ActiveView() {
     handleRejectBreak,
     handleAcceptBreak,
     handleResumeSession,
+    cycleElapsed,
   } = useFocusSession();
 
   if (!session) return null;
@@ -28,18 +71,10 @@ export function ActiveView() {
   // Các logic tính toán phục vụ thuần hiển thị UI
   const plannedSeconds = session.plannedDuration * 60;
   const cycleSeconds = 25 * 60;
-  const startedAt = new Date(session.startedAt).getTime();
 
   const remaining = Math.max(plannedSeconds - elapsed, 0);
   const progressTotal = Math.min(elapsed / plannedSeconds, 1);
 
-  const lastCycleAt = session.lastCycleAt
-    ? new Date(session.lastCycleAt).getTime()
-    : startedAt;
-  const cycleElapsed = Math.max(
-    Math.floor((Date.now() - lastCycleAt) / 1000),
-    0,
-  );
   const cycleProgress = Math.min(cycleElapsed / cycleSeconds, 1);
   const cycleRemaining = Math.max(cycleSeconds - cycleElapsed, 0);
 
@@ -110,19 +145,21 @@ export function ActiveView() {
 
         <div className="timer-bars-container">
           {/* phiên hiện tại */}
-          <div>
-            <div className="bar-row-header">
-              <span className="title">
-                Phiên {currentCycle}/{totalCycles}
-              </span>
-              <span className="sub-info">
-                {formatTime(cycleRemaining)} còn lại
-              </span>
+          {totalCycles > 0 && (
+            <div>
+              <div className="bar-row-header">
+                <span className="title">
+                  Phiên {currentCycle}/{totalCycles}
+                </span>
+                <span className="sub-info">
+                  {formatTime(cycleRemaining)} còn lại
+                </span>
+              </div>
+              <div className="progress-bar-bg">
+                <div className="progress-bar-fill" />
+              </div>
             </div>
-            <div className="progress-bar-bg">
-              <div className="progress-bar-fill" />
-            </div>
-          </div>
+          )}
 
           {/* Break bank */}
           <div>

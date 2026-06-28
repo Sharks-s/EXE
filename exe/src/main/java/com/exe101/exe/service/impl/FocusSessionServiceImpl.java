@@ -70,20 +70,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 .findByUserIdAndStatus(userId, SessionStatus.IN_PROGRESS);
 
         if (!activeSessions.isEmpty()) {
-            boolean hasRealActiveSession = activeSessions.stream()
-                    .anyMatch(s -> now.isBefore(
-                            s.getStartedAt().plus(s.getPlannedDuration(), ChronoUnit.MINUTES)
-                    ));
-
-            if (hasRealActiveSession) {
-                throw new BusinessException(ErrorCode.SESSION_ALREADY_RUNNING);
-            }
-
-            activeSessions.forEach(s -> {
-                s.setStatus(SessionStatus.CANCELLED);
-                s.setEndedAt(s.getStartedAt().plus(s.getPlannedDuration(), ChronoUnit.MINUTES));
-            });
-            focusSessionRepository.saveAll(activeSessions);
+            throw new BusinessException(ErrorCode.SESSION_ALREADY_RUNNING);
         }
 
         // 2. Kiểm tra và cập nhật hạn mức ngày (Daily Limit)
@@ -288,7 +275,9 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         - Hãy chỉ thẳng vào hành vi sai (ví dụ: đang mất tập trung, đang dùng app giải trí, đang nhìn đi chỗ khác) và yêu cầu họ quay lại NGAY, theo đúng tông giọng của cá tính [%s].
         - Ví dụ ĐÚNG tinh thần: "Lại lo ra rồi đó! Quay lại làm việc ngay!" hoặc "Mở app đó làm gì, tắt đi và tập trung lại!"
         - Ví dụ SAI tinh thần (TUYỆT ĐỐI TRÁNH): "Cố lên, bạn làm được!" hoặc "Đừng bỏ cuộc nha!"
-
+        - Dù có tính cách ngọt ngào, khi người dùng vi phạm vẫn phải thể hiện sự khó chịu, thất vọng hoặc giận dỗi phù hợp với cá tính.
+        - Không được quá nhẹ nhàng đến mức giống động viên.
+        - Mức độ nghiêm khắc phải được ưu tiên hơn sự dễ thương.
         Lưu ý đặc biệt:
         - Nếu lỗi thuộc nhóm sức khỏe (BAD_POSTURE - gù lưng, POOR_LIGHTING - thiếu sáng), hãy nhắc nhở điều chỉnh một cách tự nhiên theo đúng cá tính chứ không mắng phạt.
         - Câu thoại phải dưới 20 từ, ngắn gọn, súc tích, tác động mạnh vào tâm lý người dùng, tuyệt đối không giải thích dông dài hay chào hỏi thừa thãi. Ngôn ngữ là [%s]
@@ -418,6 +407,33 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                         new AiBubbleAction("Cày tiếp 🎯", "secondary")
                 ))
                 .build();
+    }
+
+    @Override
+    public FocusSessionResponse getActiveSessionByUserId(Long userId) {
+        return focusSessionRepository
+                .findFirstByUserIdAndStatusOrderByStartedAtDesc(userId, SessionStatus.IN_PROGRESS)
+                .map(focusSessionMapper::toResponse)
+                .orElse(null);
+    }
+
+    @Override
+    public void recordHeartbeat(Long sessionId) {
+        FocusSession session = focusSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+        Instant lastBeat = session.getLastHeartbeatAt() != null
+                ? session.getLastHeartbeatAt()
+                : session.getStartedAt();
+        long minutesSinceLastBeat = Duration.between(lastBeat, Instant.now()).toMinutes();
+
+        if (minutesSinceLastBeat > 0) {
+            User user = session.getUser();
+            user.setDailyUsedMinutes(user.getDailyUsedMinutes() + (int) minutesSinceLastBeat);
+            userService.save(user);
+        }
+
+        session.setLastHeartbeatAt(Instant.now());
+        focusSessionRepository.save(session);
     }
 
     // Helper

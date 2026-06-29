@@ -3,6 +3,9 @@ export interface User {
   id: number;
   email: string;
   roles: string[];
+  dailyUsedMinute?: number;
+  dailyUsedMinutes?: number;
+  daily_used_minutes?: number;
 }
 
 // ── Requests ──────────────────────────────────────────

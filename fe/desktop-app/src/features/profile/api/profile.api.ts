@@ -1,6 +1,7 @@
 import api from "../../../lib/axios";
 import type { ApiResponse } from "../../../types";
 import type {
+  DailyUsageResponse,
   ProfileCompletionResponse,
   SaveProfileRequest,
   UpdateAvatarRequest,
@@ -29,6 +30,11 @@ export const profileApi = {
       .get<ApiResponse<ProfileCompletionResponse>>(
         `${PROFILE_ENDPOINT}/profile-completion`,
       )
+      .then((r) => r.data.data),
+
+  getDailyUsage: () =>
+    api
+      .get<ApiResponse<DailyUsageResponse>>(`${PROFILE_ENDPOINT}/daily-usage`)
       .then((r) => r.data.data),
 
   updateAvatar: (data: UpdateAvatarRequest) => {

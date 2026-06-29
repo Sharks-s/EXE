@@ -3,6 +3,7 @@ package com.exe101.exe.controller;
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.response.ApiResponse;
+import com.exe101.exe.dto.response.DailyUsageResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
 import com.exe101.exe.dto.response.UserSummary;
 import com.exe101.exe.mapper.UserMapper;
@@ -34,6 +35,13 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ApiResponse.success(userService.getProfileCompletion(userDetails.getId()));
+    }
+
+    @GetMapping("/daily-usage")
+    public ApiResponse<DailyUsageResponse> getDailyUsage(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.success(userService.getDailyUsage(userDetails.getId()));
     }
 
     @PutMapping("/basic-profile")

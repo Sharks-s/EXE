@@ -1,8 +1,10 @@
 package com.exe101.exe.service.impl;
 
+import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
 import com.exe101.exe.dto.response.CloudinaryUploadResponse;
+import com.exe101.exe.dto.response.DailyUsageResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
@@ -27,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +38,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
     private final UserRepository userRepository;
     private final PersonalityRepository personalityRepository;
     private final ProvinceRepository provinceRepository;
@@ -43,6 +49,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final ImageService cloudinaryService;
     private final UserIdentityService userIdentityService;
+    private final AppSeedProperties appSeedProperties;
 
     @Override
     public User createLocalUser(String email) {
@@ -152,6 +159,24 @@ public class UserServiceImpl implements UserService {
                 .required(!user.isProfileCompleted() || !requiredFields.isEmpty())
                 .requiredFields(requiredFields)
                 .user(userMapper.toSummary(user))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public DailyUsageResponse getDailyUsage(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_ID_NOT_FOUND));
+
+        resetDailyUsageIfNeeded(user, Instant.now());
+
+        int dailyUsedMinutes = currentDailyUsedMinutes(user);
+        int dailyLimitMinutes = appSeedProperties.getDailyFreeUsage();
+
+        return DailyUsageResponse.builder()
+                .dailyUsedMinute(dailyUsedMinutes)
+                .dailyLimitMinute(dailyLimitMinutes)
+                .remainingMinute(Math.max(0, dailyLimitMinutes - dailyUsedMinutes))
                 .build();
     }
 
@@ -307,6 +332,23 @@ public class UserServiceImpl implements UserService {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private void resetDailyUsageIfNeeded(User user, Instant now) {
+        LocalDate today = now.atZone(VN_ZONE).toLocalDate();
+        LocalDate lastUsageLocalDate = user.getLastUsageDate() != null
+                ? user.getLastUsageDate().atZone(VN_ZONE).toLocalDate()
+                : null;
+
+        if (lastUsageLocalDate == null || !lastUsageLocalDate.isEqual(today)) {
+            user.setDailyUsedMinutes(0);
+            user.setLastUsageDate(now);
+            userRepository.save(user);
+        }
+    }
+
+    private int currentDailyUsedMinutes(User user) {
+        return user.getDailyUsedMinutes() != null ? user.getDailyUsedMinutes() : 0;
     }
 
     private String buildDeletedEmail(Long userId) {

@@ -347,10 +347,18 @@ export default function StatisticsPage() {
           <article className="heatmap-card">
             <h2>Tần suất tập trung</h2>
 
-            <div className="heatmap-grid" aria-label="Tần suất tập trung">
-              {heatmapLevels.map((level, index) => (
-                <span key={index} className={`heatmap-cell level-${level}`} />
-              ))}
+            <div className="heatmap-panel">
+              <div className="heatmap-weekdays" aria-hidden="true">
+                {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((day) => (
+                  <span key={day}>{day}</span>
+                ))}
+              </div>
+
+              <div className="heatmap-grid" aria-label="Tan suat tap trung">
+                {heatmapLevels.map((level, index) => (
+                  <span key={index} className={`heatmap-cell level-${level}`} />
+                ))}
+              </div>
             </div>
 
             <div className="heatmap-legend">

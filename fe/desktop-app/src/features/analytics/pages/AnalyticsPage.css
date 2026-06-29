@@ -50,11 +50,9 @@ a {
 .statistics-main {
   width: 100%;
   max-width: 1280px;
-  max-height: 1024px;
   margin: 0 auto;
   padding: 24px 32px 32px;
   flex: 1;
-  overflow-y: auto;
 }
 
 .page-header {
@@ -314,16 +312,34 @@ a {
   margin-bottom: 12px;
 }
 
+.heatmap-panel {
+  display: grid;
+  justify-content: center;
+  gap: 8px;
+}
+
+.heatmap-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 18px);
+  gap: 6px;
+  color: var(--on-surface-variant);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .heatmap-grid {
   display: grid;
-  grid-template-columns: repeat(7, 14px);
-  gap: 4px;
+  grid-template-columns: repeat(7, 18px);
+  gap: 6px;
+  justify-content: center;
 }
 
 .heatmap-cell {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
   display: block;
 }
 

@@ -226,13 +226,13 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                     value={customGoal}
                     onChange={(event) => setCustomGoal(event.target.value)}
                   />
-                  <button
+                  {/* <button
                     type="button"
                     aria-label="Dùng mục tiêu tùy chỉnh"
                     onClick={() => setCustomGoal(customGoal.trim())}
                   >
                     <MaterialIcon name="add" />
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </section>

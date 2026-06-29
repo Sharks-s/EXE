@@ -41,7 +41,7 @@ export default function LoginForm({ onForgotPassword }: Props) {
             window.location.href =
               "http://localhost:8080/oauth2/authorization/google";
           }}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-lg border-2-#0f172a border-slate-300 bg-white text-slate-600 font-semibold shadow-sm ring-1 ring-slate-100 hover:border-yellow-400 hover:text-yellow-500 hover:shadow-[0_0_12px_rgba(250,204,21,0.5)] transition"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-lg border-2   border-slate-300 bg-white text-slate-600 font-semibold shadow-sm ring-1 ring-slate-100 hover:border-yellow-400 hover:text-yellow-500 hover:shadow-[0_0_12px_rgba(250,204,21,0.5)] transition"
         >
           G
         </button>

@@ -30,21 +30,21 @@ export default function RegisterForm({ onRegisterSuccess }: Props) {
       </h1>
 
       {/* SOCIAL REGISTER */}
-      <div className="flex gap-3 my-5 font-semibold">
+      <div className="flex gap-3 my-5 font-bold">
         <button
           type="button"
           onClick={() => {
             window.location.href =
               "http://localhost:8080/oauth2/authorization/google";
           }}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-lg border-2 border-slate-300 bg-white text-slate-600 font-semibold shadow-sm ring-1 ring-slate-100 hover:border-yellow-400 hover:text-yellow-500 hover:shadow-[0_0_12px_rgba(250,204,21,0.5)] transition"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-600 font-semibold hover:border-yellow-400 hover:text-yellow-500 hover:shadow-[0_0_12px_rgba(250,204,21,0.5)] transition"
         >
           G
         </button>
         <button
           type="button"
           disabled
-          className="w-10 h-10 inline-flex items-center justify-center rounded-lg border-2 border-slate-200 bg-white text-slate-400 font-semibold shadow-sm ring-1 ring-slate-100 cursor-not-allowed opacity-60"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 font-semibold cursor-not-allowed opacity-60"
         >
           F
         </button>
@@ -67,11 +67,10 @@ export default function RegisterForm({ onRegisterSuccess }: Props) {
           placeholder={t("common:auth.email_placeholder", {
             defaultValue: "Email",
           })}
-          className={`w-full px-4 py-3 mt-3 text-sm rounded-xl border bg-white placeholder:text-slate-400 focus:outline-none transition ${
-            errors.email
+          className={`w-full px-4 py-3 mt-3 text-sm rounded-xl border bg-white placeholder:text-slate-400 focus:outline-none transition ${errors.email
               ? "border-red-400 focus:ring-2 focus:ring-red-400/30"
               : "border-slate-300 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
-          }`}
+            }`}
         />
         {errors.email?.message && (
           <p className="mt-1 text-xs text-red-500">
@@ -93,11 +92,10 @@ export default function RegisterForm({ onRegisterSuccess }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className={`mt-3 px-12 py-3 rounded-xl text-sm font-semibold uppercase  bg-[#9fd6fa] cursor-pointer text-[#0f172a] transition duration-300 ${
-          loading
+        className={`mt-3 px-12 py-3 rounded-xl text-sm font-semibold uppercase  bg-[#9fd6fa] cursor-pointer text-[#0f172a] transition duration-300 ${loading
             ? "opacity-60 cursor-wait"
             : "hover:bg-[#7bc3f7] hover:shadow-[0_0_25px_rgba(159,214,250,0.65)]"
-        }`}
+          }`}
       >
         {loading
           ? t("common:auth.signing_up", { defaultValue: "Signing up..." })

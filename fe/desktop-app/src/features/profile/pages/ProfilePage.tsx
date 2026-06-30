@@ -489,12 +489,8 @@ export default function ProfilePage() {
               <div className="profile-heading">
                 <h2>{isLoading ? "Đang tải..." : display.name}</h2>
                 <div className="badge-group">
-                  <span className="badge badge-expert">
-                    <span className="material-symbols-outlined">star</span>
-                    {mockProfileExtras.rank}
-                  </span>
                   {display.isPremium && (
-                    <span className="badge badge-premium">PREMIUM</span>
+                    <span className="badge badge-premium">Free</span>
                   )}
                 </div>
               </div>

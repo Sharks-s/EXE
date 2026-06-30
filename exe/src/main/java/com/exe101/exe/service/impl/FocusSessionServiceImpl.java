@@ -48,6 +48,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private final AppSeedProperties appSeedProperties;
     private final AiCloudService aiCloudService;
     private final PersonalityService personalityService;
+    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
 
     private static final Set<ViolationType> NON_PENALTY_TYPES = Set.of(
@@ -62,9 +63,6 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     public FocusSessionResponse createSession(CreateSessionRequest request, Long userId) {
 
         Instant now = Instant.now();
-        ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
-        LocalDate today = now.atZone(vnZone).toLocalDate();
-
         // 1. Xử lý và dọn dẹp các phiên IN_PROGRESS cũ bị kẹt
         List<FocusSession> activeSessions = focusSessionRepository
                 .findByUserIdAndStatus(userId, SessionStatus.IN_PROGRESS);
@@ -76,22 +74,13 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         // 2. Kiểm tra và cập nhật hạn mức ngày (Daily Limit)
         User user = userService.findById(userId);
 
-        LocalDate lastUsageLocalDate = user.getLastUsageDate() != null
-                ? user.getLastUsageDate().atZone(vnZone).toLocalDate()
-                : null;
-
-        if (lastUsageLocalDate == null || !lastUsageLocalDate.isEqual(today)) {
-            user.setDailyUsedMinutes(0);
-            user.setLastUsageDate(now);
-            userService.save(user);
-        }
+        resetDailyUsageIfNeeded(user, now);
 
         // 3. Chặn nếu vượt hạn mức 120 phút (Chỉ áp dụng với Free User)
         boolean isPremium = subscriptionRepository.existsByUserIdAndIsActiveTrue(userId);
 
         if (!isPremium) {
-            int projectedUsage = user.getDailyUsedMinutes() + request.durationMinutes();
-            if (projectedUsage > appSeedProperties.getDailyFreeUsage()) {
+            if (exceedsDailyUsageLimit(user, request.durationMinutes())) {
                 throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
             }
         }
@@ -418,21 +407,30 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     }
 
     @Override
+    @Transactional
     public void recordHeartbeat(Long sessionId) {
         FocusSession session = focusSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+        Instant now = Instant.now();
+        User user = session.getUser();
+        resetDailyUsageIfNeeded(user, now);
+
         Instant lastBeat = session.getLastHeartbeatAt() != null
                 ? session.getLastHeartbeatAt()
                 : session.getStartedAt();
-        long minutesSinceLastBeat = Duration.between(lastBeat, Instant.now()).toMinutes();
+        long minutesSinceLastBeat = Duration.between(lastBeat, now).toMinutes();
 
         if (minutesSinceLastBeat > 0) {
-            User user = session.getUser();
-            user.setDailyUsedMinutes(user.getDailyUsedMinutes() + (int) minutesSinceLastBeat);
+            if (exceedsDailyUsageLimit(user, (int) minutesSinceLastBeat)) {
+                throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
+            }
+
+            user.setDailyUsedMinutes(currentDailyUsedMinutes(user) + (int) minutesSinceLastBeat);
+            user.setLastUsageDate(now);
             userService.save(user);
         }
 
-        session.setLastHeartbeatAt(Instant.now());
+        session.setLastHeartbeatAt(now);
         focusSessionRepository.save(session);
     }
 
@@ -461,5 +459,26 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         long totalElapsedMins = Duration.between(session.getStartedAt(), now).toMinutes();
         // Tổng thời gian học thực tế = Toàn bộ thời gian từ lúc start - Thời gian đã pause/break
         return (int) totalElapsedMins - session.getPausedMinutes();
+    }
+
+    private void resetDailyUsageIfNeeded(User user, Instant now) {
+        LocalDate today = now.atZone(VN_ZONE).toLocalDate();
+        LocalDate lastUsageLocalDate = user.getLastUsageDate() != null
+                ? user.getLastUsageDate().atZone(VN_ZONE).toLocalDate()
+                : null;
+
+        if (lastUsageLocalDate == null || !lastUsageLocalDate.isEqual(today)) {
+            user.setDailyUsedMinutes(0);
+            user.setLastUsageDate(now);
+            userService.save(user);
+        }
+    }
+
+    private boolean exceedsDailyUsageLimit(User user, int minutesToAdd) {
+        return currentDailyUsedMinutes(user) + minutesToAdd > appSeedProperties.getDailyFreeUsage();
+    }
+
+    private int currentDailyUsedMinutes(User user) {
+        return user.getDailyUsedMinutes() != null ? user.getDailyUsedMinutes() : 0;
     }
 }

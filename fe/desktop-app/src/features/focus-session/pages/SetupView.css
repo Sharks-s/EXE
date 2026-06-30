@@ -730,7 +730,6 @@ button {
 
 .reward-progress span {
   display: block;
-  width: 66.666%;
   height: 100%;
   background: #f59e0b;
   border-radius: inherit;

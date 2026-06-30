@@ -24,6 +24,7 @@ public class UserSummary {
     private Integer wardCode;
     private String wardName;
     private Instant createdAt;
+
     private Instant passwordUpdatedAt;
     private boolean profileCompleted;
     private Long personalityId;

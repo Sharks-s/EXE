@@ -1,5 +1,5 @@
 :root {
-  --background: #fcf8ff;
+  /* --background: #fcf8ff; */
   --surface: #fcf8ff;
   --surface-bright: #fcf8ff;
   --surface-container-lowest: #ffffff;
@@ -232,8 +232,8 @@ button {
 }
 
 .badge-premium {
-  color: #78350f;
-  background: linear-gradient(90deg, #fde68a, #fbbf24);
+  color: white;
+  background: linear-gradient(90deg, #8adafd, #0905df);
   box-shadow: 0 2px 6px rgba(251, 191, 36, 0.35);
 }
 

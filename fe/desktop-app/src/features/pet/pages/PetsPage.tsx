@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { useUserPets } from "../hooks/useUserPets";
 import type { UserPet, ShopPet } from "../types/pet.type";
 import { usePetShop } from "../hooks/usePetShop";
@@ -19,6 +19,7 @@ export default function PetsPage() {
     loading,
     error,
     actionLoadingId,
+    addPetToCollection,
     handleEquip,
     handleRename,
     handleUpgrade,
@@ -28,6 +29,36 @@ export default function PetsPage() {
   const [keyword, setKeyword] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("level-desc");
+  const [renamePet, setRenamePet] = useState<UserPet | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState("");
+
+  const openRenameModal = (pet: UserPet) => {
+    setRenamePet(pet);
+    setRenameValue(pet.customName);
+    setRenameError("");
+  };
+
+  const closeRenameModal = () => {
+    if (renamePet && actionLoadingId === renamePet.userPetId) return;
+    setRenamePet(null);
+    setRenameValue("");
+    setRenameError("");
+  };
+
+  const submitRename = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!renamePet) return;
+
+    const nextName = renameValue.trim();
+    if (!nextName) {
+      setRenameError("Tên thú cưng không được để trống.");
+      return;
+    }
+
+    const renamed = await handleRename(renamePet.userPetId, nextName);
+    if (renamed) closeRenameModal();
+  };
 
   const filteredPets = useMemo(() => {
     let result = [...pets];
@@ -103,9 +134,7 @@ export default function PetsPage() {
                         loading={actionLoadingId === pet.userPetId}
                         onSelect={() => setSelectedPet(pet)}
                         onEquip={() => handleEquip(pet.userPetId)}
-                        onRename={() =>
-                          handleRename(pet.userPetId, pet.customName)
-                        }
+                        onRename={() => openRenameModal(pet)}
                         onUpgrade={() => handleUpgrade(pet.userPetId)}
                       />
                     ))
@@ -122,7 +151,7 @@ export default function PetsPage() {
                   onClose={() => setSelectedPet(null)}
                   onRename={() => {
                     if (!selectedPet) return;
-                    handleRename(selectedPet.userPetId, selectedPet.customName);
+                    openRenameModal(selectedPet);
                   }}
                   onUpgrade={() => {
                     if (!selectedPet) return;
@@ -133,9 +162,22 @@ export default function PetsPage() {
             )}
           </>
         ) : (
-          <ShopPanel />
+          <ShopPanel onPetAdded={addPetToCollection} />
         )}
       </section>
+
+      <RenamePetModal
+        pet={renamePet}
+        value={renameValue}
+        error={renameError}
+        loading={renamePet?.userPetId === actionLoadingId}
+        onChange={(value) => {
+          setRenameValue(value);
+          if (renameError) setRenameError("");
+        }}
+        onClose={closeRenameModal}
+        onSubmit={submitRename}
+      />
     </div>
   );
 }
@@ -319,8 +361,8 @@ function PetCard({
       </div>
 
       <div className="pet-card-body">
-        <h3>{pet.code}</h3>
-        <p>{formatPetCode(pet.customName)}</p>
+        <h3>{pet.customName}</h3>
+        <p>{formatPetCode(pet.code)}</p>
 
         <div className="level-line">
           <div style={{ width: `${Math.min(pet.level * 4, 100)}%` }} />
@@ -459,8 +501,99 @@ function PetDetail({
   );
 }
 
-function ShopPanel() {
+type RenamePetModalProps = {
+  pet: UserPet | null;
+  value: string;
+  error: string;
+  loading: boolean;
+  onChange: (value: string) => void;
+  onClose: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+function RenamePetModal({
+  pet,
+  value,
+  error,
+  loading,
+  onChange,
+  onClose,
+  onSubmit,
+}: RenamePetModalProps) {
+  if (!pet) return null;
+
+  const theme = getPetTheme(pet.code);
+
+  return (
+    <div
+      className="rename-modal-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <form className="rename-modal" onSubmit={onSubmit}>
+        <button
+          className="rename-modal-close"
+          type="button"
+          onClick={onClose}
+          disabled={loading}
+          aria-label="Đóng"
+        >
+          ×
+        </button>
+
+        <div className={`rename-modal-avatar ${theme}`}>
+          {pet.imageUrl ? (
+            <img src={pet.imageUrl} alt={pet.customName} />
+          ) : (
+            <span>{getPetEmoji(pet.code)}</span>
+          )}
+        </div>
+
+        <div className="rename-modal-heading">
+          <p>Đổi tên thú cưng</p>
+          <h2>{formatPetCode(pet.code)}</h2>
+        </div>
+
+        <label className="rename-modal-field">
+          <span>Tên mới</span>
+          <input
+            autoFocus
+            value={value}
+            maxLength={32}
+            disabled={loading}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="Nhập tên thú cưng"
+          />
+        </label>
+
+        {error && <div className="rename-modal-error">{error}</div>}
+
+        <div className="rename-modal-actions">
+          <button type="button" onClick={onClose} disabled={loading}>
+            Hủy
+          </button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Đang lưu..." : "Lưu tên"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+type ShopPanelProps = {
+  onPetAdded: (pet: UserPet) => void;
+};
+
+function ShopPanel({ onPetAdded }: ShopPanelProps) {
   const { shopPets, loading, addingId, error, handleAddPet } = usePetShop();
+
+  const addPet = async (petId: number) => {
+    const addedPet = await handleAddPet(petId);
+    if (addedPet) onPetAdded(addedPet);
+  };
 
   if (loading) {
     return <div className="pet-loading">Đang tải shop thú cưng...</div>;
@@ -486,7 +619,7 @@ function ShopPanel() {
               key={pet.id}
               pet={pet}
               adding={addingId === pet.id}
-              onAdd={() => handleAddPet(pet.id)}
+              onAdd={() => addPet(pet.id)}
             />
           ))}
         </div>

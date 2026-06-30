@@ -46,6 +46,12 @@ export interface ProfileCompletionResponse {
   missingFields?: string[];
 }
 
+export interface DailyUsageResponse {
+  dailyUsedMinute: number;
+  dailyLimitMinute: number;
+  remainingMinute: number;
+}
+
 export interface LocationOption {
   code: number;
   codeName: string;

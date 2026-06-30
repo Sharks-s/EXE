@@ -56,12 +56,11 @@ const plans: Plan[] = [
 
 const faqItems: FaqItem[] = [];
 
-export default function UpgradePage()
-  {
-    
+export default function UpgradePage() {
+
   const currentPlanLabel = "Đang dùng gói Free";
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  
+
 
   return (
     <div className="upgrade-page">
@@ -95,7 +94,7 @@ export default function UpgradePage()
         <section className="faq-section">
           <div className="faq-header">
             <h2>Câu hỏi thường gặp</h2>
-            <p>Vẫn còn thắc mắc? Liên hệ support@focusbuddy.app</p>
+            <p>Vẫn còn thắc mắc? Liên hệ pinkydeng168@gmail.com(Lê Bọi Nhi)</p>
           </div>
 
           <div className="faq-list">

@@ -3,6 +3,7 @@ package com.exe101.exe.service;
 
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
+import com.exe101.exe.dto.response.DailyUsageResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
 import com.exe101.exe.model.entity.User;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +28,8 @@ public interface UserService {
     User findByIdWithRoles(Long id);
 
     ProfileCompletionResponse getProfileCompletion(Long userId);
+
+    DailyUsageResponse getDailyUsage(Long userId);
 
     User completeBasicProfile(Long userId, CompleteBasicProfileRequest request);
 

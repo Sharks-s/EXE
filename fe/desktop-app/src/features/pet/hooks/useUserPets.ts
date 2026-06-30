@@ -39,6 +39,18 @@ export function useUserPets() {
     return pets.filter((pet) => pet.premium).length;
   }, [pets]);
 
+  const addPetToCollection = (addedPet: UserPet) => {
+    setPets((prev) => {
+      if (prev.some((pet) => pet.userPetId === addedPet.userPetId)) {
+        return prev;
+      }
+
+      return [addedPet, ...prev];
+    });
+
+    setSelectedPet((prev) => prev ?? addedPet);
+  };
+
   const handleEquip = async (userPetId: number) => {
     try {
       setActionLoadingId(userPetId);
@@ -50,7 +62,7 @@ export function useUserPets() {
         prev.map((pet) => ({
           ...pet,
           equipped: pet.userPetId === updatedPet.userPetId,
-        }))
+        })),
       );
 
       setSelectedPet({
@@ -65,29 +77,30 @@ export function useUserPets() {
     }
   };
 
-  const handleRename = async (userPetId: number, currentName: string) => {
-    const newName = window.prompt("Nhập tên mới cho thú cưng:", currentName);
-
-    if (!newName || newName.trim() === "") return;
+  const handleRename = async (userPetId: number, newName: string) => {
+    const nextName = newName.trim();
+    if (!nextName) return false;
 
     try {
       setActionLoadingId(userPetId);
       setError("");
 
-      const updatedPet = await petApi.renamePet(userPetId, newName.trim());
+      const updatedPet = await petApi.renamePet(userPetId, nextName);
 
       setPets((prev) =>
         prev.map((pet) =>
-          pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet
-        )
+          pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet,
+        ),
       );
 
       setSelectedPet((prev) =>
-        prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev
+        prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev,
       );
+      return true;
     } catch (err) {
       console.error(err);
       setError("Không thể đổi tên thú cưng.");
+      return false;
     } finally {
       setActionLoadingId(null);
     }
@@ -102,12 +115,12 @@ export function useUserPets() {
 
       setPets((prev) =>
         prev.map((pet) =>
-          pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet
-        )
+          pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet,
+        ),
       );
 
       setSelectedPet((prev) =>
-        prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev
+        prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev,
       );
     } catch (err) {
       console.error(err);
@@ -127,6 +140,7 @@ export function useUserPets() {
     error,
     actionLoadingId,
     fetchPets,
+    addPetToCollection,
     handleEquip,
     handleRename,
     handleUpgrade,

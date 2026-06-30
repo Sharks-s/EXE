@@ -19,6 +19,7 @@ export default function PetsPage() {
     loading,
     error,
     actionLoadingId,
+    addPetToCollection,
     handleEquip,
     handleRename,
     handleUpgrade,
@@ -161,7 +162,7 @@ export default function PetsPage() {
             )}
           </>
         ) : (
-          <ShopPanel />
+          <ShopPanel onPetAdded={addPetToCollection} />
         )}
       </section>
 
@@ -582,8 +583,17 @@ function RenamePetModal({
   );
 }
 
-function ShopPanel() {
+type ShopPanelProps = {
+  onPetAdded: (pet: UserPet) => void;
+};
+
+function ShopPanel({ onPetAdded }: ShopPanelProps) {
   const { shopPets, loading, addingId, error, handleAddPet } = usePetShop();
+
+  const addPet = async (petId: number) => {
+    const addedPet = await handleAddPet(petId);
+    if (addedPet) onPetAdded(addedPet);
+  };
 
   if (loading) {
     return <div className="pet-loading">Đang tải shop thú cưng...</div>;
@@ -609,7 +619,7 @@ function ShopPanel() {
               key={pet.id}
               pet={pet}
               adding={addingId === pet.id}
-              onAdd={() => handleAddPet(pet.id)}
+              onAdd={() => addPet(pet.id)}
             />
           ))}
         </div>

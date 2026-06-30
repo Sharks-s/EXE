@@ -13,6 +13,7 @@ import type { Page } from "../../../shared/components/Sidebar";
 
 const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
 const presets = [5, 25, 50, 90, 120];
+const MAX_DURATION_MINUTES = 240;
 
 const formatMinutes = (minutes?: number) => {
   if (!minutes) return "0m";
@@ -83,6 +84,12 @@ export function SetupView({ onNavigate }: SetupViewProps) {
   const focusGoal = useMemo(
     () => customGoal.trim() || selectedGoal,
     [customGoal, selectedGoal],
+  );
+
+  const breakRewardMinutes = useMemo(() => Math.floor(duration / 5), [duration]);
+  const breakRewardProgress = useMemo(
+    () => Math.min((duration / MAX_DURATION_MINUTES) * 100, 100),
+    [duration],
   );
 
   const recentFocusItem = useMemo(() => {
@@ -293,12 +300,12 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 </div>
                 <div className="reward-content">
                   <div className="reward-title">
-                    <h4>+10 phút nghỉ</h4>
-                    <span>Hot</span>
+                    <h4>+{breakRewardMinutes} phút nghỉ</h4>
+                    <span>1:5</span>
                   </div>
-                  <p>Hoàn thành 2 hiệp 50 phút</p>
+                  <p>Cứ 5 phút tập trung được 1 phút nghỉ</p>
                   <div className="reward-progress">
-                    <span />
+                    <span style={{ width: `${breakRewardProgress}%` }} />
                   </div>
                 </div>
               </div>

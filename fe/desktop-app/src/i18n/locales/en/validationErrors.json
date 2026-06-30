@@ -10,6 +10,7 @@
     "pattern": "Password must contain at least one uppercase and one lowercase letter"
   },
   "confirmPassword": {
-    "message": "Password is not match!!"
+    "message": "Passwords do not match",
+    "notMatch": "Passwords do not match"
   }
 }

@@ -39,6 +39,18 @@ export function useUserPets() {
     return pets.filter((pet) => pet.premium).length;
   }, [pets]);
 
+  const addPetToCollection = (addedPet: UserPet) => {
+    setPets((prev) => {
+      if (prev.some((pet) => pet.userPetId === addedPet.userPetId)) {
+        return prev;
+      }
+
+      return [addedPet, ...prev];
+    });
+
+    setSelectedPet((prev) => prev ?? addedPet);
+  };
+
   const handleEquip = async (userPetId: number) => {
     try {
       setActionLoadingId(userPetId);
@@ -128,6 +140,7 @@ export function useUserPets() {
     error,
     actionLoadingId,
     fetchPets,
+    addPetToCollection,
     handleEquip,
     handleRename,
     handleUpgrade,

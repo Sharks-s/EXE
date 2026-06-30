@@ -309,7 +309,48 @@ a {
 }
 
 .heatmap-card h2 {
+  margin: 0;
+}
+
+.heatmap-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
+}
+
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--on-surface-variant);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.calendar-controls button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--on-surface-variant);
+  background: var(--surface-container);
+  cursor: pointer;
+}
+
+.calendar-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.calendar-controls .material-symbols-outlined {
+  font-size: 18px;
 }
 
 .heatmap-panel {

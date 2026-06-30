@@ -14,14 +14,6 @@ import "./AnalyticsPage.css";
 type StatTone = "primary" | "success" | "danger" | "warning";
 type Trend = "up" | "down" | "neutral";
 
-const fallbackHeatmapLevels = [
-  1, 2, 0, 3, 1, 2, 0,
-  2, 3, 1, 0, 2, 1, 3,
-  0, 1, 2, 3, 2, 1, 0,
-  3, 2, 1, 2, 0, 1, 3,
-  1, 0, 2, 3, 1, 2, 0,
-];
-
 const rangeLabels: { range: AnalyticsRange; label: string }[] = [
   { range: "DAY", label: "Ngày" },
   { range: "WEEK", label: "Tuần" },
@@ -76,6 +68,12 @@ const formatChartLabel = (dateValue: string) => {
   }).format(date);
 };
 
+const formatCalendarMonth = (date: Date) =>
+  new Intl.DateTimeFormat("vi-VN", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+
 const buildChartPath = (items: FocusTimeAnalytics["items"]) => {
   if (!items.length) return "";
 
@@ -105,12 +103,39 @@ export default function StatisticsPage() {
   const [goals, setGoals] = useState<GoalAnalytics | null>(null);
   const [violations, setViolations] = useState<ViolationAnalytics | null>(null);
   const [calendar, setCalendar] = useState<CalendarHeatmap | null>(null);
+  const [calendarDate, setCalendarDate] = useState(() => new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const calendarYear = calendarDate.getFullYear();
+  const calendarMonth = calendarDate.getMonth() + 1;
+  const calendarMonthLabel = useMemo(
+    () => formatCalendarMonth(calendarDate),
+    [calendarDate],
+  );
+  const canGoNextCalendarMonth = useMemo(() => {
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(calendarYear, calendarMonth - 1, 1);
+
+    return selectedMonthStart.getTime() < currentMonthStart.getTime();
+  }, [calendarMonth, calendarYear]);
+
+  const changeCalendarMonth = (offset: number) => {
+    setCalendarDate((current) => {
+      const next = new Date(current.getFullYear(), current.getMonth() + offset, 1);
+      const today = new Date();
+      const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      if (next.getTime() > currentMonthStart.getTime()) {
+        return currentMonthStart;
+      }
+
+      return next;
+    });
+  };
 
   useEffect(() => {
     let cancelled = false;
-    const now = new Date();
 
     const loadAnalytics = async () => {
       try {
@@ -123,14 +148,12 @@ export default function StatisticsPage() {
           hourlyResult,
           goalsResult,
           violationsResult,
-          calendarResult,
         ] = await Promise.allSettled([
           analyticsApi.getSummary({ range }),
           analyticsApi.getFocusTime({ range }),
           analyticsApi.getHourly({ range }),
           analyticsApi.getGoals({ range }),
           analyticsApi.getViolations({ range }),
-          analyticsApi.getCalendar(now.getFullYear(), now.getMonth() + 1),
         ]);
 
         if (cancelled) return;
@@ -144,9 +167,6 @@ export default function StatisticsPage() {
         if (violationsResult.status === "fulfilled") {
           setViolations(violationsResult.value);
         }
-        if (calendarResult.status === "fulfilled") {
-          setCalendar(calendarResult.value);
-        }
 
         const hasFailure = [
           summaryResult,
@@ -154,7 +174,6 @@ export default function StatisticsPage() {
           hourlyResult,
           goalsResult,
           violationsResult,
-          calendarResult,
         ].some((result) => result.status === "rejected");
 
         if (hasFailure) {
@@ -171,6 +190,33 @@ export default function StatisticsPage() {
       cancelled = true;
     };
   }, [range]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCalendar = async () => {
+      try {
+        const calendarResult = await analyticsApi.getCalendar(
+          calendarYear,
+          calendarMonth,
+        );
+
+        if (!cancelled) setCalendar(calendarResult);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) {
+          setCalendar(null);
+          setError("Chưa tải được tần suất tập trung của tháng này.");
+        }
+      }
+    };
+
+    loadCalendar();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [calendarMonth, calendarYear]);
 
   const stats = useMemo(
     () => [
@@ -235,8 +281,7 @@ export default function StatisticsPage() {
       !best || item.focusMinutes > best.focusMinutes ? item : best,
     null,
   );
-  const heatmapLevels =
-    calendar?.items.map((item) => item.level) ?? fallbackHeatmapLevels;
+  const heatmapLevels = calendar?.items.map((item) => item.level) ?? [];
   const topHourlyItems = [...(hourly?.items ?? [])]
     .sort((a, b) => b.focusMinutes - a.focusMinutes)
     .slice(0, 2);
@@ -345,7 +390,28 @@ export default function StatisticsPage() {
           </article>
 
           <article className="heatmap-card">
-            <h2>Tần suất tập trung</h2>
+            <div className="heatmap-header">
+              <h2>Tần suất tập trung</h2>
+
+              <div className="calendar-controls" aria-label="Chọn tháng tần suất tập trung">
+                <button
+                  type="button"
+                  aria-label="Tháng trước"
+                  onClick={() => changeCalendarMonth(-1)}
+                >
+                  <span className="material-symbols-outlined">chevron_left</span>
+                </button>
+                <span>{calendarMonthLabel}</span>
+                <button
+                  type="button"
+                  aria-label="Tháng sau"
+                  disabled={!canGoNextCalendarMonth}
+                  onClick={() => changeCalendarMonth(1)}
+                >
+                  <span className="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            </div>
 
             <div className="heatmap-panel">
               <div className="heatmap-weekdays" aria-hidden="true">
@@ -374,7 +440,7 @@ export default function StatisticsPage() {
             </div>
 
             <p>
-              Dựa trên lịch tập trung tháng hiện tại. Màu càng đậm nghĩa là thời
+              Dựa trên lịch tập trung của {calendarMonthLabel}. Màu càng đậm nghĩa là thời
               gian tập trung càng cao.
             </p>
           </article>

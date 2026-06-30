@@ -32,10 +32,13 @@ export function usePetShop() {
       setAddingId(petId);
       setError("");
 
-      await petApi.addPet(petId);
+      const addedPet = await petApi.addPet(petId);
+      setShopPets((prev) => prev.filter((pet) => pet.id !== petId));
+      return addedPet;
     } catch (err) {
       console.error(err);
       setError("Không thể thêm thú cưng này.");
+      return null;
     } finally {
       setAddingId(null);
     }

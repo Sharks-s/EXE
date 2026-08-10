@@ -332,6 +332,7 @@ export default function Sidebar({
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="
+          sidebar-toggle-btn
           absolute -right-3 top-1/2 -translate-y-1/2
           w-6 h-6 rounded-full
           bg-white border border-slate-200

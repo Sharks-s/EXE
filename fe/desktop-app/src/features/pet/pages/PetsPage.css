@@ -61,7 +61,6 @@
   background: linear-gradient(135deg, #7c5cff, #5f3deb);
   color: #ffffff;
   font-weight: 800;
-  cursor: pointer;
   box-shadow: 0 14px 28px rgba(124, 92, 255, 0.32);
 }
 
@@ -83,7 +82,6 @@
   background: transparent;
   color: #64748b;
   font-weight: 800;
-  cursor: pointer;
 }
 
 .pet-navbar button.active {
@@ -386,7 +384,6 @@
   height: 38px;
   border-radius: 11px;
   font-weight: 900;
-  cursor: pointer;
 }
 
 .equip-btn {
@@ -450,7 +447,6 @@
   background: #e2e8f0;
   color: #94a3b8;
   font-size: 22px;
-  cursor: pointer;
 }
 
 .detail-image {
@@ -576,7 +572,6 @@
   height: 40px;
   border-radius: 12px;
   font-weight: 900;
-  cursor: pointer;
 }
 
 .detail-actions button:first-child {
@@ -623,7 +618,6 @@
   background: #eef4ff;
   color: #64748b;
   font-size: 22px;
-  cursor: pointer;
 }
 
 .rename-modal-close:disabled {
@@ -722,7 +716,6 @@
   height: 44px;
   border-radius: 14px;
   font-weight: 900;
-  cursor: pointer;
 }
 
 .rename-modal-actions button:first-child {
@@ -776,7 +769,6 @@
   background: linear-gradient(135deg, #7c5cff, #5f3deb);
   color: #ffffff;
   font-weight: 900;
-  cursor: pointer;
 }
 
 @media (max-width: 1180px) {
@@ -946,7 +938,6 @@
   background: linear-gradient(135deg, #7c5cff, #5f3deb);
   color: #ffffff;
   font-weight: 900;
-  cursor: pointer;
   box-shadow: 0 12px 24px rgba(124, 92, 255, 0.25);
 }
 

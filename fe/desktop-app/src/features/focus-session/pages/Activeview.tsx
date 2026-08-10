@@ -9,6 +9,16 @@ import { ResumeConfirmPopup } from "../../../shared/components/ResumeConfirmPopu
 import { focusApi } from "../api/focus.api";
 import { invoke } from "@tauri-apps/api/core";
 
+const VIOLATION_LABELS: Record<string, string> = {
+  AWAY: "Rời khỏi màn hình",
+  LOOK_AWAY: "Nhìn đi chỗ khác",
+  TOO_CLOSE: "Ngồi quá gần",
+  ENTERTAINMENT: "Mở app giải trí",
+  BAD_POSTURE: "Sai tư thế",
+  POOR_LIGHTING: "Thiếu sáng",
+  PHONE: "Dùng điện thoại",
+};
+
 export function ActiveView() {
   const { session, isResumeConfirmPending } = useFocusStore();
   const [isResuming, setIsResuming] = useState(false);
@@ -49,8 +59,9 @@ export function ActiveView() {
 }
 
 function ActiveViewContent() {
-  const { session, violationCount } = useFocusStore();
+  const { session, violationCount, aiMessages } = useFocusStore();
   const [isAbortConfirmOpen, setIsAbortConfirmOpen] = useState(false);
+
 
   // Triệu hồi Hook quản lý thời gian gốc
   const {
@@ -198,20 +209,82 @@ function ActiveViewContent() {
         />
       </div>
 
+      {/* AI MESSAGES + VIOLATIONS LOG — 2 cột ngang nhau */}
+      <div className="grid grid-cols-2 gap-4 mt-4" style={{ height: 200 }}>
+        {/* Cột trái — lời AI */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 overflow-y-auto">
+          <h4 className="text-xs font-semibold text-slate-400 uppercase mb-2">
+            Trợ lý nói
+          </h4>
+          {aiMessages.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">Chưa có gì...</p>
+          ) : (
+            <ul className="space-y-2">
+              {aiMessages.map((item, idx) => (
+                <li key={idx} className="text-sm text-slate-700">
+                  <span className="text-xs text-slate-400 mr-2">
+                    {new Date(item.timestamp).toLocaleTimeString("vi-VN")}
+                  </span>
+                  {item.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Cột phải — danh sách vi phạm */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 overflow-y-auto">
+          <h4 className="text-xs font-semibold text-slate-400 uppercase mb-2">
+            Vi phạm trong phiên
+          </h4>
+          {!session.violations || session.violations.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">Chưa có vi phạm nào</p>
+          ) : (
+            <ul className="space-y-2">
+              {session.violations.map((v, idx) => (
+                <li key={idx} className="text-sm text-slate-700">
+                  <span className="text-xs text-slate-400 mr-2">
+                    {new Date(v.occurredAt).toLocaleTimeString("vi-VN")}
+                  </span>
+                  {VIOLATION_LABELS[v.type] ?? v.type}
+                  {v.appName ? ` (${v.appName})` : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
       {/* ACTIONS: Tự động tính toán hiển thị nút theo tiến trình học */}
       <div className="actions-footer">
         {isBreaking ? (
-          /* 🎯 KỊCH BẢN NGHỈ: Hiện nút quay lại học sớm */
-          <button
-            className="btn-complete-session cursor-pointer"
-            onClick={handleResumeSession}
-            style={{ width: "100%", backgroundColor: "#10B981" }} // Màu xanh lá cho tươi tắn
-          >
-            Học tiếp sớm (Kết thúc nghỉ) 🚀
-          </button>
-        ) : elapsed < plannedSeconds ? (
           <>
-            {/* Nếu ĐANG học: Giữ nguyên 2 nút Từ bỏ và Thu nhỏ cũ của bạn */}
+            {/*KỊCH BẢN NGHỈ: Học tiếp sớm hoặc Thu nhỏ về Widget trong lúc nghỉ */}
+            <button
+              className="btn-complete-session cursor-pointer"
+              onClick={handleResumeSession}
+              style={{ width: "100%", backgroundColor: "#10B981" }} // Màu xanh lá cho tươi tắn
+            >
+              Quay lại học (Kết thúc nghỉ)
+            </button>
+
+            <button
+              className="btn-minimize-widget"
+              onClick={handleBackToDashboard}
+            >
+              <span className="action-button-icon primary">
+                <span className="material-symbols-outlined">picture_in_picture_alt</span>
+              </span>
+              <span className="action-button-copy">
+                <strong>Thu nhỏ</strong>
+                <small>Về Widget</small>
+              </span>
+            </button>
+          </>
+        ) : (
+          <>
+            {/* ĐANG HỌC: 2 nút Từ bỏ và Thu nhỏ. Nhánh "đã đủ giờ chờ bấm Hoàn thành" đã bỏ
+                vì session giờ tự động kết thúc khi đủ giờ (xem handleEndSession trong useFocusSession) */}
             <button
               className={`btn-abort-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
               onClick={() => setIsAbortConfirmOpen(true)}
@@ -237,18 +310,6 @@ function ActiveViewContent() {
                 <strong>Thu nhỏ</strong>
                 <small>Về Widget</small>
               </span>
-            </button>
-          </>
-        ) : (
-          <>
-            {/* Nếu ĐÃ ĐỦ GIỜ: Giữ nguyên nút Hoàn thành cũ của bạn */}
-            <button
-              className={`btn-complete-session ${isEnding ? "cursor-wait" : "cursor-pointer"}`}
-              onClick={() => handleEndSession(false)}
-              disabled={isEnding}
-              style={{ width: "100%" }}
-            >
-              Hoàn thành & Nhận thưởng! 🎉 ✓
             </button>
           </>
         )}

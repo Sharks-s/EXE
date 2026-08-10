@@ -78,6 +78,10 @@ public class FocusSession {
     @Column(name = "last_cycle_at")
     private Instant lastCycleAt;
 
+    @Column(name = "break_count", nullable = false)
+    @Builder.Default
+    private Integer breakCount = 0;
+
     @Column(name = "accumulated_reward", nullable = false)
     @Builder.Default
     private Integer accumulatedReward = 0; // Quỹ thưởng thực tế đã thu thập

@@ -47,6 +47,14 @@ export interface ViolationRequest {
 
 // ── Response types ─────────────────────────────────────
 
+export interface ViolationResponseItem {
+  type: ViolationType;
+  minutesDeducted: number;
+  appName: string;
+  windowTitle: string;
+  occurredAt: string;
+}
+
 export interface FocusSessionResponse {
   id: number;
   goal: string;
@@ -61,6 +69,8 @@ export interface FocusSessionResponse {
   lastCycleAt: string | null;
   userPetId: number | null;
   personalityId: number | null;
+  violations: ViolationResponseItem[];
+  breakCount: number;
 }
 
 // response riêng cho endpoint handleViolation, khớp HandleViolationResponse bên BE
@@ -77,6 +87,11 @@ export interface HandleViolationResponse {
 export interface GoalPresetItem {
   key: PresetGoalKey;
   labelKey: string;
+}
+
+export interface AiMessageItem {
+  message: string;
+  timestamp: number;
 }
 
 export interface AssistantItem {
@@ -125,6 +140,8 @@ export interface FocusState {
   isBubbleVisible: boolean;
 
   isResumeConfirmPending: boolean;
+  // AI
+  aiMessages: AiMessageItem[];
 
   // Actions
   setSession: (session: FocusSessionResponse) => void;
@@ -145,6 +162,7 @@ export interface FocusState {
   addToAllowedCache: (appOrTitle: string) => void;
   clearAppRules: () => void;
   setResumeConfirmPending: (pending: boolean) => void;
+  addAiMessage: (message: string) => void;
 }
 
 export interface AppRulesResponse {

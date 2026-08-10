@@ -50,7 +50,6 @@ input {
 
 button {
   border: 0;
-  cursor: pointer;
 }
 
 .material-symbols-outlined {
@@ -136,7 +135,6 @@ button {
 .avatar-wrapper {
   position: relative;
   flex: 0 0 auto;
-  cursor: pointer;
 }
 
 .avatar-frame {

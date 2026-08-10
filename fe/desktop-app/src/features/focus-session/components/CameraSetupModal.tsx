@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { useCameraSetup } from "../hooks/useCameraSetup";
 import { useFocusStore } from "../stores/focusStore";
@@ -34,6 +35,13 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
   useEffect(() => {
     setStreamError(null);
     setSubmitError(null);
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.add("camera-modal-open");
+    return () => {
+      document.body.classList.remove("camera-modal-open");
+    };
   }, []);
 
   const { pitch = 0, yaw = 0, face_detected = false, checks } = status || {};
@@ -91,8 +99,8 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
       <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1e1e1e] text-white shadow-2xl border border-zinc-800">
         {/* Header — luôn cố định, có nút back rõ ràng */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-[#1e1e1e] border-b border-zinc-800">
@@ -223,6 +231,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

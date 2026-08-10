@@ -19,7 +19,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   botActions: undefined,
   isBubbleVisible: false,
   isResumeConfirmPending: false,
-
+  aiMessages: [],
   // ── ACTIONS ──────────────────────────────────────────────────────
   setSession: (session) =>
     set({
@@ -36,6 +36,11 @@ export const useFocusStore = create<FocusState>((set, get) => ({
 
   setResumeConfirmPending: (pending) =>
     set({ isResumeConfirmPending: pending }),
+
+  addAiMessage: (message) =>
+    set((state) => ({
+      aiMessages: [{ message, timestamp: Date.now() }, ...state.aiMessages].slice(0, 20),
+    })),
 
   syncSession: (session, serverViolationCount) => {
     const isEnded =

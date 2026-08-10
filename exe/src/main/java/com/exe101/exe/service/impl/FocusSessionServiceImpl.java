@@ -179,9 +179,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
         }
 
-        int totalElapsedMinutes = (int) Duration.between(session.getStartedAt(), now).toMinutes();
         int actualMinutes = isAborted
-                ? Math.min(totalElapsedMinutes, session.getPlannedDuration())
+                ? Math.min(getActualFocusMinutes(session), session.getPlannedDuration())
                 : session.getPlannedDuration();
 
         session.setActualDuration(actualMinutes);
@@ -299,13 +298,17 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_ALREADY_PAUSED);
         }
 
-        // 🎯 CHECK THỜI GIAN NGHỈ THƯỞNG: Nếu không còn phút nghỉ nào thì KHÔNG cho pause
+        // CHECK THỜI GIAN NGHỈ THƯỞNG: Nếu không còn phút nghỉ nào thì KHÔNG cho pause
         if (session.getAccumulatedReward() <= 0) {
             throw new BusinessException(ErrorCode.NO_BREAK_TIME_AVAILABLE);
         }
 
         // Tiến hành đóng băng để bắt đầu tính giờ nghỉ
         session.setPausedAt(Instant.now());
+
+        // Đếm số lần nghỉ đã bắt đầu trong session
+        session.setBreakCount(session.getBreakCount() + 1);
+
         FocusSession savedSession = focusSessionRepository.save(session);
 
         return focusSessionMapper.toResponse(savedSession);

@@ -19,7 +19,9 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   botActions: undefined,
   isBubbleVisible: false,
   isResumeConfirmPending: false,
+  aiMessages: [],
 
+  violatingCache: new Set<string>(),
   // ── ACTIONS ──────────────────────────────────────────────────────
   setSession: (session) =>
     set({
@@ -36,6 +38,11 @@ export const useFocusStore = create<FocusState>((set, get) => ({
 
   setResumeConfirmPending: (pending) =>
     set({ isResumeConfirmPending: pending }),
+
+  addAiMessage: (message) =>
+    set((state) => ({
+      aiMessages: [{ message, timestamp: Date.now() }, ...state.aiMessages].slice(0, 20),
+    })),
 
   syncSession: (session, serverViolationCount) => {
     const isEnded =
@@ -75,6 +82,13 @@ export const useFocusStore = create<FocusState>((set, get) => ({
         isBubbleVisible: isEnded ? false : state.isBubbleVisible,
       };
     });
+  },
+
+  addToViolatingCache: (appOrTitle) => {
+    const currentCache = get().violatingCache;
+    const newCache = new Set(currentCache);
+    newCache.add(appOrTitle.toLowerCase().trim());
+    set({ violatingCache: newCache });
   },
 
   clearSession: () =>

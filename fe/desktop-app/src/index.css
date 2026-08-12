@@ -105,7 +105,6 @@
     flex-shrink: 0;
   }
 
-  /* Tất cả element clickable tự có cursor pointer */
   button,
   [role="button"],
   a,
@@ -116,3 +115,8 @@
     cursor: pointer;
   }
 }
+
+body.camera-modal-open .sidebar-toggle-btn {
+  display: none !important;
+}
+

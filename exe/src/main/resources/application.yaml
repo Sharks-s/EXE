@@ -129,43 +129,40 @@ app:
         description: "A lively and energetic companion that loves to hop around and catch flies."
         premium: true
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/FROGI_dxvowf.png"
-#    app-rules:
-#      - app-name: "YouTube"
-#        window-title-keyword: "youtube"
-#        rule-type: BLACKLIST
-#      - app-name: "TikTok"
-#        window-title-keyword: "tiktok"
-#        rule-type: BLACKLIST
-#      - app-name: "Facebook"
-#        window-title-keyword: "facebook"
-#        rule-type: BLACKLIST
-#      - app-name: "Instagram"
-#        window-title-keyword: "instagram"
-#        rule-type: BLACKLIST
-#      - app-name: "Netflix"
-#        window-title-keyword: "netflix"
-#        rule-type: BLACKLIST
-#      - app-name: "Steam"
-#        window-title-keyword: "steam"
-#        rule-type: BLACKLIST
-#      - app-name: "Riot Client"
-#        window-title-keyword: "riot client"
-#        rule-type: BLACKLIST
-#      - app-name: "Visual Studio Code"
-#        window-title-keyword: "visual studio code"
-#        rule-type: WHITELIST
-#      - app-name: "Antigravity IDE"
-#        window-title-keyword: "antigravity ide"
-#        rule-type: WHITELIST
-#      - app-name: "IntelliJ IDEA"
-#        window-title-keyword: "intellij idea"
-#        rule-type: WHITELIST
-#      - app-name: "Google Docs"
-#        window-title-keyword: "docs.google"
-#        rule-type: WHITELIST
-#      - app-name: "Notion"
-#        window-title-keyword: "notion"
-#        rule-type: WHITELIST
+    app-rules:
+      - app-name: "TikTok"
+        window-title-keyword: "tiktok"
+        rule-type: BLACKLIST
+      - app-name: "Facebook"
+        window-title-keyword: "facebook"
+        rule-type: BLACKLIST
+      - app-name: "Instagram"
+        window-title-keyword: "instagram"
+        rule-type: BLACKLIST
+      - app-name: "Netflix"
+        window-title-keyword: "netflix"
+        rule-type: BLACKLIST
+      - app-name: "Steam"
+        window-title-keyword: "steam"
+        rule-type: BLACKLIST
+      - app-name: "Riot Client"
+        window-title-keyword: "riot client"
+        rule-type: BLACKLIST
+      - app-name: "Visual Studio Code"
+        window-title-keyword: "visual studio code"
+        rule-type: WHITELIST
+      - app-name: "Antigravity IDE"
+        window-title-keyword: "antigravity ide"
+        rule-type: WHITELIST
+      - app-name: "IntelliJ IDEA"
+        window-title-keyword: "intellij idea"
+        rule-type: WHITELIST
+      - app-name: "Google Docs"
+        window-title-keyword: "docs.google"
+        rule-type: WHITELIST
+      - app-name: "Notion"
+        window-title-keyword: "notion"
+        rule-type: WHITELIST
 
   ai-cloud:
     base-url: https://openrouter.ai/api/v1

@@ -1,11 +1,9 @@
 package com.exe101.exe.controller;
 
+import com.exe101.exe.dto.request.ClassifyAppRequest;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
-import com.exe101.exe.dto.response.ApiResponse;
-import com.exe101.exe.dto.response.BreakPromptAiResponse;
-import com.exe101.exe.dto.response.FocusSessionResponse;
-import com.exe101.exe.dto.response.HandleViolationResponse;
+import com.exe101.exe.dto.response.*;
 import com.exe101.exe.model.enums.ViolationType;
 import com.exe101.exe.security.CustomUserDetails;
 import com.exe101.exe.service.FocusSessionService;
@@ -104,6 +102,17 @@ public class FocusSessionController {
         BreakPromptAiResponse response =
                 focusSessionService.getBreakPrompt(sessionId, userDetails.getId());
 
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/{sessionId}/classify-app")
+    public ApiResponse<ClassifyAndHandleViolationResponse> classifyAndHandleViolation(
+            @PathVariable Long sessionId,
+            @RequestBody ClassifyAppRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        ClassifyAndHandleViolationResponse response = focusSessionService.classifyAndHandleViolation(
+                sessionId, userDetails.getId(), request);
         return ApiResponse.success(response);
     }
 }

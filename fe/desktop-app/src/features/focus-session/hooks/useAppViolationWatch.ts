@@ -3,8 +3,8 @@ import { useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { AppRulesResponse } from "../types/focus.types";
 
-const APP_VIOLATION_THRESHOLD_SECONDS = 7;
-const APP_GRACE_PERIOD_SECONDS = 3;
+const VIOLATION_THRESHOLD_SECONDS = 7;
+const GRACE_PERIOD_SECONDS = 3;
 
 interface ActiveWindowInfo {
     app_name: string;
@@ -15,37 +15,97 @@ interface UseAppViolationWatchParams {
     sessionId: number | null;
     appRules: AppRulesResponse | null;
     allowedCache: Set<string>;
+    violatingCache: Set<string>;
     onViolation: (appName: string, windowTitle: string) => Promise<void> | void;
+    onClassifyApp: (appName: string, windowTitle: string) => Promise<void> | void;
 }
 
 function containsKeyword(target: string, keywords: string[]): boolean {
     return keywords.some((kw) => target.includes(kw.toLowerCase().trim()));
 }
 
+// ── Bộ đếm dùng chung: đếm liên tục + chờ (grace period) trước khi reset ──
+interface StickyCounter {
+    target: string | null;
+    counter: number;
+    leftAt: number | null; // null = đang ở đúng target; số = đã rời được bao nhiêu giây
+}
+
+function createStickyCounter(): StickyCounter {
+    return { target: null, counter: 0, leftAt: null };
+}
+
+function resetStickyCounter(state: StickyCounter) {
+    state.target = null;
+    state.counter = 0;
+    state.leftAt = null;
+}
+
+/**
+ * Gọi mỗi giây. Trả về true nếu vừa đạt đủ ngưỡng (threshold).
+ * isMatch: app hiện tại có khớp với điều kiện đang theo dõi không (blacklist / app lạ...)
+ */
+function tickStickyCounter(
+    state: StickyCounter,
+    target: string,
+    isMatch: boolean,
+    threshold: number,
+    gracePeriod: number,
+): boolean {
+    if (!isMatch) {
+        if (state.counter > 0) {
+            if (state.leftAt === null) {
+                state.leftAt = 0;
+            } else {
+                state.leftAt += 1;
+                if (state.leftAt >= gracePeriod) {
+                    resetStickyCounter(state);
+                }
+            }
+        }
+        return false;
+    }
+
+    // Đang match -> hủy trạng thái "đã rời", tiếp tục đếm
+    state.leftAt = null;
+
+    if (state.target === target) {
+        state.counter += 1;
+    } else {
+        state.target = target;
+        state.counter = 1;
+    }
+
+    if (state.counter >= threshold) {
+        resetStickyCounter(state);
+        return true;
+    }
+    return false;
+}
+
 export function useAppViolationWatch({
     sessionId,
     appRules,
     allowedCache,
+    violatingCache,
     onViolation,
+    onClassifyApp,
 }: UseAppViolationWatchParams) {
-    const currentDistractingAppRef = useRef<string | null>(null);
-    const appDistractCounterRef = useRef<number>(0);
-    const isHandlingViolationRef = useRef<boolean>(false);
-    const leftViolationAppAtRef = useRef<number | null>(null);
+    const blacklistCounterRef = useRef<StickyCounter>(createStickyCounter());
+    const unknownAppCounterRef = useRef<StickyCounter>(createStickyCounter());
 
-    // Reset toàn bộ ref khi session đổi (mount lại)
+    const isHandlingViolationRef = useRef<boolean>(false);
+    const isClassifyingRef = useRef<boolean>(false);
+
     useEffect(() => {
-        currentDistractingAppRef.current = null;
-        appDistractCounterRef.current = 0;
+        resetStickyCounter(blacklistCounterRef.current);
+        resetStickyCounter(unknownAppCounterRef.current);
         isHandlingViolationRef.current = false;
-        leftViolationAppAtRef.current = null;
+        isClassifyingRef.current = false;
     }, [sessionId]);
 
-    /**
-     * Gọi mỗi giây từ interval chính bên ngoài (hook cha).
-     */
     const tick = async (isPaused: boolean) => {
-        if (!sessionId || isPaused || isHandlingViolationRef.current) return;
+        if (!sessionId || isPaused) return;
 
         try {
             const activeWindow = await invoke<ActiveWindowInfo>(
@@ -56,6 +116,7 @@ export function useAppViolationWatch({
 
             const appNameLower = activeWindow.app_name.toLowerCase().trim();
             const titleLower = activeWindow.title.toLowerCase().trim();
+            const currentTarget = `${appNameLower} | ${titleLower}`;
 
             const isWhitelisted =
                 (appRules?.whitelist &&
@@ -64,57 +125,65 @@ export function useAppViolationWatch({
                 allowedCache.has(appNameLower) ||
                 allowedCache.has(titleLower);
 
-            let isViolationApp = false;
-            if (!isWhitelisted) {
-                const isBlacklisted =
-                    appRules?.blacklist &&
-                    (containsKeyword(appNameLower, appRules.blacklist) ||
-                        containsKeyword(titleLower, appRules.blacklist));
-                if (isBlacklisted) isViolationApp = true;
+            const isBlacklisted =
+                !isWhitelisted &&
+                !!appRules?.blacklist &&
+                (containsKeyword(appNameLower, appRules.blacklist) ||
+                    containsKeyword(titleLower, appRules.blacklist));
+
+            const isKnownViolating =
+                violatingCache.has(appNameLower) || violatingCache.has(titleLower);
+
+            // ── NHÁNH 1: Blacklist rõ ràng hoặc đã từng bị AI phán vi phạm ──
+            const isBlacklistMatch =
+                !isHandlingViolationRef.current && (isBlacklisted || isKnownViolating);
+
+            const blacklistTriggered = tickStickyCounter(
+                blacklistCounterRef.current,
+                currentTarget,
+                isBlacklistMatch,
+                VIOLATION_THRESHOLD_SECONDS,
+                GRACE_PERIOD_SECONDS,
+            );
+
+            if (blacklistTriggered) {
+                isHandlingViolationRef.current = true;
+                Promise.resolve(onViolation(activeWindow.app_name, activeWindow.title))
+                    .catch((err) => {
+                        console.error("[useAppViolationWatch] Lỗi xử lý vi phạm App:", err);
+                    })
+                    .finally(() => {
+                        isHandlingViolationRef.current = false;
+                    });
+                return;
             }
 
-            if (isViolationApp) {
-                const currentTarget = `${appNameLower} | ${titleLower}`;
-                leftViolationAppAtRef.current = null; // đang ở app xấu -> không tính là "đã rời"
+            if (isBlacklistMatch) return; // đang trong quá trình đếm blacklist, không cần xét app lạ
 
-                if (currentDistractingAppRef.current === currentTarget) {
-                    appDistractCounterRef.current += 1;
-                } else {
-                    // Đổi sang 1 app xấu KHÁC (không phải quay lại app cũ) -> reset đếm từ đầu
-                    currentDistractingAppRef.current = currentTarget;
-                    appDistractCounterRef.current = 1;
-                }
+            // ── NHÁNH 2: App lạ (không whitelist, không blacklist, chưa từng phân loại) ──
+            const isUnknownApp =
+                !isWhitelisted && !isBlacklisted && !isKnownViolating;
 
-                if (appDistractCounterRef.current >= APP_VIOLATION_THRESHOLD_SECONDS) {
-                    isHandlingViolationRef.current = true;
-                    appDistractCounterRef.current = 0;
-                    currentDistractingAppRef.current = null;
+            const isUnknownMatch =
+                !isHandlingViolationRef.current && !isClassifyingRef.current && isUnknownApp;
 
-                    Promise.resolve(onViolation(activeWindow.app_name, activeWindow.title))
-                        .catch((err) => {
-                            console.error("[useAppViolationWatch] Lỗi xử lý vi phạm App:", err);
-                        })
-                        .finally(() => {
-                            isHandlingViolationRef.current = false;
-                        });
-                }
-            } else {
-                // Đang ở app hợp lệ (không vi phạm)
-                if (appDistractCounterRef.current > 0 && currentDistractingAppRef.current) {
-                    if (leftViolationAppAtRef.current === null) {
-                        // Vừa mới rời app xấu -> bắt đầu tính grace period
-                        leftViolationAppAtRef.current = 0;
-                    } else {
-                        leftViolationAppAtRef.current += 1;
+            const unknownTriggered = tickStickyCounter(
+                unknownAppCounterRef.current,
+                currentTarget,
+                isUnknownMatch,
+                VIOLATION_THRESHOLD_SECONDS,
+                GRACE_PERIOD_SECONDS,
+            );
 
-                        if (leftViolationAppAtRef.current >= APP_GRACE_PERIOD_SECONDS) {
-                            // Rời đủ lâu -> mới thực sự reset counter
-                            appDistractCounterRef.current = 0;
-                            currentDistractingAppRef.current = null;
-                            leftViolationAppAtRef.current = null;
-                        }
-                    }
-                }
+            if (unknownTriggered) {
+                isClassifyingRef.current = true;
+                Promise.resolve(onClassifyApp(activeWindow.app_name, activeWindow.title))
+                    .catch((err) => {
+                        console.error("[useAppViolationWatch] Lỗi phân loại app lạ:", err);
+                    })
+                    .finally(() => {
+                        isClassifyingRef.current = false;
+                    });
             }
         } catch (err) {
             console.error("[useAppViolationWatch] Lỗi quét App Windows:", err);

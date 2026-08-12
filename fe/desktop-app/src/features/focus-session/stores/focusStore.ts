@@ -20,6 +20,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   isBubbleVisible: false,
   isResumeConfirmPending: false,
   aiMessages: [],
+
+  violatingCache: new Set<string>(),
   // ── ACTIONS ──────────────────────────────────────────────────────
   setSession: (session) =>
     set({
@@ -80,6 +82,13 @@ export const useFocusStore = create<FocusState>((set, get) => ({
         isBubbleVisible: isEnded ? false : state.isBubbleVisible,
       };
     });
+  },
+
+  addToViolatingCache: (appOrTitle) => {
+    const currentCache = get().violatingCache;
+    const newCache = new Set(currentCache);
+    newCache.add(appOrTitle.toLowerCase().trim());
+    set({ violatingCache: newCache });
   },
 
   clearSession: () =>

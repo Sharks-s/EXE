@@ -161,7 +161,7 @@ function ActiveViewContent() {
             <div>
               <div className="bar-row-header">
                 <span className="title">
-                  Phiên {currentCycle}/{totalCycles}
+                  Phiên học {currentCycle}/{totalCycles}
                 </span>
                 <span className="sub-info">
                   {formatTime(cycleRemaining)} còn lại
@@ -176,7 +176,7 @@ function ActiveViewContent() {
           {/* Break bank */}
           <div>
             <div className="bar-row-header">
-              <span className="title">💰 Break bank</span>
+              <span className="title">💰 Thời gian nghỉ đã nhận được</span>
               <span className="reward-info">
                 {session.accumulatedReward} phút tích lũy
               </span>
@@ -197,61 +197,65 @@ function ActiveViewContent() {
           accent={violationCount > 0 ? "#EF4444" : "#0F172A"}
         />
         <StatCard
-          label="Quỹ tương lai"
-          value={`${session.potentialReward}p`}
+          label="Thời gian nghỉ"
+          value={`${session.potentialReward} phút`}
           sub="có thể kiếm thêm"
           accent="#9fd6fa"
         />
         <StatCard
           label="Đã học"
-          value={`${Math.floor(elapsed / 60)}p`}
+          value={`${Math.floor(elapsed / 60)}`}
           sub={`/ ${session.plannedDuration} phút`}
         />
       </div>
 
       {/* AI MESSAGES + VIOLATIONS LOG — 2 cột ngang nhau */}
-      <div className="grid grid-cols-2 gap-4 mt-4" style={{ height: 200 }}>
+      <div className="grid grid-cols-2 gap-4" style={{ height: 200 }}>
         {/* Cột trái — lời AI */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 overflow-y-auto">
-          <h4 className="text-xs font-semibold text-slate-400 uppercase mb-2">
-            Trợ lý nói
+        <div className="bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden">
+          <h4 className="text-xs font-semibold text-slate-400 uppercase px-4 pt-4 pb-2 flex-shrink-0">
+            Trợ lý
           </h4>
-          {aiMessages.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">Chưa có gì...</p>
-          ) : (
-            <ul className="space-y-2">
-              {aiMessages.map((item, idx) => (
-                <li key={idx} className="text-sm text-slate-700">
-                  <span className="text-xs text-slate-400 mr-2">
-                    {new Date(item.timestamp).toLocaleTimeString("vi-VN")}
-                  </span>
-                  {item.message}
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="px-4 pb-4 overflow-y-auto flex-1">
+            {aiMessages.length === 0 ? (
+              <p className="text-sm text-slate-400 italic">Chưa có gì...</p>
+            ) : (
+              <ul className="space-y-2">
+                {aiMessages.map((item, idx) => (
+                  <li key={idx} className="text-sm text-slate-700">
+                    <span className="text-xs text-slate-400 mr-2">
+                      {new Date(item.timestamp).toLocaleTimeString("vi-VN")}
+                    </span>
+                    {item.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         {/* Cột phải — danh sách vi phạm */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 overflow-y-auto">
-          <h4 className="text-xs font-semibold text-slate-400 uppercase mb-2">
+        <div className="bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden">
+          <h4 className="text-xs font-semibold text-slate-400 uppercase px-4 pt-4 pb-2 flex-shrink-0">
             Vi phạm trong phiên
           </h4>
-          {!session.violations || session.violations.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">Chưa có vi phạm nào</p>
-          ) : (
-            <ul className="space-y-2">
-              {session.violations.map((v, idx) => (
-                <li key={idx} className="text-sm text-slate-700">
-                  <span className="text-xs text-slate-400 mr-2">
-                    {new Date(v.occurredAt).toLocaleTimeString("vi-VN")}
-                  </span>
-                  {VIOLATION_LABELS[v.type] ?? v.type}
-                  {v.appName ? ` (${v.appName})` : ""}
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="px-4 pb-4 overflow-y-auto flex-1">
+            {!session.violations || session.violations.length === 0 ? (
+              <p className="text-sm text-slate-400 italic">Chưa có vi phạm nào</p>
+            ) : (
+              <ul className="space-y-2">
+                {session.violations.map((v, idx) => (
+                  <li key={idx} className="text-sm text-slate-700">
+                    <span className="text-xs text-slate-400 mr-2">
+                      {new Date(v.occurredAt).toLocaleTimeString("vi-VN")}
+                    </span>
+                    {VIOLATION_LABELS[v.type] ?? v.type}
+                    {v.appName ? ` (${v.appName})` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 

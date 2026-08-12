@@ -301,7 +301,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 <div className="reward-content">
                   <div className="reward-title">
                     <h4>+{breakRewardMinutes} phút nghỉ</h4>
-                    <span>1:5</span>
+
                   </div>
                   <p>Cứ 5 phút tập trung được 1 phút nghỉ</p>
                   <div className="reward-progress">

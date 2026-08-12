@@ -62,6 +62,7 @@ dependencies {
 
     // Thư viện giúp Spring Boot đọc file .env
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
+    implementation("io.github.cdimascio:dotenv-java:3.1.0")
     implementation("com.cloudinary:cloudinary-http5:2.4.0")
 }
 

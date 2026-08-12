@@ -143,6 +143,9 @@ export interface FocusState {
   // AI
   aiMessages: AiMessageItem[];
 
+  violatingCache: Set<string>; // cache app đã bị AI phán là vi phạm, tránh hỏi AI lại trong session
+
+
   // Actions
   setSession: (session: FocusSessionResponse) => void;
   syncSession: (
@@ -163,6 +166,7 @@ export interface FocusState {
   clearAppRules: () => void;
   setResumeConfirmPending: (pending: boolean) => void;
   addAiMessage: (message: string) => void;
+  addToViolatingCache: (appOrTitle: string) => void;
 }
 
 export interface AppRulesResponse {
@@ -178,4 +182,11 @@ export interface AiBubbleAction {
 export interface BreakPromptAiResponse {
   aiSpeech: string; // Câu rủ rê nghỉ ngơi của AI
   actions: AiBubbleAction[];
+}
+
+export interface ClassifyAndHandleViolationResponse {
+  focusSessionResponse: FocusSessionResponse;
+  isViolation: boolean;
+  aiSpeech: string | null;
+  violationCount: number;
 }

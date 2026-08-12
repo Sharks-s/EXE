@@ -6,7 +6,6 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  font-family: "Inter", system-ui, sans-serif;
 }
 
 /* ── Header ── */
@@ -55,9 +54,7 @@
 
 /* Vòng tròn chạy tiến độ kế thừa biến --total-progress từ cha */
 .progress-ring-circle-fill {
-  stroke-dashoffset: calc(
-    var(--circumference) - (var(--total-progress) * var(--circumference))
-  );
+  stroke-dashoffset: calc(var(--circumference) - (var(--total-progress) * var(--circumference)));
   transition: stroke-dashoffset 0.5s ease;
 }
 

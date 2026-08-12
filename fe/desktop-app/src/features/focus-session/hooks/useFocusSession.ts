@@ -17,7 +17,7 @@ const MAIN_INTERVAL_MS = 1000;
 const FINAL_STRETCH_WARNING_SECONDS = 3 * 60;
 
 export function useFocusSession() {
-  const { session, syncSession, appRules, allowedCache } = useFocusStore();
+  const { session, syncSession, appRules, allowedCache, violatingCache } = useFocusStore();
 
   // ── State phục vụ UI ──
   const [elapsed, setElapsed] = useState<number>(0);
@@ -72,10 +72,45 @@ export function useFocusSession() {
     sessionId: session?.id ?? null,
     appRules,
     allowedCache,
+    violatingCache,
     onViolation: (appName, windowTitle) => {
       handleViolation("ENTERTAINMENT", appName, windowTitle, "penalty");
     },
+    onClassifyApp: handleClassifyApp,
   });
+
+  // Gọi khi phát hiện app lạ (không whitelist/blacklist) xuất hiện liên tục đủ lâu
+  async function handleClassifyApp(appName: string, windowTitle: string) {
+    const latestSession = sessionRef.current;
+    if (!latestSession) return;
+
+    const appKey = appName.toLowerCase().trim();
+    const titleKey = windowTitle.toLowerCase().trim();
+
+    try {
+      const resData = await focusApi.classifyAndHandleViolation(latestSession.id, {
+        appName,
+        windowTitle,
+      });
+
+      syncSession(resData.focusSessionResponse, resData.violationCount);
+
+      if (resData.isViolation) {
+        // Nhớ lại để lần sau khỏi phải hỏi AI nữa trong session này
+        useFocusStore.getState().addToViolatingCache(appKey);
+        useFocusStore.getState().addToViolatingCache(titleKey);
+
+        if (resData.aiSpeech) {
+          await emit("warning-update", { message: resData.aiSpeech });
+        }
+      } else {
+        // AI phán an toàn -> nhớ lại để khỏi hỏi lại
+        useFocusStore.getState().addToAllowedCache(appKey);
+      }
+    } catch (err) {
+      console.error("[useFocusSession] Lỗi phân loại app lạ:", err);
+    }
+  }
 
   // Hàm dùng chung để gọi API xử lý vi phạm (thay cho việc mỗi hook con tự gọi API riêng)
   async function handleViolation(

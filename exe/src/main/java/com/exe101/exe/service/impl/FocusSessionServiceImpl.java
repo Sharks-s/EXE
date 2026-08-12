@@ -1,12 +1,10 @@
 package com.exe101.exe.service.impl;
 
 import com.exe101.exe.config.AppSeedProperties;
+import com.exe101.exe.dto.request.ClassifyAppRequest;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
-import com.exe101.exe.dto.response.AiBubbleAction;
-import com.exe101.exe.dto.response.BreakPromptAiResponse;
-import com.exe101.exe.dto.response.FocusSessionResponse;
-import com.exe101.exe.dto.response.HandleViolationResponse;
+import com.exe101.exe.dto.response.*;
 import com.exe101.exe.model.entity.*;
 import com.exe101.exe.model.enums.ViolationType;
 import com.exe101.exe.repository.SubscriptionRepository;
@@ -124,7 +122,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     public FocusSessionResponse completeCycle(Long sessionId, Long userId) {
         Instant now = Instant.now();
 
-        FocusSession session = focusSessionRepository.findById(sessionId)
+        // Dùng findByIdForUpdate để khóa dòng, tránh 2 request (violation + cycle) đụng độ ghi đè nhau
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
         if (!session.getUser().getId().equals(userId)) {
@@ -207,7 +206,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     @Override
     @Transactional
     public HandleViolationResponse handleViolation(Long sessionId, Long userId, ViolationRequest request) {
-        FocusSession session = focusSessionRepository.findById(sessionId)
+        // Dùng findByIdForUpdate để khóa dòng, tránh 2 vi phạm gần như đồng thời đọc trùng giá trị cũ rồi ghi đè nhau
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
         if (!session.getUser().getId().equals(userId)) {
@@ -221,26 +221,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         boolean isPenalty = !NON_PENALTY_TYPES.contains(request.type());
         int penaltyMinutes = isPenalty ? 1 : 0;
 
-        if (isPenalty) {
-            if (session.getPotentialReward() >= penaltyMinutes) {
-                session.setPotentialReward(session.getPotentialReward() - penaltyMinutes);
-            } else {
-                int remainingPenalty = penaltyMinutes - session.getPotentialReward();
-                session.setPotentialReward(0);
-                session.setAccumulatedReward(Math.max(0, session.getAccumulatedReward() - remainingPenalty));
-            }
-        }
-
-        Violation violation = Violation.builder()
-                .session(session)
-                .type(request.type())
-                .minutesDeducted(penaltyMinutes) // 0 cho nhóm nhắc nhở
-                .appName(request.appName())
-                .windowTitle(request.windowTitle())
-                .build();
-        session.addViolation(violation);
-
-        FocusSession savedSession = focusSessionRepository.save(session);
+        FocusSession savedSession = applyPenaltyAndRecordViolation(
+                session, request.type(), request.appName(), request.windowTitle(), penaltyMinutes);
 
         int violationCount = savedSession.getViolations() != null ? savedSession.getViolations().size() : 0;
 
@@ -437,10 +419,75 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         focusSessionRepository.save(session);
     }
 
+    @Override
+    @Transactional
+    public ClassifyAndHandleViolationResponse classifyAndHandleViolation(
+            Long sessionId, Long userId, ClassifyAppRequest request) {
+
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+        if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
+        }
+
+        // Hỏi AI phân loại app này là học tập hay giải trí
+        String classifyPrompt = String.format("""
+        Ứng dụng "%s" - tiêu đề cửa sổ "%s" đang được người dùng mở trong lúc học tập.
+        Hãy phân loại: đây có phải là app/hoạt động GIẢI TRÍ, XAO NHÃNG (game, video giải trí,
+        mạng xã hội, xem phim...) hay là app PHỤC VỤ HỌC TẬP/LÀM VIỆC (IDE, tài liệu, công cụ...)?
+        CHỈ trả lời đúng 1 từ duy nhất: "VIOLATION" nếu là giải trí/xao nhãng, hoặc "SAFE" nếu là học tập/làm việc.
+        Không giải thích gì thêm.
+        """, request.appName(), request.windowTitle());
+
+        String classifyResult = aiCloudService.requestAiSpeech(classifyPrompt, "Phân loại ứng dụng này.");
+        boolean isViolation = classifyResult != null && classifyResult.trim().toUpperCase().contains("VIOLATION");
+
+        if (!isViolation) {
+            return ClassifyAndHandleViolationResponse.builder()
+                    .focusSessionResponse(focusSessionMapper.toResponse(session))
+                    .isViolation(false)
+                    .violationCount(session.getViolations() != null ? session.getViolations().size() : 0)
+                    .build();
+        }
+
+        // Nếu vi phạm->trừ điểm + sinh lời thoại luôn trong cùng request
+        FocusSession savedSession = applyPenaltyAndRecordViolation(
+                session, ViolationType.ENTERTAINMENT, request.appName(), request.windowTitle(), 1);
+        int violationCount = savedSession.getViolations() != null ? savedSession.getViolations().size() : 0;
+
+        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "SWEET";
+        String pName = session.getUserPet() != null ? session.getUserPet().getCustomName() : "Khỉ";
+        String personalityInstruction = personalityService.getPersonalityDescriptionByCode(pCode);
+
+        String speechPrompt = String.format("""
+        Bạn là thú cưng ảo tên %s, cá tính [%s]: %s
+        User vừa bị phát hiện mở app "%s" (không thuộc danh sách quen biết) để giải trí trong lúc học.
+        Hãy nói 1 câu CẢNH BÁO NGHIÊM KHẮC dưới 15 từ, yêu cầu quay lại học ngay, đúng tông giọng cá tính trên.
+        Ngôn ngữ: vi
+        """, pName, pCode, personalityInstruction, request.appName());
+
+        String aiSpeech = aiCloudService.requestAiSpeech(speechPrompt, "Nhắc user quay lại học ngay!");
+        if (aiSpeech == null || aiSpeech.isEmpty()) {
+            aiSpeech = "Phát hiện app lạ khả nghi! Quay lại học ngay!";
+        }
+
+        return ClassifyAndHandleViolationResponse.builder()
+                .focusSessionResponse(focusSessionMapper.toResponse(savedSession))
+                .isViolation(true)
+                .aiSpeech(aiSpeech)
+                .violationCount(violationCount)
+                .build();
+    }
+
     // Helper
 
     private FocusSession loadOwnedSession(Long sessionId, Long userId) {
-        FocusSession session = focusSessionRepository.findById(sessionId)
+        // Dùng findByIdForUpdate để khóa dòng, tránh pause/resume/end đụng độ với violation/cycle
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
         if (!session.getUser().getId().equals(userId)) {
@@ -483,5 +530,32 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
     private int currentDailyUsedMinutes(User user) {
         return user.getDailyUsedMinutes() != null ? user.getDailyUsedMinutes() : 0;
+    }
+
+    // Helper dùng chung cho cả handleViolation và classifyAndHandleViolation
+    // Trừ điểm phạt, tạo bản ghi Violation, trả về response đã build sẵn phần session + violationCount
+    private FocusSession applyPenaltyAndRecordViolation(
+            FocusSession session, ViolationType type, String appName, String windowTitle, int penaltyMinutes) {
+
+        if (penaltyMinutes > 0) {
+            if (session.getPotentialReward() >= penaltyMinutes) {
+                session.setPotentialReward(session.getPotentialReward() - penaltyMinutes);
+            } else {
+                int remainingPenalty = penaltyMinutes - session.getPotentialReward();
+                session.setPotentialReward(0);
+                session.setAccumulatedReward(Math.max(0, session.getAccumulatedReward() - remainingPenalty));
+            }
+        }
+
+        Violation violation = Violation.builder()
+                .session(session)
+                .type(type)
+                .minutesDeducted(penaltyMinutes)
+                .appName(appName)
+                .windowTitle(windowTitle)
+                .build();
+        session.addViolation(violation);
+
+        return focusSessionRepository.save(session);
     }
 }

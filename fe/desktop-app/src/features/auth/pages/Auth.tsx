@@ -1,11 +1,11 @@
 import { useState } from "react";
-import LoginForm from "./LoginForm";
-import RegisterForm from "./RegisterForm";
+import LoginForm from "../components/LoginForm";
+import RegisterForm from "../components/RegisterForm";
 import AuthLayout from "./AuthLayout";
-import VerifyForm from "./VerifyForm";
-import PasswordForm from "./PasswordForm";
-import ForgotPasswordForm from "./ForgotPasswordForm";
-import ResetPasswordForm from "./ResetPasswordForm";
+import VerifyForm from "../components/VerifyForm";
+import PasswordForm from "../components/PasswordForm";
+import ForgotPasswordForm from "../components/ForgotPasswordForm";
+import ResetPasswordForm from "../components/ResetPasswordForm";
 import {
   forgotPasswordService,
   registerInitService,
@@ -73,6 +73,9 @@ export default function Auth() {
       {mode === "password" && (
         <PasswordForm
           sessionToken={sessionToken}
+          onSuccess={() => {
+            setRegisterResult(null);
+          }}
           onBack={() => setMode("verify")}
         />
       )}

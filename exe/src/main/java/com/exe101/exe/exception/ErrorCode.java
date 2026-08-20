@@ -96,7 +96,10 @@ public enum ErrorCode {
     // ===== CLOUDINARY =====
 
     // ===== AI =====
-    AI_CLOUD_PARSE_ERROR("AI_001", HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse AI response")
+    AI_CLOUD_PARSE_ERROR("AI_001", HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse AI response"),
+
+    // ===== PROMPT =====
+    PROMPT_TEMPLATE_NOT_FOUND("AI_002", HttpStatus.NOT_FOUND, "Prompt template not found")
 
     ;
     private final String code;

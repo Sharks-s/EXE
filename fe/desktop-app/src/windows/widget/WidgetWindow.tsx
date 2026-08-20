@@ -8,15 +8,15 @@ import {
 const ANIMATION_SPEED_FPS = 10;
 
 const ACTION_FRAME_COUNTS: Record<string, number> = {
-  khingu: 10,
-  khichamhoi: 10,
-  khinhacnho: 10,
-  khiposture: 9,
-  khiquaotucgian: 10,
-  khiworking: 9,
+  sleep: 10,
+  warn: 10,
+  remind: 10,
+  posture: 9,
+  angry: 10,
+  working: 9,
 };
 
-const BACKGROUND_ACTIONS = ["khiworking", "khingu"] as const;
+const BACKGROUND_ACTIONS = ["working", "sleep"] as const;
 const BACKGROUND_INTERVAL_MS = 60_000;
 
 export default function WidgetWindow() {

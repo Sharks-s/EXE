@@ -2,31 +2,27 @@
   "auth": {
     "login_title": "Welcome Back",
     "login_subtitle": "Use your email & password",
+    "login_divider": "Or sign up with",
     "register_title": "Create Account",
     "register_subtitle": "or use your email for registration",
     "verify_title": "Verify OTP",
     "verify_subtitle": "We sent a 6-digit code to",
     "set_password_title": "Set Password",
     "set_password_subtitle": "Almost there! Set a password for your account",
-
     "email_placeholder": "Email",
     "password_placeholder": "Password",
     "confirm_password_placeholder": "Confirm Password",
-
     "btn_login": "Sign In",
     "btn_register": "Sign Up",
     "btn_verify": "Verify",
     "btn_complete": "Complete",
     "btn_resend": "Resend OTP",
     "btn_back": "Back",
-
     "signing_in": "Signing in...",
     "signing_up": "Signing up...",
     "verifying": "Verifying...",
     "completing": "Setting up...",
-
     "expires_in": "Expires in",
-
     "toggle_signin_title": "Welcome Back",
     "toggle_signin_subtitle": "Enter your personal details to continue your journey",
     "toggle_signup_title": "Hello, Friend",

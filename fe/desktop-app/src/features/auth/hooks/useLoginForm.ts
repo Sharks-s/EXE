@@ -1,4 +1,3 @@
-import { useState } from "react";
 import axios from "axios";
 import { useForm, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +8,7 @@ import { LoginSchema } from "../schemas/auth.schemas";
 import { getStringLimits } from "../../../utils/zod-utils";
 import { parseApiError } from "../../../utils/error-mapper";
 import { useAuthStore } from "../stores/authStore";
+import { toast } from "../../../shared/store/toastStore";
 import type { ApiErrorResponse } from "../../../types";
 
 type LoginFormData = z.infer<typeof LoginSchema>;
@@ -20,7 +20,6 @@ const passwordLimits = getStringLimits(LoginSchema.shape.password);
 export function useLoginForm() {
   const { t } = useTranslation(["validationErrors", "common"]);
   const { login, isLoading, error: authError, clearError } = useAuthStore();
-  const [localGlobalError, setLocalGlobalError] = useState("");
 
   const {
     register,
@@ -36,7 +35,6 @@ export function useLoginForm() {
 
   // ── Submit ────────────────────────────────────────
   const onSubmit = async (data: LoginFormData) => {
-    setLocalGlobalError("");
     if (authError) clearError();
 
     try {
@@ -52,9 +50,11 @@ export function useLoginForm() {
           });
         });
 
-        if (globalMessage) setLocalGlobalError(globalMessage);
+        if (globalMessage) {
+          toast.error(globalMessage);
+        }
       } else {
-        setLocalGlobalError("An unexpected error occurred.");
+        toast.error(t("common:errors.unexpected", { defaultValue: "An unexpected error occurred." }));
       }
     }
   };
@@ -65,14 +65,12 @@ export function useLoginForm() {
       fieldName: FieldPath<LoginFormData>,
       originalOnChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
     ) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      originalOnChange(e);
-      if (authError) clearError();
-      if (localGlobalError) setLocalGlobalError("");
-      clearErrors(fieldName);
-    };
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        originalOnChange(e);
+        if (authError) clearError();
+        clearErrors(fieldName);
+      };
 
-  const displayGlobalError = localGlobalError || authError;
 
   return {
     // react-hook-form
@@ -86,7 +84,6 @@ export function useLoginForm() {
 
     // state
     isLoading,
-    displayGlobalError,
 
     // i18n + limits
     t,

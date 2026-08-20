@@ -13,5 +13,6 @@ public class ClassifyAndHandleViolationResponse {
     private FocusSessionResponse focusSessionResponse;
     private boolean isViolation; // AI phán là vi phạm hay an toàn
     private String aiSpeech; // chỉ có ý nghĩa khi isViolation = true
+    private String aiAction;
     private int violationCount;
 }

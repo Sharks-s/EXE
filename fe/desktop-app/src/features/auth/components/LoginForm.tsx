@@ -1,4 +1,5 @@
 import { useLoginForm } from "../hooks/useLoginForm";
+import SocialButtons from "./SocialButtons";
 
 type Props = {
   onForgotPassword: () => void;
@@ -12,7 +13,6 @@ export default function LoginForm({ onForgotPassword }: Props) {
     onSubmit,
     createChangeHandler,
     isLoading,
-    displayGlobalError,
     t,
     emailLimits,
     passwordLimits,
@@ -21,8 +21,8 @@ export default function LoginForm({ onForgotPassword }: Props) {
   const emailReg = register("email");
   const passwordReg = register("password");
 
-  const isEmailError = !!errors.email || !!displayGlobalError;
-  const isPasswordError = !!errors.password || !!displayGlobalError;
+  const isEmailError = !!errors.email;
+  const isPasswordError = !!errors.password;
 
   return (
     <form
@@ -33,28 +33,7 @@ export default function LoginForm({ onForgotPassword }: Props) {
         {t("common:auth.login_title", { defaultValue: "Sign In" })}
       </h1>
 
-      {/* SOCIAL LOGIN */}
-      <div className="flex gap-3 my-5 font-semibold">
-        <button
-          type="button"
-          onClick={() => {
-            window.location.href =
-              "http://localhost:8080/oauth2/authorization/google";
-          }}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-lg border-2   border-slate-300 bg-white text-slate-600 font-semibold shadow-sm ring-1 ring-slate-100 hover:border-yellow-400 hover:text-yellow-500 hover:shadow-[0_0_12px_rgba(250,204,21,0.5)] transition"
-        >
-          G
-        </button>
-        <button
-          type="button"
-          disabled
-          className="w-10 h-10 inline-flex items-center justify-center rounded-lg border-2 border-slate-200 bg-white text-slate-400 font-semibold shadow-sm ring-1 ring-slate-100 opacity-60 cursor-not-allowed"
-        >
-          F
-        </button>
-      </div>
-
-      <span className="text-sm text-slate-500 mb-4">
+      <span className="text-sm text-slate-500 mb-3 mt-2">
         {t("common:auth.login_subtitle", {
           defaultValue: "Use your email & password",
         })}
@@ -112,7 +91,7 @@ export default function LoginForm({ onForgotPassword }: Props) {
         <button
           type="button"
           onClick={onForgotPassword}
-          className="text-xs font-medium text-slate-500 hover:text-yellow-600 hover:underline"
+          className="text-xs font-medium text-slate-500 hover:text-yellow-600 hover:underline cursor-pointer"
         >
           {t("common:auth.forgot_password", {
             defaultValue: "Forgot password?",
@@ -120,20 +99,11 @@ export default function LoginForm({ onForgotPassword }: Props) {
         </button>
       </div>
 
-      {/* GLOBAL ERROR */}
-      <div className="w-full max-w-sm min-h-[24px] mt-2 text-center">
-        {displayGlobalError && !Object.keys(errors).length && (
-          <p className="text-sm text-red-500 font-medium">
-            {displayGlobalError}
-          </p>
-        )}
-      </div>
-
       {/* SUBMIT */}
       <button
         type="submit"
         disabled={isLoading}
-        className={`mt-3 px-12 py-3 rounded-xl text-sm font-semibold uppercase bg-[#9fd6fa] text-[#0f172a] transition duration-300 ${isLoading
+        className={`mt-4 px-12 py-2 rounded-xl text-sm font-semibold uppercase bg-[#9fd6fa] text-[#0f172a] transition duration-300 cursor-pointer ${isLoading
           ? "opacity-60 cursor-wait"
           : "hover:bg-[#7bc3f7] hover:shadow-[0_0_25px_rgba(159,214,250,0.65)]"
           }`}
@@ -142,6 +112,22 @@ export default function LoginForm({ onForgotPassword }: Props) {
           ? t("common:auth.signing_in", { defaultValue: "Signing in..." })
           : t("common:auth.btn_login", { defaultValue: "Sign In" })}
       </button>
+
+      <div className="flex items-center my-4 w-full max-w-sm">
+        {/* Đường gạch trái */}
+        <div className="flex-grow border-t border-slate-200"></div>
+
+        {/* Chữ ở giữa */}
+        <span className="shrink-0 px-3 text-xs font-medium text-slate-400 uppercase">
+          {t("common:auth.login_divider", { defaultValue: "Or sign up with" })}
+        </span>
+
+        {/* Đường gạch phải */}
+        <div className="flex-grow border-t border-slate-200"></div>
+      </div>
+
+      {/* SOCIAL LOGIN */}
+      <SocialButtons />
     </form>
   );
 }

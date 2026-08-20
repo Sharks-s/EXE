@@ -3,6 +3,7 @@ package com.exe101.exe.service.impl;
 import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
+import com.exe101.exe.dto.request.UpdateAiAddressRequest;
 import com.exe101.exe.dto.response.CloudinaryUploadResponse;
 import com.exe101.exe.dto.response.DailyUsageResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
@@ -306,8 +307,26 @@ public class UserServiceImpl implements UserService {
         return userRepository.getReferenceById(id);
     }
 
+    @Override
+    @Transactional
+    public User updateAiAddress(Long userId, UpdateAiAddressRequest request) {
+        User user = findById(userId);
+
+        user.setAiSelfAddress(
+                (request.aiSelfAddress() != null && !request.aiSelfAddress().isBlank())
+                        ? request.aiSelfAddress().trim() : null
+        );
+        user.setAiUserAddress(
+                (request.aiUserAddress() != null && !request.aiUserAddress().isBlank())
+                        ? request.aiUserAddress().trim() : null
+        );
+
+        userRepository.save(user);
+        return findByIdWithRoles(userId);
+    }
 
 
+    // HELPER
     private List<String> getMissingRequiredFields(User user) {
         List<String> fields = new ArrayList<>();
 

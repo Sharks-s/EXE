@@ -2,31 +2,27 @@
   "auth": {
     "login_title": "Chào mừng trở lại",
     "login_subtitle": "Sử dụng email và mật khẩu của bạn",
+    "login_divider": "Hoặc đăng nhập bằng",
     "register_title": "Tạo tài khoản",
-    "register_subtitle": "hoặc dùng email để đăng ký",
+    "register_subtitle": "Dùng email để đăng ký",
     "verify_title": "Xác thực OTP",
     "verify_subtitle": "Chúng tôi đã gửi mã 6 số đến",
     "set_password_title": "Đặt mật khẩu",
     "set_password_subtitle": "Gần xong rồi! Đặt mật khẩu cho tài khoản của bạn",
-
     "email_placeholder": "Email",
     "password_placeholder": "Mật khẩu",
     "confirm_password_placeholder": "Xác nhận mật khẩu",
-
     "btn_login": "Đăng nhập",
     "btn_register": "Đăng ký",
     "btn_verify": "Xác thực",
     "btn_complete": "Hoàn tất",
     "btn_resend": "Gửi lại OTP",
     "btn_back": "Quay lại",
-
     "signing_in": "Đang đăng nhập...",
     "signing_up": "Đang đăng ký...",
     "verifying": "Đang xác thực...",
     "completing": "Đang thiết lập...",
-
     "expires_in": "Hết hạn sau",
-
     "toggle_signin_title": "Chào mừng trở lại",
     "toggle_signin_subtitle": "Nhập thông tin để tiếp tục hành trình của bạn",
     "toggle_signup_title": "Xin chào bạn!",

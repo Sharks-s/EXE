@@ -9,11 +9,13 @@ import { RegisterInitSchema } from "../schemas/auth.schemas";
 import { getStringLimits } from "../../../utils/zod-utils";
 import { parseApiError } from "../../../utils/error-mapper";
 import { registerInitService } from "../services/auth.service";
+import { toast } from "../../../shared/store/toastStore";
 import type { ApiErrorResponse } from "../../../types";
 import type { RegisterResponse } from "../types/auth.types";
 
 type FormData = z.infer<typeof RegisterInitSchema>;
 
+// Chạy ngoài hook — không tính lại mỗi render
 const emailLimits = getStringLimits(RegisterInitSchema.shape.email);
 
 interface UseRegisterFormProps {
@@ -23,7 +25,6 @@ interface UseRegisterFormProps {
 export function useRegisterForm({ onRegisterSuccess }: UseRegisterFormProps) {
   const { t } = useTranslation(["validationErrors", "common"]);
   const [loading, setLoading] = useState(false);
-  const [localGlobalError, setLocalGlobalError] = useState("");
 
   const {
     register,
@@ -39,7 +40,6 @@ export function useRegisterForm({ onRegisterSuccess }: UseRegisterFormProps) {
 
   // ── Submit ────────────────────────────────────────
   const onSubmit = async (data: FormData) => {
-    setLocalGlobalError("");
     try {
       setLoading(true);
       const res = await registerInitService({ email: data.email });
@@ -55,9 +55,15 @@ export function useRegisterForm({ onRegisterSuccess }: UseRegisterFormProps) {
           });
         });
 
-        if (globalMessage) setLocalGlobalError(globalMessage);
+        if (globalMessage) {
+          toast.error(globalMessage);
+        }
       } else {
-        setLocalGlobalError("An unexpected error occurred.");
+        toast.error(
+          t("common:errors.unexpected", {
+            defaultValue: "An unexpected error occurred.",
+          })
+        );
       }
     } finally {
       setLoading(false);
@@ -68,13 +74,12 @@ export function useRegisterForm({ onRegisterSuccess }: UseRegisterFormProps) {
   const createChangeHandler =
     (
       fieldName: FieldPath<FormData>,
-      originalOnChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+      originalOnChange: (e: React.ChangeEvent<HTMLInputElement>) => void
     ) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      originalOnChange(e);
-      if (localGlobalError) setLocalGlobalError("");
-      clearErrors(fieldName);
-    };
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        originalOnChange(e);
+        clearErrors(fieldName);
+      };
 
   return {
     // react-hook-form
@@ -88,7 +93,6 @@ export function useRegisterForm({ onRegisterSuccess }: UseRegisterFormProps) {
 
     // state
     loading,
-    localGlobalError,
 
     // i18n + limits
     t,

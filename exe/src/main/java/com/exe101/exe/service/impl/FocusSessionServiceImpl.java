@@ -9,16 +9,13 @@ import com.exe101.exe.model.entity.*;
 import com.exe101.exe.model.enums.ViolationType;
 import com.exe101.exe.repository.SubscriptionRepository;
 import com.exe101.exe.repository.UserPetRepository;
-import com.exe101.exe.service.AiCloudService;
-import com.exe101.exe.service.FocusSessionService;
+import com.exe101.exe.service.*;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.mapper.FocusSessionMapper;
 import com.exe101.exe.model.enums.SessionStatus;
 import com.exe101.exe.repository.FocusSessionRepository;
 import com.exe101.exe.repository.PersonalityRepository;
-import com.exe101.exe.service.PersonalityService;
-import com.exe101.exe.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +26,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -46,6 +45,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private final AppSeedProperties appSeedProperties;
     private final AiCloudService aiCloudService;
     private final PersonalityService personalityService;
+    private final PromptTemplateService promptTemplateService;
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
 
@@ -232,34 +232,48 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         String language = "vi"; //tạm
 
         String personalityInstruction = personalityService.getPersonalityDescriptionByCode(pCode);
+        String[] addressPair = getAddressPair(session.getUser());
 
-        String systemPrompt = String.format("""
-        Bạn là thú cưng ảo hỗ trợ học tập tên là %s, là một con pet %s, có tính cách đặc trưng là [%s]: %s
-        Bối cảnh: Người dùng đang trong phiên học tập nhưng vừa bị hệ thống bắt quả tang lỗi hành vi: [%s].
-        Chi tiết: Ứng dụng "%s" - Tiêu đề "%s" áp dụng khi người dùng sài app nếu không có thì là các lỗi khác.
-        User sài máy tính hoặc laptop
-        Nhiệm vụ: Hãy đưa ra 1 câu phản hồi duy nhất phù hợp hoàn hảo với cá tính [%s] của bạn dựa trên hướng dẫn hành vi trên.
+        boolean isCameraSource = "Camera Tracker".equals(request.appName());
+        String taskPromptKey = isCameraSource ? "CAMERA_VIOLATION_SPEECH" : "APP_VIOLATION_SPEECH";
 
-        QUAN TRỌNG NHẤT - Đây là lời NHẮC NHỞ/CẢNH BÁO vì user đang VI PHẠM, KHÔNG phải lời động viên/cổ vũ:
-        - TUYỆT ĐỐI KHÔNG dùng các từ như "cố lên", "tiếp tục cố gắng", "bạn làm được", "cố gắng lên nào" — đây là lỗi nghiêm trọng vì user đang SAI, không phải đang nỗ lực đúng hướng.
-        - Hãy chỉ thẳng vào hành vi sai (ví dụ: đang mất tập trung, đang dùng app giải trí, đang nhìn đi chỗ khác) và yêu cầu họ quay lại NGAY, theo đúng tông giọng của cá tính [%s].
-        - Ví dụ ĐÚNG tinh thần: "Lại lo ra rồi đó! Quay lại làm việc ngay!" hoặc "Mở app đó làm gì, tắt đi và tập trung lại!"
-        - Ví dụ SAI tinh thần (TUYỆT ĐỐI TRÁNH): "Cố lên, bạn làm được!" hoặc "Đừng bỏ cuộc nha!"
-        - Dù có tính cách ngọt ngào, khi người dùng vi phạm vẫn phải thể hiện sự khó chịu, thất vọng hoặc giận dỗi phù hợp với cá tính.
-        - Không được quá nhẹ nhàng đến mức giống động viên.
-        - Mức độ nghiêm khắc phải được ưu tiên hơn sự dễ thương.
-        Lưu ý đặc biệt:
-        - Nếu lỗi thuộc nhóm sức khỏe (BAD_POSTURE - gù lưng, POOR_LIGHTING - thiếu sáng), hãy nhắc nhở điều chỉnh một cách tự nhiên theo đúng cá tính chứ không mắng phạt.
-        - Câu thoại phải dưới 20 từ, ngắn gọn, súc tích, tác động mạnh vào tâm lý người dùng, tuyệt đối không giải thích dông dài hay chào hỏi thừa thãi. Ngôn ngữ là [%s]
-        """, pName, pPet, pCode, personalityInstruction, request.type().name(), request.appName(),
-                request.windowTitle(), pCode, pCode,
-                language);
+        Map<String, String> promptValues = new HashMap<>();
+        promptValues.put("petName", pName);
+        promptValues.put("petSpecies", pPet);
+        promptValues.put("personalityCode", pCode);
+        promptValues.put("personalityDescription", personalityInstruction);
+        promptValues.put("selfAddress", addressPair[0]);
+        promptValues.put("userAddress", addressPair[1]);
+        promptValues.put("language", language);
+        promptValues.put("violationType", request.type().name());
+        promptValues.put("appName", request.appName());
+        promptValues.put("windowTitle", request.windowTitle());
+
+        String systemPrompt = promptTemplateService.renderWithPersona(taskPromptKey, promptValues);
+
         String userPrompt = "Hãy nói một câu với tôi đi!";
-        String aiSpeech = aiCloudService.requestAiSpeech(systemPrompt, userPrompt);
+        String rawResponse = aiCloudService.requestAiSpeech(systemPrompt, userPrompt);
 
-        // Fallback an toàn nếu AI bị nghẽn mạch
+        String aiSpeech = null;
+        String aiAction = null;
+
+        if (rawResponse != null && !rawResponse.isEmpty()) {
+            try {
+                String cleanJson = rawResponse.replaceAll("```json|```", "").trim();
+                Map<String, String> parsed = objectMapper.readValue(cleanJson, Map.class);
+                aiSpeech = parsed.get("speech");
+                aiAction = parsed.get("action");
+            } catch (Exception e) {
+                System.err.println("[FocusSessionService] Lỗi parse JSON câu thoại vi phạm: " + e.getMessage());
+            }
+        }
+
+        // Fallback an toàn nếu AI bị nghẽn mạch hoặc parse lỗi
         if (aiSpeech == null || aiSpeech.isEmpty()) {
             aiSpeech = isPenalty ? "Tập trung lại nào, đừng để tôi phải nhắc nhé!" : "Chú ý tư thế và ánh sáng kìa bạn ơi!";
+        }
+        if (aiAction == null || aiAction.isEmpty()) {
+            aiAction = isPenalty ? "angry" : "remind";
         }
 
         return HandleViolationResponse.builder()
@@ -267,6 +281,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 .isPenalty(isPenalty)
                 .type(request.type())
                 .aiSpeech(aiSpeech)
+                .aiAction(aiAction)
                 .violationCount(violationCount)
                 .build();
     }
@@ -339,26 +354,19 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         String pPet = session.getUserPet() != null ? session.getUserPet().getPet().getName() : "Khỉ";
         String language = "vi"; //tạm
 
-        String personalityInstruction= personalityService.getPersonalityDescriptionByCode(pCode);
+        String personalityInstruction = personalityService.getPersonalityDescriptionByCode(pCode);
+        String[] addressPair = getAddressPair(session.getUser());
 
-        String systemPrompt = String.format("""
-                Bạn là thú cưng ảo hỗ trợ học tập tên là %s, là một con pet %s, có tính cách đặc trưng là [%s].
-                
-                Bối cảnh: Người dùng vừa hoàn thành xuất sắc 1 phiên học tập tập trung 25 phút mà không bỏ cuộc. User sài máy tính hoặc laptop
-                
-                Nhiệm vụ: Hãy đưa ra 1 câu hỏi rủ rê họ nghỉ ngơi ngắn một cách sinh động, thể hiện rõ chất giọng ứng với hướng dẫn hành vi: [%s].
-                
-                BẮT BUỘC trả về kết quả dưới dạng một JSON Object duy nhất, không kèm ký tự tạo khối markdown ```json, không giải thích dông dài.
-                Cấu trúc JSON bắt buộc:
-                {
-                  "aiSpeech": "Câu thoại rủ rê ngọt ngào/nghiêm túc/đá đểu tùy theo tính cách của bạn (dưới 20 từ)",
-                  "actions": [
-                    { "label": "Nhãn cho nút Đồng ý nghỉ (Ví dụ: 'Nghỉ thôi cậu 💖' hoặc 'Chấp hành lệnh 🎖️' hoặc 'Nghỉ đi kẻo sập 🙄')", "variant": "primary" },
-                    { "label": "Nhãn cho nút Từ chối để cày tiếp (Ví dụ: 'Học tiếp cơ 💪' hoặc 'Tiếp tục quy trình 🎯' hoặc 'Thách đấy, cày tiếp! 🔥')", "variant": "secondary" }
-                  ]
-                }
-                Ngôn ngữ: [%s]
-                """,pName, pPet , pCode, personalityInstruction,language);
+        Map<String, String> promptValues = new HashMap<>();
+        promptValues.put("petName", pName);
+        promptValues.put("petSpecies", pPet);
+        promptValues.put("personalityCode", pCode);
+        promptValues.put("personalityDescription", personalityInstruction);
+        promptValues.put("selfAddress", addressPair[0]);
+        promptValues.put("userAddress", addressPair[1]);
+        promptValues.put("language", language);
+
+        String systemPrompt = promptTemplateService.renderWithPersona("BREAK_PROMPT_SPEECH", promptValues);
 
         String userPrompt = "Hãy gợi ý lời thoại nghỉ ngơi cho tôi dưới dạng JSON.";
 
@@ -461,14 +469,21 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "SWEET";
         String pName = session.getUserPet() != null ? session.getUserPet().getCustomName() : "Khỉ";
+        String pPet = session.getUserPet() != null ? session.getUserPet().getPet().getName() : "Khỉ";
         String personalityInstruction = personalityService.getPersonalityDescriptionByCode(pCode);
+        String[] addressPair = getAddressPair(session.getUser());
 
-        String speechPrompt = String.format("""
-        Bạn là thú cưng ảo tên %s, cá tính [%s]: %s
-        User vừa bị phát hiện mở app "%s" (không thuộc danh sách quen biết) để giải trí trong lúc học.
-        Hãy nói 1 câu CẢNH BÁO NGHIÊM KHẮC dưới 15 từ, yêu cầu quay lại học ngay, đúng tông giọng cá tính trên.
-        Ngôn ngữ: vi
-        """, pName, pCode, personalityInstruction, request.appName());
+        Map<String, String> promptValues = new HashMap<>();
+        promptValues.put("petName", pName);
+        promptValues.put("petSpecies", pPet);
+        promptValues.put("personalityCode", pCode);
+        promptValues.put("personalityDescription", personalityInstruction);
+        promptValues.put("selfAddress", addressPair[0]);
+        promptValues.put("userAddress", addressPair[1]);
+        promptValues.put("language", "vi");
+        promptValues.put("appName", request.appName());
+
+        String speechPrompt = promptTemplateService.renderWithPersona("CLASSIFY_APP_SPEECH", promptValues);
 
         String aiSpeech = aiCloudService.requestAiSpeech(speechPrompt, "Nhắc user quay lại học ngay!");
         if (aiSpeech == null || aiSpeech.isEmpty()) {
@@ -557,5 +572,13 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.addViolation(violation);
 
         return focusSessionRepository.save(session);
+    }
+
+    private String[] getAddressPair(User user) {
+        String selfAddress = (user.getAiSelfAddress() != null && !user.getAiSelfAddress().isBlank())
+                ? user.getAiSelfAddress() : "tôi";
+        String userAddress = (user.getAiUserAddress() != null && !user.getAiUserAddress().isBlank())
+                ? user.getAiUserAddress() : "bạn";
+        return new String[]{selfAddress, userAddress};
     }
 }

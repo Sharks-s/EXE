@@ -56,7 +56,7 @@ export function useFocusSession() {
   const { tick: tickCameraWatch, stopCamera: stopCameraWatch } = useCameraViolationWatch({
     sessionId: session?.id ?? null,
     onPenaltyViolation: (type) => {
-      handleViolation(type, "Camera Tracker", `Vi phạm camera: ${type}`, "penalty");
+      handleViolation(type, "Camera Tracker", `Vi phạm camera: ${type}`, "penalty", "bubble");
     },
     onHealthViolation: (type) => {
       handleViolation(
@@ -64,6 +64,7 @@ export function useFocusSession() {
         "Camera Tracker",
         type === "BAD_POSTURE" ? "Sai tư thế gù lưng" : "Môi trường thiếu sáng",
         "health",
+        "bubble",
       );
     },
   });
@@ -74,13 +75,21 @@ export function useFocusSession() {
     allowedCache,
     violatingCache,
     onViolation: (appName, windowTitle) => {
-      handleViolation("ENTERTAINMENT", appName, windowTitle, "penalty");
+      handleViolation("ENTERTAINMENT", appName, windowTitle, "penalty", "warning");
     },
     onClassifyApp: handleClassifyApp,
   });
 
+  const tickAppWatchRef = useRef(tickAppWatch);
+  const tickCameraWatchRef = useRef(tickCameraWatch);
+  useEffect(() => {
+    tickAppWatchRef.current = tickAppWatch;
+    tickCameraWatchRef.current = tickCameraWatch;
+  });
+
   // Gọi khi phát hiện app lạ (không whitelist/blacklist) xuất hiện liên tục đủ lâu
   async function handleClassifyApp(appName: string, windowTitle: string) {
+    console.log("[DEBUG warning] === handleClassifyApp GỌI ===", appName, windowTitle);
     const latestSession = sessionRef.current;
     if (!latestSession) return;
 
@@ -93,19 +102,25 @@ export function useFocusSession() {
         windowTitle,
       });
 
+      console.log("[DEBUG warning] Kết quả đầy đủ:", JSON.stringify(resData));
+
       syncSession(resData.focusSessionResponse, resData.violationCount);
 
-      if (resData.isViolation) {
-        // Nhớ lại để lần sau khỏi phải hỏi AI nữa trong session này
-        useFocusStore.getState().addToViolatingCache(appKey);
+      if (resData.violation) {
+        console.log("[DEBUG warning] VIOLATION = TRUE, chuẩn bị emit warning-update");
+        // useFocusStore.getState().addToViolatingCache(appKey);
         useFocusStore.getState().addToViolatingCache(titleKey);
 
         if (resData.aiSpeech) {
+          console.log("[DEBUG warning] Đang emit với message:", resData.aiSpeech);
           await emit("warning-update", { message: resData.aiSpeech });
+          console.log("[DEBUG warning] Emit xong");
+        } else {
+          console.log("[DEBUG warning] aiSpeech rỗng, KHÔNG emit");
         }
       } else {
-        // AI phán an toàn -> nhớ lại để khỏi hỏi lại
-        useFocusStore.getState().addToAllowedCache(appKey);
+        console.log("[DEBUG warning] violation = false, coi là an toàn");
+        useFocusStore.getState().addToAllowedCache(titleKey);
       }
     } catch (err) {
       console.error("[useFocusSession] Lỗi phân loại app lạ:", err);
@@ -118,6 +133,7 @@ export function useFocusSession() {
     appName: string,
     windowTitle: string,
     priority: "penalty" | "health",
+    channel: "bubble" | "warning",
   ) {
     const latestSession = sessionRef.current;
     if (!latestSession) return;
@@ -131,11 +147,22 @@ export function useFocusSession() {
       syncSession(resData.focusSessionResponse, resData.violationCount);
 
       if (resData.aiSpeech) {
-        showBotAction({
-          message: resData.aiSpeech,
-          priority,
-        });
-        useFocusStore.getState().addAiMessage(resData.aiSpeech); // save ai message
+        useFocusStore.getState().addAiMessage(resData.aiSpeech);
+
+        if (channel === "warning") {
+          await emit("warning-update", { message: resData.aiSpeech });
+          await emit("bot-bubble-update", {
+            message: null,
+            actions: undefined,
+            isVisible: false,
+            action: "warn",
+          });
+        } else {
+          showBotAction({
+            message: resData.aiSpeech,
+            priority,
+          });
+        }
       }
     } catch (err) {
       console.error("[useFocusSession] Lỗi gửi vi phạm lên BE:", err);
@@ -315,8 +342,8 @@ export function useFocusSession() {
       }
 
       // ── Gọi tick của 2 hook con đã tách (Camera watch, App watch) ──
-      tickAppWatch(isPausedForWatch);
-      tickCameraWatch(currentElapsed, isPausedForWatch);
+      tickAppWatchRef.current(isPausedForWatch);
+      tickCameraWatchRef.current(currentElapsed, isPausedForWatch);
 
       // ── Đếm ngược tự động đóng popup hỏi nghỉ sau 60s nếu không phản hồi ──
       if (isPromptActiveRef.current && promptStartedAtRef.current !== null) {

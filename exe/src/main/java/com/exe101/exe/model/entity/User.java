@@ -99,13 +99,17 @@ public class User {
     @Column(name = "address_line", length = 255)
     private String addressLine;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "province_code")
-    private Province province;
+    @Size(max = 30)
+    @Column(name = "ai_self_address", length = 30)
+    private String aiSelfAddress; // AI tự xưng là gì, null = mặc định "tôi"
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ward_code")
-    private Ward ward;
+    @Size(max = 30)
+    @Column(name = "ai_user_address", length = 30)
+    private String aiUserAddress; // AI gọi user là gì, null = mặc định "bạn"
+
+    @Column(name = "onboarding_completed", nullable = false)
+    @Builder.Default
+    private boolean onboardingCompleted = false;
 
     // --- RELATIONS ---
     @Builder.Default
@@ -138,6 +142,14 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personality_id", foreignKey = @ForeignKey(name = "fk_users_personality"))
     private Personality personality;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "province_code")
+    private Province province;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ward_code")
+    private Ward ward;
 
     // --- HELPER METHODS ---
     public void addIdentity(UserIdentity identity) {

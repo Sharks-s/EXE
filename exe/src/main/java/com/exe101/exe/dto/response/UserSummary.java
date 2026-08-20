@@ -27,6 +27,9 @@ public class UserSummary {
 
     private Instant passwordUpdatedAt;
     private boolean profileCompleted;
+    private String aiSelfAddress;
+    private String aiUserAddress;
+    private boolean onboardingCompleted;
     private Long personalityId;
     private String personalityCode;
     private List<String> roles;

@@ -34,6 +34,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       botActions: undefined,
       isBubbleVisible: false,
       isResumeConfirmPending: false,
+      aiMessages: [],
+      violatingCache: new Set<string>(),
     }),
 
   setResumeConfirmPending: (pending) =>
@@ -103,6 +105,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       botActions: undefined,
       isBubbleVisible: false,
       isResumeConfirmPending: false,
+      aiMessages: [],
+      violatingCache: new Set<string>(),
     }),
 
   dismissSummary: () => set({ lastCompletedSession: null }),

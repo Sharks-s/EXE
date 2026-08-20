@@ -55,6 +55,14 @@ api.interceptors.response.use(
     if (!originalRequest) return Promise.reject(error);
 
     const status = error.response?.status;
+    // const url = originalRequest.url ?? "";
+
+    // const isPublicAuthRoute =
+    //   url.includes("/auth/login") ||
+    //   url.includes("/auth/register") ||
+    //   url.includes("/auth/forgot-password") ||
+    //   url.includes("/auth/reset-password");
+
     const hasToken = !!authStorage.getAccessToken();
     const canRefresh = await authSession.canRefresh();
 
@@ -118,7 +126,7 @@ api.interceptors.response.use(
       } catch (err) {
         processQueue(err, null);
         window.dispatchEvent(new Event("auth:session-expired"));
-        return new Promise(() => {}); // pending forever, tránh error toast
+        return new Promise(() => { }); // pending forever, tránh error toast
       } finally {
         isRefreshing = false;
       }

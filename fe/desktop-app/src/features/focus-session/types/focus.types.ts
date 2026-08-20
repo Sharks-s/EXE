@@ -186,7 +186,7 @@ export interface BreakPromptAiResponse {
 
 export interface ClassifyAndHandleViolationResponse {
   focusSessionResponse: FocusSessionResponse;
-  isViolation: boolean;
+  violation: boolean;
   aiSpeech: string | null;
   violationCount: number;
 }

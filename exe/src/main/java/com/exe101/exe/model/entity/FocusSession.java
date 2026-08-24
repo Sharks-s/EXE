@@ -51,6 +51,9 @@ public class FocusSession {
     @Column(name = "last_heartbeat_at")
     private Instant lastHeartbeatAt;
 
+    @Column(name = "last_heartbeat_elapsed_seconds")
+    private Integer lastHeartbeatElapsedSeconds;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private SessionStatus status;

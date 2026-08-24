@@ -40,8 +40,11 @@ public class FocusSessionController {
     }
 
     @PostMapping("/{id}/heartbeat")
-    public ApiResponse<Void> heartbeat(@PathVariable Long id) {
-        focusSessionService.recordHeartbeat(id);
+    public ApiResponse<Void> heartbeat(
+            @PathVariable Long id,
+            @RequestParam int actualElapsedSeconds
+    ) {
+        focusSessionService.recordHeartbeat(id, actualElapsedSeconds);
         return ApiResponse.success(null);
     }
 

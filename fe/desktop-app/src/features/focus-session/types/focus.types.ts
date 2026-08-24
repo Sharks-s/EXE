@@ -73,14 +73,24 @@ export interface FocusSessionResponse {
   breakCount: number;
 }
 
-// response riêng cho endpoint handleViolation, khớp HandleViolationResponse bên BE
 export interface HandleViolationResponse {
   focusSessionResponse: FocusSessionResponse;
   isPenalty: boolean;
   type: ViolationType;
   aiSpeech: string;
+  aiAction: string;
   violationCount: number;
 }
+
+export interface ClassifyAndHandleViolationResponse {
+  focusSessionResponse: FocusSessionResponse;
+  violation: boolean;
+  aiSpeech: string | null;
+  aiAction: string | null;
+  violationCount: number;
+}
+
+export interface HeartbeatResponse { dailyUsedMinutes: number; dailyLimitMinutes: number; }
 
 // ── UI helper types ────────────────────────────────────
 
@@ -122,6 +132,22 @@ export interface BubbleAction {
   variant?: "primary" | "secondary";
 }
 
+export interface AppRulesResponse {
+  blacklist: string[];
+  whitelist: string[];
+}
+
+export interface AiBubbleAction {
+  label: string;
+  variant?: "primary" | "secondary";
+}
+
+export interface BreakPromptAiResponse {
+  aiSpeech: string; // Câu rủ rê nghỉ ngơi của AI
+  actions: AiBubbleAction[];
+}
+
+
 // ── Zustand Store State Interface ──────────────────────
 export interface FocusState {
   session: FocusSessionResponse | null;
@@ -145,6 +171,7 @@ export interface FocusState {
 
   violatingCache: Set<string>; // cache app đã bị AI phán là vi phạm, tránh hỏi AI lại trong session
 
+  dailyUsage: { dailyUsedMinutes: number; dailyLimitMinutes: number } | null;
 
   // Actions
   setSession: (session: FocusSessionResponse) => void;
@@ -167,26 +194,7 @@ export interface FocusState {
   setResumeConfirmPending: (pending: boolean) => void;
   addAiMessage: (message: string) => void;
   addToViolatingCache: (appOrTitle: string) => void;
+
+  setDailyUsage: (usage: { dailyUsedMinutes: number; dailyLimitMinutes: number }) => void;
 }
 
-export interface AppRulesResponse {
-  blacklist: string[];
-  whitelist: string[];
-}
-
-export interface AiBubbleAction {
-  label: string;
-  variant?: "primary" | "secondary";
-}
-
-export interface BreakPromptAiResponse {
-  aiSpeech: string; // Câu rủ rê nghỉ ngơi của AI
-  actions: AiBubbleAction[];
-}
-
-export interface ClassifyAndHandleViolationResponse {
-  focusSessionResponse: FocusSessionResponse;
-  violation: boolean;
-  aiSpeech: string | null;
-  violationCount: number;
-}

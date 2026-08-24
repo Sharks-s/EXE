@@ -6,6 +6,7 @@ import { profileApi } from "../../features/profile/api/profile.api";
 import type { DailyUsageResponse } from "../../features/profile/types/profile.types";
 import logoIcon from "../../assets/logo/MonkeyLogo.png";
 import { icons } from "./sidebarIcons";
+import { useFocusStore } from "../../features/focus-session/stores/focusStore";
 
 export type Page =
   | "dashboard"
@@ -190,6 +191,19 @@ export default function Sidebar({
     createFallbackDailyUsage(user),
   );
 
+  const focusStoreDailyUsage = useFocusStore((s) => s.dailyUsage);
+
+  const effectiveDailyUsage: DailyUsageResponse = focusStoreDailyUsage
+    ? {
+      dailyUsedMinute: focusStoreDailyUsage.dailyUsedMinutes,
+      dailyLimitMinute: focusStoreDailyUsage.dailyLimitMinutes,
+      remainingMinute: Math.max(
+        focusStoreDailyUsage.dailyLimitMinutes - focusStoreDailyUsage.dailyUsedMinutes,
+        0,
+      ),
+    }
+    : dailyUsage;
+
   useEffect(() => {
     let cancelled = false;
 
@@ -292,7 +306,7 @@ export default function Sidebar({
       </nav>
 
       <div className="p-3 border-t border-slate-100 space-y-1">
-        <DailyUsageCard usage={dailyUsage} collapsed={collapsed} />
+        <DailyUsageCard usage={effectiveDailyUsage} collapsed={collapsed} />
 
         <NavItem
           page="profile"

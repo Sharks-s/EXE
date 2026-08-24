@@ -22,6 +22,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   aiMessages: [],
 
   violatingCache: new Set<string>(),
+
+  dailyUsage: null,
   // ── ACTIONS ──────────────────────────────────────────────────────
   setSession: (session) =>
     set({
@@ -45,6 +47,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
     set((state) => ({
       aiMessages: [{ message, timestamp: Date.now() }, ...state.aiMessages].slice(0, 20),
     })),
+
+  setDailyUsage: (usage) => set({ dailyUsage: usage }),
 
   syncSession: (session, serverViolationCount) => {
     const isEnded =

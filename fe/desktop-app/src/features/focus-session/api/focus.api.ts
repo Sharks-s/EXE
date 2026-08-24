@@ -9,6 +9,7 @@ import type {
   AppRulesResponse,
   BreakPromptAiResponse,
   ClassifyAndHandleViolationResponse,
+  HeartbeatResponse,
 } from "../types/focus.types";
 
 export const focusApi = {
@@ -97,8 +98,11 @@ export const focusApi = {
   },
 
   // POST /focus-sessions/{id}/heartbeat
-  heartbeat: async (sessionId: number): Promise<void> => {
-    await api.post(`/focus-sessions/${sessionId}/heartbeat`);
+  heartbeat: async (sessionId: number, actualElapsedSeconds: number): Promise<HeartbeatResponse> => {
+    const res = await api.post(`/focus-sessions/${sessionId}/heartbeat`, null, {
+      params: { actualElapsedSeconds },
+    });
+    return res.data.data;
   },
 
   classifyAndHandleViolation: async (

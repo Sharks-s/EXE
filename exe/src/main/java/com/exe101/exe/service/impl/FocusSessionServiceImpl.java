@@ -401,28 +401,29 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
     @Override
     @Transactional
-    public void recordHeartbeat(Long sessionId) {
+    public void recordHeartbeat(Long sessionId, int actualElapsedSeconds) {
         FocusSession session = focusSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
         Instant now = Instant.now();
         User user = session.getUser();
         resetDailyUsageIfNeeded(user, now);
 
-        Instant lastBeat = session.getLastHeartbeatAt() != null
-                ? session.getLastHeartbeatAt()
-                : session.getStartedAt();
-        long minutesSinceLastBeat = Duration.between(lastBeat, now).toMinutes();
+        int lastElapsedSeconds = session.getLastHeartbeatElapsedSeconds() != null
+                ? session.getLastHeartbeatElapsedSeconds() : 0;
+        int deltaSeconds = Math.max(0, actualElapsedSeconds - lastElapsedSeconds);
+        int deltaMinutes = deltaSeconds / 60;
 
-        if (minutesSinceLastBeat > 0) {
-            if (exceedsDailyUsageLimit(user, (int) minutesSinceLastBeat)) {
+        if (deltaMinutes > 0) {
+            if (exceedsDailyUsageLimit(user, deltaMinutes)) {
                 throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
             }
 
-            user.setDailyUsedMinutes(currentDailyUsedMinutes(user) + (int) minutesSinceLastBeat);
+            user.setDailyUsedMinutes(currentDailyUsedMinutes(user) + deltaMinutes);
             user.setLastUsageDate(now);
             userService.save(user);
         }
 
+        session.setLastHeartbeatElapsedSeconds(actualElapsedSeconds);
         session.setLastHeartbeatAt(now);
         focusSessionRepository.save(session);
     }
@@ -484,18 +485,37 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         promptValues.put("appName", request.appName());
 
         String speechPrompt = promptTemplateService.renderWithPersona("CLASSIFY_APP_SPEECH", promptValues);
+        String rawResponse = aiCloudService.requestAiSpeech(speechPrompt, "Nhắc user quay lại học ngay!");
 
-        String aiSpeech = aiCloudService.requestAiSpeech(speechPrompt, "Nhắc user quay lại học ngay!");
+        String aiSpeech = null;
+        String aiAction = null;
+
+        if (rawResponse != null && !rawResponse.isEmpty()) {
+            try {
+                String cleanJson = rawResponse.replaceAll("```json|```", "").trim();
+                Map<String, String> parsed = objectMapper.readValue(cleanJson, Map.class);
+                aiSpeech = parsed.get("speech");
+                aiAction = parsed.get("action");
+            } catch (Exception e) {
+                System.err.println("[FocusSessionService] Lỗi parse JSON câu thoại classify: " + e.getMessage());
+            }
+        }
+
         if (aiSpeech == null || aiSpeech.isEmpty()) {
-            aiSpeech = "Phát hiện app lạ khả nghi! Quay lại học ngay!";
+            aiSpeech = "Ơ, đang làm gì đấy? Quay lại học thôi!";
+        }
+        if (aiAction == null || aiAction.isEmpty()) {
+            aiAction = "question";
         }
 
         return ClassifyAndHandleViolationResponse.builder()
                 .focusSessionResponse(focusSessionMapper.toResponse(savedSession))
                 .isViolation(true)
                 .aiSpeech(aiSpeech)
+                .aiAction(aiAction)
                 .violationCount(violationCount)
                 .build();
+
     }
 
     // Helper

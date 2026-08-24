@@ -26,7 +26,7 @@ public interface FocusSessionService {
 
     FocusSessionResponse getActiveSessionByUserId(Long userId);
 
-    void recordHeartbeat(Long sessionId);
+    void recordHeartbeat(Long sessionId, int actualElapsedSeconds);
 
     ClassifyAndHandleViolationResponse classifyAndHandleViolation(Long sessionId, Long userId, ClassifyAppRequest request);
 }

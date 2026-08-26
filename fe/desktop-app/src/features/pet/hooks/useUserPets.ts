@@ -21,7 +21,7 @@ export function useUserPets() {
       setSelectedPet(equippedPet ?? data[0] ?? null);
     } catch (err) {
       console.error(err);
-      setError("Không thể tải danh sách thú cưng.");
+      setError("Không thể tải danh sách bạn đồng hành.");
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ export function useUserPets() {
       });
     } catch (err) {
       console.error(err);
-      setError("Không thể trang bị thú cưng.");
+      setError("Không thể trang bị bạn đồng hành.");
     } finally {
       setActionLoadingId(null);
     }
@@ -99,7 +99,7 @@ export function useUserPets() {
       return true;
     } catch (err) {
       console.error(err);
-      setError("Không thể đổi tên thú cưng.");
+      setError("Không thể đổi tên bạn đồng hành.");
       return false;
     } finally {
       setActionLoadingId(null);
@@ -124,7 +124,7 @@ export function useUserPets() {
       );
     } catch (err) {
       console.error(err);
-      setError("Không thể nâng cấp thú cưng.");
+      setError("Không thể nâng cấp bạn đồng hành.");
     } finally {
       setActionLoadingId(null);
     }

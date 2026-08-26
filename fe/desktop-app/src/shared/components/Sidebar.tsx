@@ -22,7 +22,7 @@ interface SidebarProps {
   isLocked?: boolean;
 }
 
-const DAILY_USAGE_FALLBACK_LIMIT = 120;
+const DAILY_USAGE_FALLBACK_LIMIT = 60;
 
 const getDailyUsedMinutes = (user: User | null) =>
   user?.dailyUsedMinute ?? user?.dailyUsedMinutes ?? user?.daily_used_minutes ?? 0;
@@ -39,12 +39,7 @@ const createFallbackDailyUsage = (user: User | null): DailyUsageResponse => {
 
 const formatUsageMinutes = (minutes: number) => {
   const safeMinutes = Math.max(Math.round(minutes), 0);
-  const hours = Math.floor(safeMinutes / 60);
-  const remainingMinutes = safeMinutes % 60;
-
-  if (hours <= 0) return `${safeMinutes}p`;
-  if (remainingMinutes === 0) return `${hours}h`;
-  return `${hours}h ${remainingMinutes}p`;
+  return `${safeMinutes} phút`;
 };
 
 function DailyUsageCard({
@@ -112,7 +107,7 @@ function DailyUsageCard({
           Đã dùng {formatUsageMinutes(usage.dailyUsedMinute)} /{" "}
           {formatUsageMinutes(usage.dailyLimitMinute)}
         </p>
-      </div>
+      </div>  
     </div>
   );
 }
@@ -283,7 +278,7 @@ export default function Sidebar({
         />
         <NavItem
           page="pet"
-          label={t("sidebar.pet", { defaultValue: "Pet" })}
+          label={t("sidebar.pet", { defaultValue: "Buddy" })}
           icon={icons.pet}
           currentPage={currentPage}
           onNavigate={onNavigate}
@@ -291,8 +286,9 @@ export default function Sidebar({
           disabled={isLocked}
         />
 
-        <div className="my-2 border-t border-slate-100" />
+      </nav>
 
+      <div className="p-3 border-t border-slate-100 space-y-1">
         <NavItem
           page="upgrade"
           label={t("sidebar.upgrade", { defaultValue: "Upgrade" })}
@@ -303,9 +299,7 @@ export default function Sidebar({
           variant="upgrade"
           disabled={isLocked}
         />
-      </nav>
 
-      <div className="p-3 border-t border-slate-100 space-y-1">
         <DailyUsageCard usage={effectiveDailyUsage} collapsed={collapsed} />
 
         <NavItem

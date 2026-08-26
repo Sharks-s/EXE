@@ -6,9 +6,6 @@ import { toast } from "../../shared/store/toastStore";
 import Sidebar, { type Page } from "../../shared/components/Sidebar";
 import Auth from "../../features/auth/pages/Auth";
 import { focusApi } from "../../features/focus-session/api/focus.api";
-import CompleteProfileModal from "../../shared/components/CompleteProfileModal";
-import { profileApi } from "../../features/profile/api/profile.api";
-
 import Dashboard from "../../features/focus-session/pages/Dashboard";
 import AnalyticsPage from "../../features/analytics/pages/AnalyticsPage";
 import SettingsPage from "../../features/settings/pages/SettingsPage";
@@ -95,34 +92,6 @@ export default function MainWindow() {
     }
     checkActiveSession();
   }, [isInitializing, isAuthenticated]);
-  // Kiểm tra profile completion MỖI LẦN user đăng nhập (user.id thay đổi).
-  // Chỉ dựa vào profileCompleted/profile_completed/completed:
-  // false thì hiện popup, true thì không hiện.
-  useEffect(() => {
-    if (!user) return; // chưa đăng nhập → bỏ qua
-
-    let cancelled = false;
-
-    const checkProfile = async () => {
-      try {
-        const result = await profileApi.getProfileCompletion();
-        const profileCompleted =
-          result.profileCompleted ?? result.profile_completed ?? result.completed;
-
-        if (!cancelled) {
-          setShowProfileModal(profileCompleted === false);
-        }
-      } catch {
-        // Bỏ qua lỗi network, không chặn user vào app.
-      }
-    };
-
-    checkProfile();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id]);
 
   // Đang check session → không render gì để tránh flash
   if (isInitializing || isCheckingActiveSession) return null;
@@ -148,12 +117,6 @@ export default function MainWindow() {
         {currentPage === "pet" && <Pet />}
       </main>
 
-      {/* Popup nhập thông tin cá nhân nếu chưa hoàn thiện */}
-      <CompleteProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        onCompleted={() => setShowProfileModal(false)}
-      />
     </div>
   );
 }

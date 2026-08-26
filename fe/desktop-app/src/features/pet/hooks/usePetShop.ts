@@ -17,7 +17,7 @@ export function usePetShop() {
       setShopPets(data);
     } catch (err) {
       console.error(err);
-      setError("Không thể tải danh sách thú cưng trong shop.");
+      setError("Không thể tải danh sách bạn đồng hành trong shop.");
     } finally {
       setLoading(false);
     }
@@ -37,7 +37,7 @@ export function usePetShop() {
       return addedPet;
     } catch (err) {
       console.error(err);
-      setError("Không thể thêm thú cưng này.");
+      setError("Không thể thêm bạn đồng hành này.");
       return null;
     } finally {
       setAddingId(null);

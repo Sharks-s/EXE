@@ -191,9 +191,9 @@ function ActiveViewContent() {
       {/* STATS */}
       <div className="stats-grid">
         <StatCard
-          label="Vi phạm"
+          label="Mất tập trung"
           value={violationCount}
-          sub="lần bị phát hiện"
+          sub="lần bị nhắc nhở"
           accent={violationCount > 0 ? "#EF4444" : "#0F172A"}
         />
         <StatCard

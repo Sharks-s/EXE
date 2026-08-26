@@ -32,11 +32,7 @@ const violationLabels: Record<string, string> = {
 };
 
 const formatMinutes = (minutes?: number) => {
-  if (!minutes) return "0m";
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (!hours) return `${rest}m`;
-  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+  return `${Math.max(Math.round(minutes ?? 0), 0)} phút`;
 };
 
 const formatChange = (value?: number, suffix = "") => {
@@ -251,7 +247,7 @@ export default function StatisticsPage() {
       },
       {
         icon: "warning",
-        title: "Số lần vi phạm",
+        title: "Số lần bạn mất tập trung",
         value: String(violations?.totalViolations ?? summary?.totalViolations ?? 0),
         change: formatChange(summary?.compareWithPreviousRange.violationsDiff),
         trendIcon:
@@ -504,7 +500,7 @@ export default function StatisticsPage() {
 
           <article className="info-card violations-card">
             <div className="violation-header">
-              <h2>Chi tiết vi phạm</h2>
+              <h2>Chi tiết số lần mất tập trung</h2>
               <span>{formatMinutes(violations?.penaltyMinutes)} bị phạt</span>
             </div>
 

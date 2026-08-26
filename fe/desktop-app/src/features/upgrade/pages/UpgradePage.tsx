@@ -6,6 +6,9 @@ export type Plan = {
   name: string;
   price: string;
   period: string;
+  yearlyOldPrice: string;
+  yearlyPrice: string;
+  yearlyPeriod: string;
   tagline: string;
   features: string[];
   buttonLabel: string;
@@ -20,10 +23,13 @@ export type FaqItem = {
 
 const plans: Plan[] = [
   {
-    id: "free",
-    name: "Free",
-    price: "0đ",
-    period: "/ tháng",
+    id: "beginner",
+    name: "Beginner",
+    price: "",
+    period: "",
+    yearlyOldPrice: "",
+    yearlyPrice: "",
+    yearlyPeriod: "",
     tagline: "Dành cho người mới bắt đầu",
     features: [
       "Tối đa 120 phút sử dụng mỗi ngày",
@@ -35,30 +41,32 @@ const plans: Plan[] = [
     highlight: false,
   },
   {
-    id: "premium",
-    name: "Premium",
-    price: "49.000đ",
-    period: "/ tháng",
-    tagline: "Dành cho người muốn tập trung nghiêm túc",
-    features: [
-      "Không giới hạn thời gian sử dụng",
-      "AI assistant đa personality",
-      "Dashboard phân tích nâng cao",
-      "Chiến lược tập trung cá nhân hóa",
-      "Theo dõi hành vi nâng cao",
-      "Ưu tiên cập nhật và tính năng premium",
-      "399.000đ / năm nếu thanh toán theo năm",
-    ],
-    buttonLabel: "Nâng cấp Premium",
-    highlight: true,
-  },
+  id: "pro",
+  name: "Pro",
+  price: "49.000đ",
+  period: "/ tháng",
+  yearlyOldPrice: "599.000đ",
+  yearlyPrice: "399.000đ",
+  yearlyPeriod: "/ năm",
+  tagline: "Dành cho người muốn tập trung nghiêm túc",
+  features: [
+    "Không giới hạn thời gian sử dụng",
+    "AI assistant đa personality",
+    "Dashboard phân tích nâng cao",
+    "Chiến lược tập trung cá nhân hóa",
+    "Theo dõi hành vi nâng cao",
+    "Ưu tiên cập nhật và tính năng premium",
+  ],
+  buttonLabel: "Nâng cấp Pro",
+  highlight: true,
+},
 ];
 
 const faqItems: FaqItem[] = [];
 
 export default function UpgradePage() {
 
-  const currentPlanLabel = "Đang dùng gói Free";
+  const currentPlanLabel = "Bạn đang là một Beginner";
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
 
@@ -88,7 +96,7 @@ export default function UpgradePage() {
         </div>
 
         <p className="pricing-note">
-          Tất cả giá đã bao gồm VAT · Thanh toán hàng tháng · Không cam kết dài hạn
+          Tất cả giá chưa bao gồm VAT · Thanh toán hàng tháng · Không cam kết dài hạn
         </p>
 
         <section className="faq-section">
@@ -138,17 +146,35 @@ function PlanCard({ plan }: { plan: Plan }) {
         <div className="plan-divider" />
 
         <div className="feature-list">
-          {plan.features.map((feature) => (
-            <div key={feature} className="feature-item">
-              <span className="check-icon">✓</span>
-              <p>{feature}</p>
-            </div>
-          ))}
-        </div>
+  {plan.features.map((feature) => (
+    <div key={feature} className="feature-item">
+      <span className="check-icon">✓</span>
+      <p>{feature}</p>
+    </div>
+  ))}
+
+  {plan.yearlyPrice && (
+    <div className="feature-item yearly-payment">
+      <span className="check-icon">✓</span>
+
+      <p>
+  <span className="old-price">
+    {plan.yearlyOldPrice}
+  </span>{" "}
+
+  <span className="new-price">
+    {plan.yearlyPrice} {plan.yearlyPeriod}
+  </span>{" "}
+
+  nếu thanh toán theo năm
+</p>
+    </div>
+  )}
+</div>
 
         <button
           className={`plan-button ${plan.highlight ? "primary" : ""}`}
-          disabled={plan.id === "free"}
+          disabled={plan.id === "beginner"}
           type="button"
         >
           {plan.buttonLabel}

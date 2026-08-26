@@ -490,7 +490,7 @@ export default function ProfilePage() {
                 <h2>{isLoading ? "Đang tải..." : display.name}</h2>
                 <div className="badge-group">
                   {display.isPremium && (
-                    <span className="badge badge-premium">Free</span>
+                    <span className="badge badge-premium">Beginner</span>
                   )}
                 </div>
               </div>

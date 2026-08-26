@@ -52,7 +52,7 @@ export default function PetsPage() {
 
     const nextName = renameValue.trim();
     if (!nextName) {
-      setRenameError("Tên thú cưng không được để trống.");
+      setRenameError("Tên bạn đồng hành không được để trống.");
       return;
     }
 
@@ -121,7 +121,7 @@ export default function PetsPage() {
             {error && <div className="pet-error">{error}</div>}
 
             {loading ? (
-              <div className="pet-loading">Đang tải danh sách thú cưng...</div>
+              <div className="pet-loading">Đang tải danh sách bạn đồng hành...</div>
             ) : (
               <div className="pet-content">
                 <div className="pet-grid">
@@ -140,7 +140,7 @@ export default function PetsPage() {
                     ))
                   ) : (
                     <div className="pet-empty">
-                      Không tìm thấy thú cưng phù hợp.
+                      Không tìm thấy bạn đồng hành phù hợp.
                     </div>
                   )}
                 </div>
@@ -190,9 +190,9 @@ function PetHeader() {
           <span className="app-page-title-icon">
             <span className="material-symbols-outlined">pets</span>
           </span>
-          <h1>Thú cưng của tôi</h1>
+          <h1>Bạn đồng hành của tôi</h1>
         </div>
-        <p>Quản lý, trang bị và nâng cấp thú cưng đồng hành.</p>
+        <p>Quản lý, trang bị và nâng cấp bạn đồng hành đồng hành.</p>
       </div>
 
     </header>
@@ -239,7 +239,7 @@ function PetStats({ totalPets, equippedPet, premiumCount }: PetStatsProps) {
         <div className="stat-icon purple">🐾</div>
         <div>
           <strong>{totalPets}</strong>
-          <span>Tổng số thú cưng</span>
+          <span>Tổng số bạn đồng hành</span>
         </div>
       </div>
 
@@ -256,7 +256,7 @@ function PetStats({ totalPets, equippedPet, premiumCount }: PetStatsProps) {
         <div className="stat-icon orange">☆</div>
         <div>
           <strong>{premiumCount}</strong>
-          <span>Thú cưng cao cấp</span>
+          <span>Bạn đồng hành cao cấp</span>
           <small>
             {premiumCount} / {totalPets} cao cấp
           </small>
@@ -429,7 +429,7 @@ function PetDetail({
   if (!pet) {
     return (
       <aside className="pet-detail empty-detail">
-        <p>Chọn một thú cưng để xem chi tiết.</p>
+        <p>Chọn một bạn đồng hành để xem chi tiết.</p>
       </aside>
     );
   }
@@ -552,7 +552,7 @@ function RenamePetModal({
         </div>
 
         <div className="rename-modal-heading">
-          <p>Đổi tên thú cưng</p>
+          <p>Đổi tên bạn đồng hành</p>
           <h2>{formatPetCode(pet.code)}</h2>
         </div>
 
@@ -564,7 +564,7 @@ function RenamePetModal({
             maxLength={32}
             disabled={loading}
             onChange={(event) => onChange(event.target.value)}
-            placeholder="Nhập tên thú cưng"
+            placeholder="Nhập tên bạn đồng hành"
           />
         </label>
 
@@ -596,7 +596,7 @@ function ShopPanel({ onPetAdded }: ShopPanelProps) {
   };
 
   if (loading) {
-    return <div className="pet-loading">Đang tải shop thú cưng...</div>;
+    return <div className="pet-loading">Đang tải shop bạn đồng hành...</div>;
   }
 
   return (
@@ -605,13 +605,13 @@ function ShopPanel({ onPetAdded }: ShopPanelProps) {
 
       <div className="shop-header">
         <div>
-          <h2>Shop thú cưng</h2>
-          <p>Thêm thú cưng mới vào bộ sưu tập của bạn.</p>
+          <h2>Shop bạn đồng hành</h2>
+          <p>Thêm bạn đòng hành mới vào bộ sưu tập của bạn.</p>
         </div>
       </div>
 
       {shopPets.length === 0 ? (
-        <div className="pet-empty">Shop hiện chưa có thú cưng nào.</div>
+        <div className="pet-empty">Shop hiện chưa có bạn đồng hành nào.</div>
       ) : (
         <div className="shop-grid">
           {shopPets.map((pet) => (
@@ -655,7 +655,7 @@ function ShopPetCard({ pet, adding, onAdd }: ShopPetCardProps) {
         <p>{formatPetCode(pet.code)}</p>
 
         <span className="shop-description">
-          {pet.description || "Chưa có mô tả cho thú cưng này."}
+          {pet.description || "Chưa có mô tả cho bạn đồng hành này."}
         </span>
 
         <div className="shop-meta">

@@ -269,7 +269,7 @@ export default function Sidebar({
         />
         <NavItem
           page="pet"
-          label={t("sidebar.pet", { defaultValue: "Pet" })}
+          label={t("sidebar.pet", { defaultValue: "Buddy" })}
           icon={icons.pet}
           currentPage={currentPage}
           onNavigate={onNavigate}

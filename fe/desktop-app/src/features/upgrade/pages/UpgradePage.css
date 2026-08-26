@@ -338,3 +338,17 @@
   display: flex;
   gap: 24px;
 }
+.yearly-payment p {
+  display: block;
+}
+
+.old-price {
+  text-decoration: line-through;
+  color: #999;
+  margin-right: 4px;
+}
+
+.new-price {
+  font-weight: 700;
+  color: #16a34a;
+}

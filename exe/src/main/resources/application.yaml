@@ -93,7 +93,7 @@ app:
   seed:
     default-pet-code: "MONKI"
     default-personality-code: "SWEET"
-    daily-free-usage: 120
+    daily-free-usage: 60
     default-cycle-minutes: 5
     personalities:
       - code: "SWEET"

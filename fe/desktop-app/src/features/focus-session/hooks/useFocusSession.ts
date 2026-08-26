@@ -89,11 +89,9 @@ export function useFocusSession() {
 
   // Gọi khi phát hiện app lạ (không whitelist/blacklist) xuất hiện liên tục đủ lâu
   async function handleClassifyApp(appName: string, windowTitle: string) {
-    console.log("[DEBUG warning] === handleClassifyApp GỌI ===", appName, windowTitle);
     const latestSession = sessionRef.current;
     if (!latestSession) return;
 
-    const appKey = appName.toLowerCase().trim();
     const titleKey = windowTitle.toLowerCase().trim();
 
     try {
@@ -102,24 +100,21 @@ export function useFocusSession() {
         windowTitle,
       });
 
-      console.log("[DEBUG warning] Kết quả đầy đủ:", JSON.stringify(resData));
-
       syncSession(resData.focusSessionResponse, resData.violationCount);
 
       if (resData.violation) {
-        console.log("[DEBUG warning] VIOLATION = TRUE, chuẩn bị emit warning-update");
-        // useFocusStore.getState().addToViolatingCache(appKey);
         useFocusStore.getState().addToViolatingCache(titleKey);
 
         if (resData.aiSpeech) {
-          console.log("[DEBUG warning] Đang emit với message:", resData.aiSpeech);
           await emit("warning-update", { message: resData.aiSpeech });
-          console.log("[DEBUG warning] Emit xong");
-        } else {
-          console.log("[DEBUG warning] aiSpeech rỗng, KHÔNG emit");
+          await emit("bot-bubble-update", {
+            message: null,
+            actions: undefined,
+            isVisible: false,
+            action: resData.aiAction,
+          });
         }
       } else {
-        console.log("[DEBUG warning] violation = false, coi là an toàn");
         useFocusStore.getState().addToAllowedCache(titleKey);
       }
     } catch (err) {
@@ -155,12 +150,13 @@ export function useFocusSession() {
             message: null,
             actions: undefined,
             isVisible: false,
-            action: "warn",
+            action: resData.aiAction,
           });
         } else {
           showBotAction({
             message: resData.aiSpeech,
             priority,
+            action: resData.aiAction,
           });
         }
       }
@@ -234,7 +230,6 @@ export function useFocusSession() {
       setElapsed(currentElapsed);
 
       // isPaused dùng chung cho Camera/App watch: tạm dừng quét khi đang hỏi nghỉ
-      // (đang breaking thì đã return ở nhánh 1 phía trên rồi, không cần tính lại ở đây)
       const isPausedForWatch = isPromptActiveRef.current;
 
       // ── HEARTBEAT: báo BE còn sống + cộng dailyUsedMinutes theo thời gian thực ──
@@ -243,9 +238,16 @@ export function useFocusSession() {
         HEARTBEAT_INTERVAL_SECONDS
       ) {
         lastHeartbeatElapsedRef.current = currentElapsed;
-        focusApi.heartbeat(latestSession.id).catch((err) => {
-          console.error("[useFocusSession] Heartbeat thất bại:", err);
-        });
+        focusApi.heartbeat(latestSession.id, currentElapsed)
+          .then((res) => {
+            useFocusStore.getState().setDailyUsage({
+              dailyUsedMinutes: res.dailyUsedMinutes,
+              dailyLimitMinutes: res.dailyLimitMinutes,
+            });
+          })
+          .catch((err) => {
+            console.error("[useFocusSession] Heartbeat thất bại:", err);
+          });
       }
 
       // ── BỘ ĐẾM CYCLE 25 PHÚT ──

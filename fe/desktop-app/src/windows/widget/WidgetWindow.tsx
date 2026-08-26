@@ -9,7 +9,7 @@ const ANIMATION_SPEED_FPS = 10;
 
 const ACTION_FRAME_COUNTS: Record<string, number> = {
   sleep: 10,
-  warn: 10,
+  question: 10,
   remind: 10,
   posture: 9,
   angry: 10,

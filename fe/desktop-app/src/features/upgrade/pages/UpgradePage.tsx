@@ -32,7 +32,7 @@ const plans: Plan[] = [
     yearlyPeriod: "",
     tagline: "Dành cho người mới bắt đầu",
     features: [
-      "Tối đa 120 phút sử dụng mỗi ngày",
+      "Tối đa 60 phút sử dụng mỗi ngày",
       "Theo dõi tập trung cơ bản",
       "Dashboard phân tích đơn giản",
       "AI assistant mặc định",

@@ -89,11 +89,7 @@ const emptyPasswordForm: PasswordFormState = {
 };
 
 const formatMinutes = (minutes?: number) => {
-  if (!minutes) return "0m";
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (!hours) return `${rest}m`;
-  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+  return `${Math.max(Math.round(minutes ?? 0), 0)} phút`;
 };
 
 const formatDate = (value?: string | null) => {
@@ -520,7 +516,7 @@ export default function ProfilePage() {
                 <span className="material-symbols-outlined icon-fill stat-green">
                   timer
                 </span>
-                <strong>{yearSummary?.totalFocusHours ?? 0}h</strong>
+                <strong>{formatMinutes(yearSummary?.totalFocusMinutes)}</strong>
                 <span>Tổng thời gian</span>
               </article>
             </div>

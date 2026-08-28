@@ -7,23 +7,49 @@ interface ResumeConfirmPopupProps {
   isProcessing?: boolean;
 }
 
+const formatMinutesSeconds = (totalSeconds: number) => {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m} phút${s > 0 ? ` ${s} giây` : ""}`;
+};
+
 export function ResumeConfirmPopup({
   session,
   onContinue,
   onEnd,
   isProcessing = false,
 }: ResumeConfirmPopupProps) {
+  const elapsedSeconds = session.currentElapsedSeconds ?? 0;
+  const plannedSeconds = session.plannedDuration * 60;
+  const remainingSeconds = Math.max(plannedSeconds - elapsedSeconds, 0);
+  const isOvertime = elapsedSeconds >= plannedSeconds;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
         <h2 className="text-lg font-bold text-slate-900 mb-2">
           Tiếp tục phiên trước?
         </h2>
-        <p className="text-sm text-slate-500 mb-5">
+        <p className="text-sm text-slate-500 mb-3">
           Bạn có 1 phiên tập trung chưa kết thúc
-          {session.goal ? ` cho mục tiêu "${session.goal}"` : ""}. Bạn muốn tiếp
-          tục hay kết thúc phiên này?
+          {session.goal ? ` cho mục tiêu "${session.goal}"` : ""}.
         </p>
+
+        <div className="bg-slate-50 rounded-xl p-3 mb-5 text-sm">
+          <p className="text-slate-700">
+            Đã học: <strong>{formatMinutesSeconds(elapsedSeconds)}</strong>
+          </p>
+          {isOvertime ? (
+            <p className="text-amber-600 mt-1">
+              Đã vượt quá thời gian dự kiến ({session.plannedDuration} phút) — phiên sẽ tự động kết thúc nếu bạn chọn tiếp tục.
+            </p>
+          ) : (
+            <p className="text-slate-500 mt-1">
+              Còn lại: {formatMinutesSeconds(remainingSeconds)}
+            </p>
+          )}
+        </div>
+
         <div className="flex gap-2">
           <button
             onClick={onEnd}

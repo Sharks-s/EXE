@@ -18,6 +18,7 @@ public interface FocusSessionMapper {
     @Mapping(source = "userPet.id", target = "userPetId")
     @Mapping(source = "personality.id", target = "personalityId")
     @Mapping(source = "violations", target = "violations", qualifiedByName = "sortViolations")
+    @Mapping(target = "currentElapsedSeconds", ignore = true)
     FocusSessionResponse toResponse(FocusSession session);
 
     ViolationResponse toViolationResponse(Violation violation);

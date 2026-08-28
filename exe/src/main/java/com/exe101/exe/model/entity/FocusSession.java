@@ -89,6 +89,15 @@ public class FocusSession {
     @Builder.Default
     private Integer accumulatedReward = 0; // Quỹ thưởng thực tế đã thu thập
 
+    @Column(name = "elapsed_seconds_at_close")
+    private Integer elapsedSecondsAtClose; // Thời điểm app bị đóng gần nhất, null nếu app đang mở bình thường
+
+    @Column(name = "was_breaking_when_closed")
+    private Boolean wasBreakingWhenClosed; // Có đang trong lúc break khi app bị đóng không
+
+    @Column(name = "break_remaining_seconds_at_close")
+    private Integer breakRemainingSecondsAtClose; // Số giây break còn lại tại thời điểm đóng (nếu đang break)
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_pet_id", foreignKey = @ForeignKey(name = "fk_focus_sessions_user_pet"))
     private UserPet userPet;

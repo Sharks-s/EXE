@@ -6,9 +6,13 @@ import WarningWindow from "./windows/warning/WarningWindow";
 import ToastContainer from "./shared/components/Toastcontainer";
 import "./App.css";
 import BubbleWindow from "./windows/bubble/BubbleWindow";
+import { ClosingOverlay } from "./shared/components/ClosingOverlay";
+import { useFocusStore } from "./features/focus-session/stores/focusStore";
 
 export default function App() {
   const [windowLabel, setWindowLabel] = useState<string>("");
+
+  const isClosing = useFocusStore((s) => s.isClosing);
 
   useEffect(() => {
     const currentWindow = getCurrentWebviewWindow();
@@ -20,6 +24,7 @@ export default function App() {
       <>
         <MainWindow />
         <ToastContainer />
+        {isClosing && <ClosingOverlay />}
       </>
     );
   if (windowLabel === "widget") return <WidgetWindow />;

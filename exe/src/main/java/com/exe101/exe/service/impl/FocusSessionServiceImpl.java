@@ -2,6 +2,7 @@ package com.exe101.exe.service.impl;
 
 import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.ClassifyAppRequest;
+import com.exe101.exe.dto.request.CloseSnapshotRequest;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.*;
@@ -392,16 +393,45 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     }
 
     @Override
+    @Transactional
     public FocusSessionResponse getActiveSessionByUserId(Long userId) {
-        return focusSessionRepository
+        FocusSession session = focusSessionRepository
                 .findFirstByUserIdAndStatusOrderByStartedAtDesc(userId, SessionStatus.IN_PROGRESS)
-                .map(focusSessionMapper::toResponse)
                 .orElse(null);
+
+        if (session == null) {
+            return null;
+        }
+
+        FocusSessionResponse response = withCloseState(focusSessionMapper.toResponse(session), session);
+
+        // Đã đọc xong, dọn dấu vết để lần gọi sau (nếu app không đóng nữa) không đọc lại giá trị cũ
+        if (session.getElapsedSecondsAtClose() != null) {
+            session.setElapsedSecondsAtClose(null);
+            session.setWasBreakingWhenClosed(null);
+            session.setBreakRemainingSecondsAtClose(null);
+            focusSessionRepository.save(session);
+        }
+
+        return response;
+    }
+
+    private FocusSessionResponse withCloseState(FocusSessionResponse response, FocusSession session) {
+        Integer elapsed = session.getElapsedSecondsAtClose();
+        return new FocusSessionResponse(
+                response.id(), response.goal(), response.plannedDuration(), response.actualDuration(),
+                response.totalRewardPool(), response.potentialReward(), response.accumulatedReward(),
+                response.status(), response.startedAt(), response.endedAt(), response.userPetId(),
+                response.personalityId(), response.lastCycleAt(), response.violations(), response.breakCount(),
+                response.pausedMinutes(), elapsed != null ? elapsed : 0,
+                session.getWasBreakingWhenClosed(),
+                session.getBreakRemainingSecondsAtClose()
+        );
     }
 
     @Override
     @Transactional
-    public void recordHeartbeat(Long sessionId, int actualElapsedSeconds) {
+    public HeartbeatResponse recordHeartbeat(Long sessionId, int actualElapsedSeconds) {
         FocusSession session = focusSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
         Instant now = Instant.now();
@@ -425,6 +455,31 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         session.setLastHeartbeatElapsedSeconds(actualElapsedSeconds);
         session.setLastHeartbeatAt(now);
+        focusSessionRepository.save(session);
+
+        return new HeartbeatResponse(
+                currentDailyUsedMinutes(user),
+                appSeedProperties.getDailyFreeUsage()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void saveCloseSnapshot(Long sessionId, Long userId, CloseSnapshotRequest request) {
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+        if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
+        }
+
+        session.setElapsedSecondsAtClose(request.elapsedSeconds());
+        session.setWasBreakingWhenClosed(request.wasBreaking());
+        session.setBreakRemainingSecondsAtClose(request.breakRemainingSeconds());
+
         focusSessionRepository.save(session);
     }
 
@@ -600,5 +655,12 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         String userAddress = (user.getAiUserAddress() != null && !user.getAiUserAddress().isBlank())
                 ? user.getAiUserAddress() : "bạn";
         return new String[]{selfAddress, userAddress};
+    }
+
+    private int calculateCurrentElapsedSeconds(FocusSession session) {
+        Instant now = effectiveNow(session); // đã có sẵn, tự đóng băng nếu đang pausedAt != null
+        long totalSeconds = Duration.between(session.getStartedAt(), now).toSeconds();
+        long pausedSeconds = session.getPausedMinutes() * 60L;
+        return (int) Math.max(0, totalSeconds - pausedSeconds);
     }
 }

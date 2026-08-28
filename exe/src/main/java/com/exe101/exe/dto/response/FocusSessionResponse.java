@@ -20,6 +20,10 @@ public record FocusSessionResponse(
         Long personalityId,
         Instant lastCycleAt,
         List<ViolationResponse> violations,
-        Integer breakCount
+        Integer breakCount,
+        Integer pausedMinutes,
+        Integer currentElapsedSeconds,
+        Boolean wasBreakingWhenClosed,
+        Integer breakRemainingSecondsAtClose
 ) {
 }

@@ -8,6 +8,7 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useCameraViolationWatch } from "./useCameraViolationWatch";
 import { useAppViolationWatch } from "./useAppViolationWatch";
 import { useBotAction } from "./useBotAction";
+import { useSessionCloseGuard } from "./useSessionCloseGuard";
 
 // ── Hằng số cấu hình (gom lại 1 chỗ, không rải rác trong hàm) ──
 const PROMPT_DURATION_SECONDS = 60;
@@ -39,8 +40,9 @@ export function useFocusSession() {
   const isBreakingRef = useRef<boolean>(false);
   const isPromptActiveRef = useRef<boolean>(false);
   const breakRemainingRef = useRef<number>(0);
-  const lastHeartbeatElapsedRef = useRef<number>(0);
+  const lastHeartbeatMinuteMarkRef = useRef<number>(0);
   const hasWarnedFinalStretchRef = useRef<boolean>(false);
+  const downtimeMsRef = useRef<number>(0);
 
   // Đồng bộ session mới nhất vào ref để đọc trong interval, tránh stale closure
   const sessionRef = useRef(session);
@@ -52,6 +54,13 @@ export function useFocusSession() {
 
   // ── Gắn 3 hook con đã tách ──
   const { showBotAction } = useBotAction();
+
+  useSessionCloseGuard({
+    sessionId: session?.id ?? null,
+    elapsed,
+    isBreaking,
+    breakRemaining,
+  });
 
   const { tick: tickCameraWatch, stopCamera: stopCameraWatch } = useCameraViolationWatch({
     sessionId: session?.id ?? null,
@@ -186,24 +195,38 @@ export function useFocusSession() {
       return;
     }
 
-    // Reset sạch sẽ toàn bộ ref của hook cha khi đổi session
+    // Lấy elapsed đã tính sẵn từ BE (0 nếu là session mới tinh, hoặc đúng giá trị nếu đang resume)
+    const initialElapsedSeconds = sessionRef.current.currentElapsedSeconds ?? 0;
+    const wasBreakingWhenClosed = sessionRef.current.wasBreakingWhenClosed ?? false;
+    const startedAtReal = new Date(sessionRef.current.startedAt).getTime();
+    const pausedSecondsTotal = (sessionRef.current.pausedMinutes ?? 0) * 60;
+    const realElapsedSinceStart = (Date.now() - startedAtReal) / 1000;
+
+    const downtimeSeconds = Math.max(
+      0,
+      realElapsedSinceStart - initialElapsedSeconds - pausedSecondsTotal,
+    );
+    downtimeMsRef.current = downtimeSeconds * 1000;
+
     totalBreakSecondsRef.current = 0;
     breakSecondsSinceLastCycleRef.current = 0;
-    breakStartedAtRef.current = null;
+    breakStartedAtRef.current = wasBreakingWhenClosed ? Date.now() : null;
     promptStartedAtRef.current = null;
-    lastHeartbeatElapsedRef.current = 0;
+    lastHeartbeatMinuteMarkRef.current = Math.floor(initialElapsedSeconds / 60);
     hasWarnedFinalStretchRef.current = false;
-    isBreakingRef.current = false;
+    isBreakingRef.current = wasBreakingWhenClosed;
     isPromptActiveRef.current = false;
-    breakRemainingRef.current = 0;
+    breakRemainingRef.current = wasBreakingWhenClosed ? (sessionRef.current.breakRemainingSecondsAtClose ?? 0) : 0;
 
-    setElapsed(0);
-    setIsBreaking(false);
+    setElapsed(initialElapsedSeconds);
+    setIsBreaking(wasBreakingWhenClosed);
     setIsPromptActive(false);
-    setBreakRemaining(0);
+    setBreakRemaining(breakRemainingRef.current);
     setPromptCountdown(PROMPT_DURATION_SECONDS);
 
-    const startedAt = new Date(sessionRef.current.startedAt).getTime();
+    // "Mốc bắt đầu ảo" — lùi lại đúng bằng elapsed đã biết, để công thức tính currentElapsed
+    // bên dưới (dựa trên Date.now() - startedAtVirtual) tự động cho ra đúng giá trị khởi điểm
+    const startedAtVirtual = Date.now() - initialElapsedSeconds * 1000;
 
     mainIntervalRef.current = setInterval(async () => {
       const now = Date.now();
@@ -226,18 +249,16 @@ export function useFocusSession() {
 
       // 2. Tính tổng thời gian học thực tế (elapsed)
       const currentElapsed =
-        Math.floor((now - startedAt) / 1000) - totalBreakSecondsRef.current;
+        Math.floor((now - startedAtVirtual) / 1000) - totalBreakSecondsRef.current;
       setElapsed(currentElapsed);
 
       // isPaused dùng chung cho Camera/App watch: tạm dừng quét khi đang hỏi nghỉ
       const isPausedForWatch = isPromptActiveRef.current;
 
       // ── HEARTBEAT: báo BE còn sống + cộng dailyUsedMinutes theo thời gian thực ──
-      if (
-        currentElapsed - lastHeartbeatElapsedRef.current >=
-        HEARTBEAT_INTERVAL_SECONDS
-      ) {
-        lastHeartbeatElapsedRef.current = currentElapsed;
+      const currentMinuteMark = Math.floor(currentElapsed / 60);
+      if (currentMinuteMark > lastHeartbeatMinuteMarkRef.current) {
+        lastHeartbeatMinuteMarkRef.current = currentMinuteMark;
         focusApi.heartbeat(latestSession.id, currentElapsed)
           .then((res) => {
             useFocusStore.getState().setDailyUsage({
@@ -252,8 +273,8 @@ export function useFocusSession() {
 
       // ── BỘ ĐẾM CYCLE 25 PHÚT ──
       const lastCycleAt = latestSession.lastCycleAt
-        ? new Date(latestSession.lastCycleAt).getTime()
-        : startedAt;
+        ? new Date(latestSession.lastCycleAt).getTime() + downtimeMsRef.current
+        : startedAtVirtual;
 
       const currentCycleElapsed = Math.max(
         Math.floor((now - lastCycleAt) / 1000) -

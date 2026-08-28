@@ -1,6 +1,6 @@
 import { useRef, useCallback } from "react";
 
-const MIN_DURATION = 25;
+const MIN_DURATION = 5;
 const MAX_DURATION = 480;
 const ACCENT = "#2563eb";
 
@@ -91,10 +91,10 @@ export function SliderTrack({ value, onChange }: SliderTrackProps) {
         }}
       >
         <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}>
-          25 phút
+          5 phút
         </span>
         <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}>
-          8 giờ
+          480 phút
         </span>
       </div>
     </div>

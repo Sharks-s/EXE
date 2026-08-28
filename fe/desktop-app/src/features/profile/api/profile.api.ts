@@ -25,13 +25,6 @@ export const profileApi = {
       .put<ApiResponse<UserSummary>>(`${PROFILE_ENDPOINT}/basic-profile`, data)
       .then((r) => r.data.data),
 
-  getProfileCompletion: () =>
-    api
-      .get<ApiResponse<ProfileCompletionResponse>>(
-        `${PROFILE_ENDPOINT}/profile-completion`,
-      )
-      .then((r) => r.data.data),
-
   getDailyUsage: () =>
     api
       .get<ApiResponse<DailyUsageResponse>>(`${PROFILE_ENDPOINT}/daily-usage`)

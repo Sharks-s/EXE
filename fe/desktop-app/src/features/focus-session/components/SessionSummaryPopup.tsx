@@ -6,10 +6,7 @@ interface SessionSummaryPopupProps {
 }
 
 const formatMinutes = (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    if (h === 0) return `${m} phút`;
-    return `${h} giờ ${m} phút`;
+    return `${Math.max(Math.round(minutes), 0)} phút`;
 };
 
 export function SessionSummaryPopup({ session, onClose }: SessionSummaryPopupProps) {

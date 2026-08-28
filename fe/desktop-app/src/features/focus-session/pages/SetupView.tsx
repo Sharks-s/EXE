@@ -9,18 +9,17 @@ import type {
 } from "../../analytics/types/analytics.types";
 import { petApi } from "../../pet/api/petApi";
 import type { UserPet } from "../../pet/types/pet.type";
+import { profileApi } from "../../profile/api/profile.api";
+import { toast } from "../../../shared/store/toastStore";
 import type { Page } from "../../../shared/components/Sidebar";
 
 const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
 const presets = [5, 25, 50, 90, 120];
 const MAX_DURATION_MINUTES = 240;
+const DAILY_LIMIT_MESSAGE = "Bạn đã vượt quá giới hạn sử dụng trong ngày.";
 
 const formatMinutes = (minutes?: number) => {
-  if (!minutes) return "0m";
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (!hours) return `${rest}m`;
-  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+  return `${Math.max(Math.round(minutes ?? 0), 0)} phút`;
 };
 
 const formatHourRange = (hour?: number | null) => {
@@ -80,6 +79,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
     useState<FocusTimeAnalytics | null>(null);
   const [hourly, setHourly] = useState<HourlyAnalytics | null>(null);
   const [equippedPet, setEquippedPet] = useState<UserPet | null>(null);
+  const [isCheckingDailyLimit, setIsCheckingDailyLimit] = useState(false);
 
   const focusGoal = useMemo(
     () => customGoal.trim() || selectedGoal,
@@ -152,9 +152,23 @@ export function SetupView({ onNavigate }: SetupViewProps) {
     setSelectedPreset(value);
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!focusGoal) return;
-    setIsCameraSetupOpen(true);
+
+    setIsCheckingDailyLimit(true);
+    try {
+      const usage = await profileApi.getDailyUsage();
+      if (usage.remainingMinute <= 0 || duration > usage.remainingMinute) {
+        toast.error(DAILY_LIMIT_MESSAGE);
+        return;
+      }
+
+      setIsCameraSetupOpen(true);
+    } catch {
+      setIsCameraSetupOpen(true);
+    } finally {
+      setIsCheckingDailyLimit(false);
+    }
   };
 
   const handleNavigate = (page: Page) => {
@@ -263,7 +277,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 <input
                   className="custom-slider"
                   max={240}
-                  min={25}
+                  min={5}
                   step={5}
                   type="range"
                   value={duration}
@@ -272,8 +286,8 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                   }
                 />
                 <div className="slider-labels">
-                  <span>25 phút</span>
-                  <span>4 giờ</span>
+                  <span>5 phút</span>
+                  <span>240 phút</span>
                 </div>
               </div>
 
@@ -310,7 +324,12 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 </div>
               </div>
 
-              <button className="start-btn" type="button" onClick={handleStart}>
+              <button
+                className="start-btn"
+                type="button"
+                onClick={handleStart}
+                disabled={isCheckingDailyLimit}
+              >
                 <span className="start-shine" />
                 <span>Bắt đầu phiên</span>
                 <MaterialIcon name="arrow_forward" />

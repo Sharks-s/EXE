@@ -9,6 +9,7 @@ import { useCameraViolationWatch } from "./useCameraViolationWatch";
 import { useAppViolationWatch } from "./useAppViolationWatch";
 import { useBotAction } from "./useBotAction";
 import { useSessionCloseGuard } from "./useSessionCloseGuard";
+import { useTranslation } from "react-i18next";
 
 // ── Hằng số cấu hình (gom lại 1 chỗ, không rải rác trong hàm) ──
 const PROMPT_DURATION_SECONDS = 60;
@@ -43,6 +44,7 @@ export function useFocusSession() {
   const lastHeartbeatMinuteMarkRef = useRef<number>(0);
   const hasWarnedFinalStretchRef = useRef<boolean>(false);
   const downtimeMsRef = useRef<number>(0);
+  const violationQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   // Đồng bộ session mới nhất vào ref để đọc trong interval, tránh stale closure
   const sessionRef = useRef(session);
@@ -139,39 +141,43 @@ export function useFocusSession() {
     priority: "penalty" | "health",
     channel: "bubble" | "warning",
   ) {
-    const latestSession = sessionRef.current;
-    if (!latestSession) return;
+    violationQueueRef.current = violationQueueRef.current.then(async () => {
+      const latestSession = sessionRef.current;
+      if (!latestSession) return;
 
-    try {
-      const resData = await focusApi.handleViolation(latestSession.id, {
-        type: type as any,
-        appName,
-        windowTitle,
-      });
-      syncSession(resData.focusSessionResponse, resData.violationCount);
+      try {
+        const resData = await focusApi.handleViolation(latestSession.id, {
+          type: type as any,
+          appName,
+          windowTitle,
+        });
+        syncSession(resData.focusSessionResponse, resData.violationCount);
 
-      if (resData.aiSpeech) {
-        useFocusStore.getState().addAiMessage(resData.aiSpeech);
+        if (resData.aiSpeech) {
+          useFocusStore.getState().addAiMessage(resData.aiSpeech);
 
-        if (channel === "warning") {
-          await emit("warning-update", { message: resData.aiSpeech });
-          await emit("bot-bubble-update", {
-            message: null,
-            actions: undefined,
-            isVisible: false,
-            action: resData.aiAction,
-          });
-        } else {
-          showBotAction({
-            message: resData.aiSpeech,
-            priority,
-            action: resData.aiAction,
-          });
+          if (channel === "warning") {
+            await emit("warning-update", { message: resData.aiSpeech });
+            await emit("bot-bubble-update", {
+              message: null,
+              actions: undefined,
+              isVisible: false,
+              action: resData.aiAction,
+            });
+          } else {
+            showBotAction({
+              message: resData.aiSpeech,
+              priority,
+              action: resData.aiAction,
+            });
+          }
         }
+      } catch (err) {
+        console.error("[useFocusSession] Lỗi gửi vi phạm lên BE:", err);
       }
-    } catch (err) {
-      console.error("[useFocusSession] Lỗi gửi vi phạm lên BE:", err);
-    }
+    });
+
+    await violationQueueRef.current;
   }
 
   // Lắng nghe lệnh từ Widget gửi về (accept/reject break)

@@ -8,15 +8,16 @@ import { BreakPromptPopup } from "../../../shared/components/BreakPromptPopup";
 import { ResumeConfirmPopup } from "../../../shared/components/ResumeConfirmPopup";
 import { focusApi } from "../api/focus.api";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 
-const VIOLATION_LABELS: Record<string, string> = {
-  AWAY: "Rời khỏi màn hình",
-  LOOK_AWAY: "Nhìn đi chỗ khác",
-  TOO_CLOSE: "Ngồi quá gần",
-  ENTERTAINMENT: "Mở app giải trí",
-  BAD_POSTURE: "Sai tư thế",
-  POOR_LIGHTING: "Thiếu sáng",
-  PHONE: "Dùng điện thoại",
+const VIOLATION_LABEL_KEYS: Record<string, string> = {
+  AWAY: "focusSession.activeView.violation_away",
+  LOOK_AWAY: "focusSession.activeView.violation_look_away",
+  TOO_CLOSE: "focusSession.activeView.violation_too_close",
+  ENTERTAINMENT: "focusSession.activeView.violation_entertainment",
+  BAD_POSTURE: "focusSession.activeView.violation_bad_posture",
+  POOR_LIGHTING: "focusSession.activeView.violation_poor_lighting",
+  PHONE: "focusSession.activeView.violation_phone",
 };
 
 export function ActiveView() {
@@ -61,7 +62,7 @@ export function ActiveView() {
 function ActiveViewContent() {
   const { session, violationCount, aiMessages } = useFocusStore();
   const [isAbortConfirmOpen, setIsAbortConfirmOpen] = useState(false);
-
+  const { t } = useTranslation("common");
 
   // Triệu hồi Hook quản lý thời gian gốc
   const {
@@ -127,8 +128,8 @@ function ActiveViewContent() {
       {/* HEADER */}
       <div className="active-view-header">
         <div>
-          <h1>Đang tập trung 🔥</h1>
-          <p>{session.goal || "Không có mục tiêu cụ thể"}</p>
+          <h1>{t("focusSession.activeView.header_title")}</h1>
+          <p>{session.goal || t("focusSession.activeView.no_goal")}</p>
         </div>
       </div>
 
@@ -151,7 +152,7 @@ function ActiveViewContent() {
             {isBreaking ? formatTime(breakRemaining) : formatTime(remaining)}
           </span>
           <span className="label-text">
-            {isBreaking ? "GIẢI LAO" : "CÒN LẠI"}
+            {isBreaking ? t("focusSession.activeView.timer_break") : t("focusSession.activeView.timer_remaining")}
           </span>
         </ProgressRing>
 
@@ -161,10 +162,10 @@ function ActiveViewContent() {
             <div>
               <div className="bar-row-header">
                 <span className="title">
-                  Phiên học {currentCycle}/{totalCycles}
+                  {t("focusSession.activeView.session_label", { current: currentCycle, total: totalCycles })}
                 </span>
                 <span className="sub-info">
-                  {formatTime(cycleRemaining)} còn lại
+                  {t("focusSession.activeView.time_left", { time: formatTime(cycleRemaining) })}
                 </span>
               </div>
               <div className="progress-bar-bg">
@@ -176,9 +177,9 @@ function ActiveViewContent() {
           {/* Break bank */}
           <div>
             <div className="bar-row-header">
-              <span className="title">💰 Thời gian nghỉ đã nhận được</span>
+              <span className="title">{t("focusSession.activeView.reward_earned_title")}</span>
               <span className="reward-info">
-                {session.accumulatedReward} phút tích lũy
+                {t("focusSession.activeView.reward_earned_sub", { minutes: session.accumulatedReward })}
               </span>
             </div>
             <div className="progress-bar-bg break-bank-bg">
@@ -191,19 +192,19 @@ function ActiveViewContent() {
       {/* STATS */}
       <div className="stats-grid">
         <StatCard
-          label="Mất tập trung"
+          label={t("focusSession.activeView.stat_violation_label")}
           value={violationCount}
-          sub="lần bị nhắc nhở"
+          sub={t("focusSession.activeView.stat_violation_sub")}
           accent={violationCount > 0 ? "#EF4444" : "#0F172A"}
         />
         <StatCard
-          label="Thời gian nghỉ"
+          label={t("focusSession.activeView.stat_reward_label")}
           value={`${session.potentialReward} phút`}
-          sub="có thể kiếm thêm"
+          sub={t("focusSession.activeView.stat_reward_sub")}
           accent="#9fd6fa"
         />
         <StatCard
-          label="Đã học"
+          label={t("focusSession.activeView.stat_studied_label")}
           value={`${Math.floor(elapsed / 60)}`}
           sub={`/ ${session.plannedDuration} phút`}
         />
@@ -214,11 +215,11 @@ function ActiveViewContent() {
         {/* Cột trái — lời AI */}
         <div className="bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden">
           <h4 className="text-xs font-semibold text-slate-400 uppercase px-4 pt-4 pb-2 flex-shrink-0">
-            Trợ lý
+            {t("focusSession.activeView.assistant_title")}
           </h4>
           <div className="px-4 pb-4 overflow-y-auto flex-1">
             {aiMessages.length === 0 ? (
-              <p className="text-sm text-slate-400 italic">Chưa có gì...</p>
+              <p className="text-sm text-slate-400 italic">{t("focusSession.activeView.assistant_empty")}</p>
             ) : (
               <ul className="space-y-2">
                 {aiMessages.map((item, idx) => (
@@ -237,11 +238,11 @@ function ActiveViewContent() {
         {/* Cột phải — danh sách vi phạm */}
         <div className="bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden">
           <h4 className="text-xs font-semibold text-slate-400 uppercase px-4 pt-4 pb-2 flex-shrink-0">
-            Vi phạm trong phiên
+            {t("focusSession.activeView.violations_title")}
           </h4>
           <div className="px-4 pb-4 overflow-y-auto flex-1">
             {!session.violations || session.violations.length === 0 ? (
-              <p className="text-sm text-slate-400 italic">Chưa có vi phạm nào</p>
+              <p className="text-sm text-slate-400 italic">{t("focusSession.activeView.violations_empty")}</p>
             ) : (
               <ul className="space-y-2">
                 {session.violations.map((v, idx) => (
@@ -249,7 +250,7 @@ function ActiveViewContent() {
                     <span className="text-xs text-slate-400 mr-2">
                       {new Date(v.occurredAt).toLocaleTimeString("vi-VN")}
                     </span>
-                    {VIOLATION_LABELS[v.type] ?? v.type}
+                    {VIOLATION_LABEL_KEYS[v.type] ? t(VIOLATION_LABEL_KEYS[v.type]) : v.type}
                     {v.appName ? ` (${v.appName})` : ""}
                   </li>
                 ))}
@@ -269,7 +270,7 @@ function ActiveViewContent() {
               onClick={handleResumeSession}
               style={{ width: "100%", backgroundColor: "#10B981" }} // Màu xanh lá cho tươi tắn
             >
-              Quay lại học (Kết thúc nghỉ)
+              {t("focusSession.activeView.resume_learning")}
             </button>
 
             <button
@@ -280,8 +281,8 @@ function ActiveViewContent() {
                 <span className="material-symbols-outlined">picture_in_picture_alt</span>
               </span>
               <span className="action-button-copy">
-                <strong>Thu nhỏ</strong>
-                <small>Về Widget</small>
+                <strong>{t("focusSession.activeView.minimize")}</strong>
+                <small>{t("focusSession.activeView.minimize_sub")}</small>
               </span>
             </button>
           </>
@@ -298,8 +299,8 @@ function ActiveViewContent() {
                 <span className="material-symbols-outlined">flag</span>
               </span>
               <span className="action-button-copy">
-                <strong>Từ bỏ phiên</strong>
-                <small>-50% XP</small>
+                <strong>{t("focusSession.activeView.abort_session")}</strong>
+                <small>{t("focusSession.activeView.abort_session_sub")}</small>
               </span>
             </button>
 
@@ -311,8 +312,8 @@ function ActiveViewContent() {
                 <span className="material-symbols-outlined">picture_in_picture_alt</span>
               </span>
               <span className="action-button-copy">
-                <strong>Thu nhỏ</strong>
-                <small>Về Widget</small>
+                <strong>{t("focusSession.activeView.minimize")}</strong>
+                <small>{t("focusSession.activeView.minimize_sub")}</small>
               </span>
             </button>
           </>
@@ -345,10 +346,9 @@ function ActiveViewContent() {
             </div>
 
             <div className="abort-confirm-copy">
-              <h2 id="abort-confirm-title">Từ bỏ phiên tập trung?</h2>
+              <h2 id="abort-confirm-title">{t("focusSession.activeView.abort_confirm_title")}</h2>
               <p>
-                Phiên hiện tại sẽ kết thúc ngay và phần thưởng XP bị giảm 50%.
-                Bạn vẫn có thể bắt đầu phiên mới sau đó.
+                {t("focusSession.activeView.abort_confirm_desc")}
               </p>
             </div>
 
@@ -359,7 +359,7 @@ function ActiveViewContent() {
                 disabled={isEnding}
                 onClick={() => setIsAbortConfirmOpen(false)}
               >
-                Tiếp tục học
+                {t("focusSession.activeView.abort_confirm_cancel")}
               </button>
               <button
                 className="abort-confirm-danger"
@@ -367,7 +367,7 @@ function ActiveViewContent() {
                 disabled={isEnding}
                 onClick={() => handleEndSession(true)}
               >
-                {isEnding ? "Đang kết thúc..." : "Xác nhận từ bỏ"}
+                {isEnding ? t("focusSession.activeView.abort_confirm_processing") : t("focusSession.activeView.abort_confirm_ok")}
               </button>
             </div>
           </div>

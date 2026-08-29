@@ -1,7 +1,8 @@
 import { useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 const MIN_DURATION = 5;
-const MAX_DURATION = 480;
+const MAX_DURATION = 240;
 const ACCENT = "#2563eb";
 
 interface SliderTrackProps {
@@ -10,6 +11,8 @@ interface SliderTrackProps {
 }
 
 export function SliderTrack({ value, onChange }: SliderTrackProps) {
+  const { t } = useTranslation("common");
+
   const trackRef = useRef<HTMLDivElement>(null);
 
   const clamp = (v: number) =>
@@ -91,10 +94,10 @@ export function SliderTrack({ value, onChange }: SliderTrackProps) {
         }}
       >
         <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}>
-          5 phút
+          {t("focusSession.slider.minutes_format", { count: MIN_DURATION })}
         </span>
         <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}>
-          480 phút
+          {t("focusSession.slider.minutes_format", { count: MAX_DURATION })}
         </span>
       </div>
     </div>

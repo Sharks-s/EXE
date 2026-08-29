@@ -12,11 +12,11 @@ import type { UserPet } from "../../pet/types/pet.type";
 import { profileApi } from "../../profile/api/profile.api";
 import { toast } from "../../../shared/store/toastStore";
 import type { Page } from "../../../shared/components/Sidebar";
+import { useTranslation } from "react-i18next";
 
 const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
 const presets = [5, 25, 50, 90, 120];
 const MAX_DURATION_MINUTES = 240;
-const DAILY_LIMIT_MESSAGE = "Bạn đã vượt quá giới hạn sử dụng trong ngày.";
 
 const formatMinutes = (minutes?: number) => {
   return `${Math.max(Math.round(minutes ?? 0), 0)} phút`;
@@ -67,6 +67,7 @@ type SetupViewProps = {
 };
 
 export function SetupView({ onNavigate }: SetupViewProps) {
+  const { t } = useTranslation("common");
   const [duration, setDuration] = useState(50);
   const [selectedPreset, setSelectedPreset] = useState(50);
   const [selectedGoal, setSelectedGoal] = useState("Coding");
@@ -159,7 +160,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
     try {
       const usage = await profileApi.getDailyUsage();
       if (usage.remainingMinute <= 0 || duration > usage.remainingMinute) {
-        toast.error(DAILY_LIMIT_MESSAGE);
+        toast.error(t("focusSession.setup.daily_limit_message"));
         return;
       }
 
@@ -184,21 +185,21 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               <span className="app-page-title-icon">
                 <MaterialIcon name="dashboard" />
               </span>
-              <h2>Chào buổi chiều 👋</h2>
+              <h2>{t("focusSession.setup.greeting")}</h2>
             </div>
-            <p>Bạn muốn tập trung vào điều gì hôm nay?</p>
+            <p>{t("focusSession.setup.subtitle")}</p>
           </div>
 
           <div className="header-actions app-page-actions">
             <div className="ready-status">
               <span className="status-dot" />
-              <span>Sẵn sàng tập trung</span>
+              <span>{t("focusSession.setup.ready_status")}</span>
             </div>
 
             <button
               className="notification-btn"
               type="button"
-              aria-label="Thông báo"
+              aria-label={t("focusSession.setup.notification_aria")}
             >
               <MaterialIcon name="notifications" />
             </button>
@@ -212,7 +213,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 <div className="title-icon">
                   <MaterialIcon name="track_changes" />
                 </div>
-                <h3>Mục tiêu tập trung</h3>
+                <h3>{t("focusSession.setup.goal_title")}</h3>
               </div>
 
               <div className="goal-controls">
@@ -242,18 +243,11 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 <div className="goal-input-wrap">
                   <MaterialIcon name="edit_note" />
                   <input
-                    placeholder="Hoặc nhập mục tiêu cụ thể của bạn..."
+                    placeholder={t("focusSession.setup.goal_placeholder")}
                     type="text"
                     value={customGoal}
                     onChange={(event) => setCustomGoal(event.target.value)}
                   />
-                  {/* <button
-                    type="button"
-                    aria-label="Dùng mục tiêu tùy chỉnh"
-                    onClick={() => setCustomGoal(customGoal.trim())}
-                  >
-                    <MaterialIcon name="add" />
-                  </button> */}
                 </div>
               </div>
             </section>
@@ -264,12 +258,12 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                   <div className="title-icon">
                     <MaterialIcon name="timer" />
                   </div>
-                  <h3>Thời gian phiên</h3>
+                  <h3>{t("focusSession.setup.duration_title")}</h3>
                 </div>
 
                 <div className="duration-value">
                   <strong>{duration}</strong>
-                  <span>phút</span>
+                  <span>{t("focusSession.setup.minutes_short")}</span>
                 </div>
               </div>
 
@@ -286,8 +280,8 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                   }
                 />
                 <div className="slider-labels">
-                  <span>5 phút</span>
-                  <span>240 phút</span>
+                  <span>{t("focusSession.setup.slider_min")}</span>
+                  <span>{t("focusSession.setup.slider_max")}</span>
                 </div>
               </div>
 
@@ -314,10 +308,13 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 </div>
                 <div className="reward-content">
                   <div className="reward-title">
-                    <h4>+{breakRewardMinutes} phút nghỉ</h4>
-
+                    <h4>
+                      {t("focusSession.setup.reward_title", {
+                        minutes: breakRewardMinutes,
+                      })}
+                    </h4>
                   </div>
-                  <p>Cứ 5 phút tập trung được 1 phút nghỉ</p>
+                  <p>{t("focusSession.setup.reward_desc")}</p>
                   <div className="reward-progress">
                     <span style={{ width: `${breakRewardProgress}%` }} />
                   </div>
@@ -331,7 +328,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 disabled={isCheckingDailyLimit}
               >
                 <span className="start-shine" />
-                <span>Bắt đầu phiên</span>
+                <span>{t("focusSession.setup.start_button")}</span>
                 <MaterialIcon name="arrow_forward" />
               </button>
             </div>
@@ -340,11 +337,11 @@ export function SetupView({ onNavigate }: SetupViewProps) {
           <div className="side-column">
             <section className="bento-card summary-card">
               <div className="summary-header">
-                <h3>Thống kê</h3>
+                <h3>{t("focusSession.setup.stats_title")}</h3>
                 <button
                   className="header-icon-button"
                   type="button"
-                  aria-label="Mở trang thống kê"
+                  aria-label={t("focusSession.setup.stats_aria")}
                   onClick={() => handleNavigate("analytics")}
                 >
                   <MaterialIcon name="query_stats" />
@@ -353,27 +350,27 @@ export function SetupView({ onNavigate }: SetupViewProps) {
 
               <div className="summary-grid">
                 <div className="stat-box">
-                  <p>Thời gian</p>
+                  <p>{t("focusSession.setup.stat_time")}</p>
                   <strong className="primary-text">
                     {formatMinutes(daySummary?.totalFocusMinutes)}
                   </strong>
                 </div>
                 <div className="stat-box">
-                  <p>Phiên</p>
+                  <p>{t("focusSession.setup.stat_sessions")}</p>
                   <div className="stat-inline">
                     <strong>{daySummary?.completedSessions ?? 0}</strong>
                     <span>/{daySummary?.totalSessions ?? 0}</span>
                   </div>
                 </div>
                 <div className="stat-box streak-box">
-                  <p>Chuỗi ngày</p>
+                  <p>{t("focusSession.setup.stat_streak")}</p>
                   <div className="fire-row">
                     <strong>{yearSummary?.currentStreakDays ?? 0}</strong>
                     <MaterialIcon name="local_fire_department" filled />
                   </div>
                 </div>
                 <div className="stat-box performance-box">
-                  <p>Hiệu suất</p>
+                  <p>{t("focusSession.setup.stat_performance")}</p>
                   <strong>
                     {Math.round(weekSummary?.completionRate ?? 0)}%
                   </strong>
@@ -385,7 +382,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               className="bento-card mascot-card clickable-card"
               role="button"
               tabIndex={0}
-              aria-label="Mở trang thú cưng"
+              aria-label={t("focusSession.setup.pet_aria")}
               onClick={() => handleNavigate("pet")}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -403,7 +400,10 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 </div>
                 <div className="mascot-info">
                   <div>
-                    <h4>{equippedPet?.customName || "Chưa trang bị"}</h4>
+                    <h4>
+                      {equippedPet?.customName ||
+                        t("focusSession.setup.pet_not_equipped")}
+                    </h4>
                     <span>LVL {equippedPet?.level ?? 0}</span>
                   </div>
                   <div className="level-bar">
@@ -415,28 +415,30 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               <div className="mascot-message">
                 <p>
                   {equippedPet
-                    ? `${equippedPet.customName} đang đồng hành cùng bạn hôm nay.`
-                    : "Trang bị một thú cưng để có bạn đồng hành trong phiên tập trung."}
+                    ? t("focusSession.setup.pet_companion", {
+                      name: equippedPet.customName,
+                    })
+                    : t("focusSession.setup.pet_no_pet")}
                 </p>
               </div>
             </section>
 
             <section className="bento-card ai-card">
               <div>
-                <span>AI Buddy Insights</span>
+                <span>{t("focusSession.setup.ai_insight_title")}</span>
                 <MaterialIcon name="auto_awesome" />
               </div>
               <p>
-                Khung giờ hiệu quả nhất của bạn là{" "}
-                <strong>{formatHourRange(hourly?.bestHour)}</strong>. Hãy duy
-                trì nhịp độ này!
+                {t("focusSession.setup.ai_insight_prefix")}{" "}
+                <strong>{formatHourRange(hourly?.bestHour)}</strong>
+                {t("focusSession.setup.ai_insight_suffix")}
               </p>
             </section>
 
             <section className="bento-card recent-card">
               <div className="recent-header">
-                <h3>Vừa hoàn thành</h3>
-                <button type="button">Tất cả</button>
+                <h3>{t("focusSession.setup.recent_title")}</h3>
+                <button type="button">{t("focusSession.setup.recent_all")}</button>
               </div>
 
               <div className="session-item">
@@ -446,21 +448,23 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                 <div className="session-content">
                   <h5>
                     {recentFocusItem
-                      ? "Phiên tập trung gần đây"
-                      : "Chưa có phiên gần đây"}
+                      ? t("focusSession.setup.recent_item_title")
+                      : t("focusSession.setup.recent_item_empty")}
                   </h5>
                   <p>
                     {recentFocusItem
                       ? `${formatRecentDate(recentFocusItem.date)} - ${formatMinutes(
                         recentFocusItem.focusMinutes,
                       )}`
-                      : "Bắt đầu một phiên để ghi nhận dữ liệu"}
+                      : t("focusSession.setup.recent_item_hint")}
                   </p>
                 </div>
                 <div className="xp-badge">
                   {recentFocusItem
-                    ? `${recentFocusItem.completedSessions} phiên`
-                    : "0 phiên"}
+                    ? t("focusSession.setup.session_count", {
+                      count: recentFocusItem.completedSessions,
+                    })
+                    : t("focusSession.setup.session_count", { count: 0 })}
                 </div>
               </div>
             </section>

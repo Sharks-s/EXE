@@ -498,14 +498,11 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
         }
 
-        // Hỏi AI phân loại app này là học tập hay giải trí
-        String classifyPrompt = String.format("""
-        Ứng dụng "%s" - tiêu đề cửa sổ "%s" đang được người dùng mở trong lúc học tập.
-        Hãy phân loại: đây có phải là app/hoạt động GIẢI TRÍ, XAO NHÃNG (game, video giải trí,
-        mạng xã hội, xem phim...) hay là app PHỤC VỤ HỌC TẬP/LÀM VIỆC (IDE, tài liệu, công cụ...)?
-        CHỈ trả lời đúng 1 từ duy nhất: "VIOLATION" nếu là giải trí/xao nhãng, hoặc "SAFE" nếu là học tập/làm việc.
-        Không giải thích gì thêm.
-        """, request.appName(), request.windowTitle());
+        Map<String, String> classifyValues = Map.of(
+                "appName", request.appName() != null ? request.appName() : "",
+                "windowTitle", request.windowTitle() != null ? request.windowTitle() : ""
+        );
+        String classifyPrompt = promptTemplateService.render("CLASSIFY_APP_SAFETY", classifyValues);
 
         String classifyResult = aiCloudService.requestAiSpeech(classifyPrompt, "Phân loại ứng dụng này.");
         boolean isViolation = classifyResult != null && classifyResult.trim().toUpperCase().contains("VIOLATION");
@@ -557,10 +554,10 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         }
 
         if (aiSpeech == null || aiSpeech.isEmpty()) {
-            aiSpeech = "Ơ, đang làm gì đấy? Quay lại học thôi!";
+            aiSpeech = "Tắt tab đó đi và quay lại học ngay nào!";
         }
         if (aiAction == null || aiAction.isEmpty()) {
-            aiAction = "question";
+            aiAction = "angry";
         }
 
         return ClassifyAndHandleViolationResponse.builder()
@@ -657,10 +654,4 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         return new String[]{selfAddress, userAddress};
     }
 
-    private int calculateCurrentElapsedSeconds(FocusSession session) {
-        Instant now = effectiveNow(session); // đã có sẵn, tự đóng băng nếu đang pausedAt != null
-        long totalSeconds = Duration.between(session.getStartedAt(), now).toSeconds();
-        long pausedSeconds = session.getPausedMinutes() * 60L;
-        return (int) Math.max(0, totalSeconds - pausedSeconds);
-    }
 }

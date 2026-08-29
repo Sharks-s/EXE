@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { listen } from "@tauri-apps/api/event";
+import { useTranslation } from "react-i18next";
 
 const AUTO_HIDE_MS = 10000;
 
 export default function WarningWindow() {
-  const [message, setMessage] = useState<string>("Hình như bạn đang bị xao nhãng?");
+  const { t } = useTranslation("common");
+  const [message, setMessage] = useState<string>("");
   const hideTimerRef = useRef<number | null>(null);
 
   const hideSelf = async () => {
@@ -13,11 +15,13 @@ export default function WarningWindow() {
       const currentWin = getCurrentWebviewWindow();
       await currentWin.hide();
     } catch (error) {
-      console.error("Lỗi khi ẩn cửa sổ cảnh báo:", error);
+      console.error("Error hiding warning window:", error);
     }
   };
 
   useEffect(() => {
+    setMessage(t("focusSession.warning.default_message"));
+
     const unlisten = listen<{ message: string }>("warning-update", async (event) => {
       setMessage(event.payload.message);
 
@@ -26,7 +30,7 @@ export default function WarningWindow() {
         await currentWin.show();
         await currentWin.setFocus();
       } catch (error) {
-        console.error("Lỗi khi hiện cửa sổ cảnh báo:", error);
+        console.error("Error showing warning window:", error);
       }
 
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
@@ -85,7 +89,7 @@ export default function WarningWindow() {
             textShadow: "2px 2px 0px #1E293B",
           }}
         >
-          Quay lại làm việc nào! 🚨
+          {t("focusSession.warning.title")}
         </h1>
 
         <p
@@ -112,7 +116,7 @@ export default function WarningWindow() {
             letterSpacing: "0.5px",
           }}
         >
-          👋 Quẹt chuột vào đây để quay lại
+          {t("focusSession.warning.hint")}
         </div>
       </div>
 

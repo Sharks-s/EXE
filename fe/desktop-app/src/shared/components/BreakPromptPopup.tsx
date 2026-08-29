@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface BreakPromptPopupProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ export const BreakPromptPopup: React.FC<BreakPromptPopupProps> = ({
   onAccept,
   onReject,
 }) => {
+  const { t } = useTranslation("common");
+
   // Nếu không ở trạng thái mở thì không render gì cả
   if (!isOpen) return null;
 
@@ -59,7 +62,7 @@ export const BreakPromptPopup: React.FC<BreakPromptPopupProps> = ({
             margin: 0,
           }}
         >
-          HẾT PHIÊN 25 PHÚT! ⏰
+          {t("focusSession.breakPrompt.title")}
         </h2>
 
         {/* Nội dung hỏi */}
@@ -72,8 +75,7 @@ export const BreakPromptPopup: React.FC<BreakPromptPopupProps> = ({
             margin: 0,
           }}
         >
-          Bạn đã xuất sắc hoàn thành một chu kỳ tập trung. Ví phút nghỉ đã được
-          nạp thêm, bạn có muốn nghỉ giải lao không?
+          {t("focusSession.breakPrompt.message")}
         </p>
 
         {/* Thời gian đếm ngược tự đóng */}
@@ -89,7 +91,7 @@ export const BreakPromptPopup: React.FC<BreakPromptPopupProps> = ({
             margin: "4px auto",
           }}
         >
-          Tự động bỏ qua sau: {countdown}s
+          {t("focusSession.breakPrompt.auto_skip", { seconds: countdown })}
         </div>
 
         {/* Bộ đôi nút bấm hành động */}
@@ -112,7 +114,7 @@ export const BreakPromptPopup: React.FC<BreakPromptPopupProps> = ({
               boxShadow: "3px 3px 0px #1E293B",
             }}
           >
-            Nghỉ ngơi ☕
+            {t("focusSession.breakPrompt.accept_button")}
           </button>
 
           <button
@@ -133,7 +135,7 @@ export const BreakPromptPopup: React.FC<BreakPromptPopupProps> = ({
               boxShadow: "3px 3px 0px #1E293B",
             }}
           >
-            Cày tiếp 🎯
+            {t("focusSession.breakPrompt.reject_button")}
           </button>
         </div>
       </div>

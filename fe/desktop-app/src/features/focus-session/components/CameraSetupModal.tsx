@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 import { useCameraSetup } from "../hooks/useCameraSetup";
 import { useFocusStore } from "../stores/focusStore";
 import { focusApi } from "../api/focus.api";
@@ -19,6 +20,8 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
   durationMinutes,
   onClose,
 }) => {
+  const { t } = useTranslation("common");
+
   // Vì SetupView render cưỡng bức bằng toán tử &&, nên mặc định mở ra là isOpen = true
   const {
     status,
@@ -90,10 +93,10 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
       await emit("widget-active-state", { active: true });
     } catch (err: any) {
       console.error("[Start Focus Error]:", err);
-      setSubmitError(err.message || "Không thể tạo phiên làm việc.");
+      setSubmitError(err.message || t("focusSession.cameraSetup.start_error"));
 
       // Nếu lỗi tạo phiên (Modal không đóng), lúc này mới cần chủ động tắt cam để giải phóng thiết bị
-      await cameraApi.stop().catch(() => {});
+      await cameraApi.stop().catch(() => { });
     } finally {
       setIsSubmitting(false);
     }
@@ -114,10 +117,10 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
               style={{ fontSize: 16 }}
               aria-hidden="true"
             />
-            Quay lại
+            {t("focusSession.cameraSetup.back")}
           </button>
           <h3 className="text-sm font-medium text-zinc-100">
-            Căn chỉnh camera
+            {t("focusSession.cameraSetup.title")}
           </h3>
           <span className="text-xs text-zinc-500 w-[60px] text-right">
             {passedCount}/4
@@ -129,7 +132,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
           <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center">
             {isLoading ? (
               <span className="text-xs text-zinc-400 animate-pulse">
-                Đang khởi động camera...
+                {t("focusSession.cameraSetup.starting_camera")}
               </span>
             ) : activeError ? (
               <div className="text-red-400 text-xs px-6 text-center space-y-1">
@@ -146,9 +149,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
                 className="w-full h-full object-cover"
                 alt="Live camera stream"
                 onError={() =>
-                  setStreamError(
-                    "Luồng stream từ Bot bị gián đoạn hoặc thiết bị bận.",
-                  )
+                  setStreamError(t("focusSession.cameraSetup.stream_error"))
                 }
               />
             )}
@@ -157,12 +158,14 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
             {!isLoading && !activeError && face_detected && (
               <div className="absolute bottom-2 left-2 flex gap-1.5">
                 <span
-                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 ${checks?.face_centered ? "text-green-400" : "text-amber-400"}`}
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 ${checks?.face_centered ? "text-green-400" : "text-amber-400"
+                    }`}
                 >
                   P {pitch}°
                 </span>
                 <span
-                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 ${checks?.face_centered ? "text-green-400" : "text-amber-400"}`}
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 ${checks?.face_centered ? "text-green-400" : "text-amber-400"
+                    }`}
                 >
                   Y {yaw}°
                 </span>
@@ -172,7 +175,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
             {!isLoading && !activeError && !face_detected && (
               <div className="absolute bottom-2 left-2">
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-black/60 text-red-400">
-                  Không tìm thấy khuôn mặt
+                  {t("focusSession.cameraSetup.no_face")}
                 </span>
               </div>
             )}
@@ -181,24 +184,24 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
           {/* Checklist điều kiện */}
           <div className="space-y-1">
             <CheckItem
-              label="Khuôn mặt ở chính giữa khung hình"
+              label={t("focusSession.cameraSetup.check_face_centered")}
               isDone={!!checks?.face_centered}
-              hint="Nhìn thẳng vào tâm camera, không nghiêng hoặc cúi gầm."
+              hint={t("focusSession.cameraSetup.hint_face_centered")}
             />
             <CheckItem
-              label="Khoảng cách phù hợp"
+              label={t("focusSession.cameraSetup.check_distance")}
               isDone={!!checks?.close_enough}
-              hint="Ngồi lùi ra xa hơn một chút, không quá sát màn hình."
+              hint={t("focusSession.cameraSetup.hint_distance")}
             />
             <CheckItem
-              label="Ánh sáng đủ rõ"
+              label={t("focusSession.cameraSetup.check_lighting")}
               isDone={!!checks?.lighting_ok}
-              hint="Bật thêm đèn hoặc tránh ánh sáng chói từ phía sau."
+              hint={t("focusSession.cameraSetup.hint_lighting")}
             />
             <CheckItem
-              label="Vai hiển thị đầy đủ"
+              label={t("focusSession.cameraSetup.check_shoulders")}
               isDone={!!checks?.shoulders_visible}
-              hint="Ngồi thẳng lưng để camera bắt được cả hai vai."
+              hint={t("focusSession.cameraSetup.hint_shoulders")}
             />
           </div>
         </div>
@@ -208,11 +211,10 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
           <button
             disabled={!canProceed || isSubmitting}
             onClick={handleStartFocus}
-            className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-              canProceed && !isSubmitting
+            className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${canProceed && !isSubmitting
                 ? "bg-green-500 text-black hover:bg-green-400 cursor-pointer"
                 : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-            }`}
+              }`}
           >
             {isSubmitting ? (
               <>
@@ -221,12 +223,12 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
                   style={{ fontSize: 16 }}
                   aria-hidden="true"
                 />
-                Đang khởi động phiên...
+                {t("focusSession.cameraSetup.starting_session")}
               </>
             ) : canProceed ? (
-              "Sẵn sàng, bắt đầu"
+              t("focusSession.cameraSetup.ready_button")
             ) : (
-              "Hoàn thành các bước trên"
+              t("focusSession.cameraSetup.incomplete_button")
             )}
           </button>
         </div>

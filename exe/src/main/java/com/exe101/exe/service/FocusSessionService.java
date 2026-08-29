@@ -1,12 +1,10 @@
 package com.exe101.exe.service;
 
 import com.exe101.exe.dto.request.ClassifyAppRequest;
+import com.exe101.exe.dto.request.CloseSnapshotRequest;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
-import com.exe101.exe.dto.response.BreakPromptAiResponse;
-import com.exe101.exe.dto.response.ClassifyAndHandleViolationResponse;
-import com.exe101.exe.dto.response.FocusSessionResponse;
-import com.exe101.exe.dto.response.HandleViolationResponse;
+import com.exe101.exe.dto.response.*;
 import com.exe101.exe.model.enums.ViolationType;
 
 public interface FocusSessionService {
@@ -26,7 +24,9 @@ public interface FocusSessionService {
 
     FocusSessionResponse getActiveSessionByUserId(Long userId);
 
-    void recordHeartbeat(Long sessionId, int actualElapsedSeconds);
+    HeartbeatResponse recordHeartbeat(Long sessionId, int actualElapsedSeconds);
+
+    void saveCloseSnapshot(Long sessionId, Long userId, CloseSnapshotRequest request);
 
     ClassifyAndHandleViolationResponse classifyAndHandleViolation(Long sessionId, Long userId, ClassifyAppRequest request);
 }

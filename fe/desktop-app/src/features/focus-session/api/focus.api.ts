@@ -112,4 +112,11 @@ export const focusApi = {
     const res = await api.post(`/focus-sessions/${sessionId}/classify-app`, data);
     return res.data.data;
   },
+
+  saveCloseSnapshot: async (
+    sessionId: number,
+    data: { wasBreaking: boolean; breakRemainingSeconds: number | null },
+  ): Promise<void> => {
+    await api.patch(`/focus-sessions/${sessionId}/close-snapshot`, data);
+  },
 };

@@ -1,6 +1,7 @@
 package com.exe101.exe.controller;
 
 import com.exe101.exe.dto.request.ClassifyAppRequest;
+import com.exe101.exe.dto.request.CloseSnapshotRequest;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.*;
@@ -40,12 +41,11 @@ public class FocusSessionController {
     }
 
     @PostMapping("/{id}/heartbeat")
-    public ApiResponse<Void> heartbeat(
+    public ApiResponse<HeartbeatResponse> heartbeat(
             @PathVariable Long id,
             @RequestParam int actualElapsedSeconds
     ) {
-        focusSessionService.recordHeartbeat(id, actualElapsedSeconds);
-        return ApiResponse.success(null);
+        return ApiResponse.success(focusSessionService.recordHeartbeat(id, actualElapsedSeconds));
     }
 
     @PostMapping("/{sessionId}/cycle")
@@ -117,5 +117,15 @@ public class FocusSessionController {
         ClassifyAndHandleViolationResponse response = focusSessionService.classifyAndHandleViolation(
                 sessionId, userDetails.getId(), request);
         return ApiResponse.success(response);
+    }
+
+    @PatchMapping("/{sessionId}/close-snapshot")
+    public ApiResponse<Void> saveCloseSnapshot(
+            @PathVariable Long sessionId,
+            @RequestBody CloseSnapshotRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        focusSessionService.saveCloseSnapshot(sessionId, userDetails.getId(), request);
+        return ApiResponse.success(null);
     }
 }

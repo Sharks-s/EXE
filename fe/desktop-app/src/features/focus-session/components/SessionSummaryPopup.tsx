@@ -1,4 +1,5 @@
 import type { FocusSessionResponse } from "../types/focus.types";
+import { useTranslation } from "react-i18next";
 
 interface SessionSummaryPopupProps {
     session: FocusSessionResponse;
@@ -10,6 +11,7 @@ const formatMinutes = (minutes: number) => {
 };
 
 export function SessionSummaryPopup({ session, onClose }: SessionSummaryPopupProps) {
+    const { t } = useTranslation("common");
     const isAborted = session.status === "ABORTED";
     const xpGained = session.accumulatedReward * 60;
 
@@ -20,33 +22,50 @@ export function SessionSummaryPopup({ session, onClose }: SessionSummaryPopupPro
                     {/* KHUNG TRÁI — thông tin chi tiết */}
                     <div className="flex-[3] p-6 space-y-3">
                         <h2 className="text-xl font-bold text-slate-900">
-                            {isAborted ? "Đã kết thúc sớm" : "Hoàn thành phiên tập trung! 🎉"}
+                            {isAborted
+                                ? t("focusSession.summary.title_aborted")
+                                : t("focusSession.summary.title_completed")}
                         </h2>
                         {isAborted && (
                             <p className="text-xs text-red-500">
-                                Phiên bị kết thúc trước thời hạn, phần thưởng đã bị giảm 50%.
+                                {t("focusSession.summary.aborted_note")}
                             </p>
                         )}
 
                         <div className="space-y-2 text-sm text-slate-700 pt-2">
-                            <p>Mục tiêu: {session.goal || "Không có mục tiêu cụ thể"}</p>
-                            <p>Thời gian dự kiến: {formatMinutes(session.plannedDuration)}</p>
                             <p>
-                                Thời gian học thực tế:{" "}
+                                {t("focusSession.summary.goal_label")}:{" "}
+                                {session.goal || t("focusSession.summary.no_goal")}
+                            </p>
+                            <p>
+                                {t("focusSession.summary.planned_label")}:{" "}
+                                {formatMinutes(session.plannedDuration)}
+                            </p>
+                            <p>
+                                {t("focusSession.summary.actual_label")}:{" "}
                                 {session.actualDuration !== null
                                     ? formatMinutes(session.actualDuration)
                                     : "—"}
                             </p>
-                            <p>Số lần nghỉ: {session.breakCount ?? 0}</p>
-                            <p>Số lỗi vi phạm: {session.violations?.length ?? 0}</p>
+                            <p>
+                                {t("focusSession.summary.break_count_label")}:{" "}
+                                {session.breakCount ?? 0}
+                            </p>
+                            <p>
+                                {t("focusSession.summary.violation_count_label")}:{" "}
+                                {session.violations?.length ?? 0}
+                            </p>
 
                             {session.violations && session.violations.length > 0 && (
                                 <div className="pt-2">
-                                    <p className="font-medium text-slate-800 mb-1">Chi tiết vi phạm:</p>
+                                    <p className="font-medium text-slate-800 mb-1">
+                                        {t("focusSession.summary.violation_detail_title")}:
+                                    </p>
                                     <ul className="space-y-1 max-h-32 overflow-y-auto pr-2">
                                         {session.violations.map((v, idx) => (
                                             <li key={idx} className="text-xs text-slate-500">
-                                                • {v.type} — {new Date(v.occurredAt).toLocaleTimeString("vi-VN")}
+                                                • {v.type} —{" "}
+                                                {new Date(v.occurredAt).toLocaleTimeString("vi-VN")}
                                                 {v.appName ? ` (${v.appName})` : ""}
                                             </li>
                                         ))}
@@ -66,7 +85,9 @@ export function SessionSummaryPopup({ session, onClose }: SessionSummaryPopupPro
                         <div className="text-center">
                             <p className="text-2xl font-bold text-emerald-500">+{xpGained} XP</p>
                             <p className="text-xs text-slate-400">
-                                ({session.accumulatedReward} phút × 60)
+                                {t("focusSession.summary.xp_formula", {
+                                    minutes: session.accumulatedReward,
+                                })}
                             </p>
                         </div>
                     </div>
@@ -78,7 +99,7 @@ export function SessionSummaryPopup({ session, onClose }: SessionSummaryPopupPro
                         onClick={onClose}
                         className="px-10 py-3 rounded-xl bg-[#9fd6fa] text-[#0f172a] font-semibold text-sm hover:bg-[#7bc3f7] transition"
                     >
-                        Quay lại
+                        {t("focusSession.summary.back_button")}
                     </button>
                 </div>
             </div>

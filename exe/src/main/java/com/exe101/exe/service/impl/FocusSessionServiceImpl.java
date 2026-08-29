@@ -2,6 +2,7 @@ package com.exe101.exe.service.impl;
 
 import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.ClassifyAppRequest;
+import com.exe101.exe.dto.request.CloseSnapshotRequest;
 import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.*;
@@ -392,16 +393,45 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     }
 
     @Override
+    @Transactional
     public FocusSessionResponse getActiveSessionByUserId(Long userId) {
-        return focusSessionRepository
+        FocusSession session = focusSessionRepository
                 .findFirstByUserIdAndStatusOrderByStartedAtDesc(userId, SessionStatus.IN_PROGRESS)
-                .map(focusSessionMapper::toResponse)
                 .orElse(null);
+
+        if (session == null) {
+            return null;
+        }
+
+        FocusSessionResponse response = withCloseState(focusSessionMapper.toResponse(session), session);
+
+        // Đã đọc xong, dọn dấu vết để lần gọi sau (nếu app không đóng nữa) không đọc lại giá trị cũ
+        if (session.getElapsedSecondsAtClose() != null) {
+            session.setElapsedSecondsAtClose(null);
+            session.setWasBreakingWhenClosed(null);
+            session.setBreakRemainingSecondsAtClose(null);
+            focusSessionRepository.save(session);
+        }
+
+        return response;
+    }
+
+    private FocusSessionResponse withCloseState(FocusSessionResponse response, FocusSession session) {
+        Integer elapsed = session.getElapsedSecondsAtClose();
+        return new FocusSessionResponse(
+                response.id(), response.goal(), response.plannedDuration(), response.actualDuration(),
+                response.totalRewardPool(), response.potentialReward(), response.accumulatedReward(),
+                response.status(), response.startedAt(), response.endedAt(), response.userPetId(),
+                response.personalityId(), response.lastCycleAt(), response.violations(), response.breakCount(),
+                response.pausedMinutes(), elapsed != null ? elapsed : 0,
+                session.getWasBreakingWhenClosed(),
+                session.getBreakRemainingSecondsAtClose()
+        );
     }
 
     @Override
     @Transactional
-    public void recordHeartbeat(Long sessionId, int actualElapsedSeconds) {
+    public HeartbeatResponse recordHeartbeat(Long sessionId, int actualElapsedSeconds) {
         FocusSession session = focusSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
         Instant now = Instant.now();
@@ -426,6 +456,31 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.setLastHeartbeatElapsedSeconds(actualElapsedSeconds);
         session.setLastHeartbeatAt(now);
         focusSessionRepository.save(session);
+
+        return new HeartbeatResponse(
+                currentDailyUsedMinutes(user),
+                appSeedProperties.getDailyFreeUsage()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void saveCloseSnapshot(Long sessionId, Long userId, CloseSnapshotRequest request) {
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+        if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
+        }
+
+        session.setElapsedSecondsAtClose(request.elapsedSeconds());
+        session.setWasBreakingWhenClosed(request.wasBreaking());
+        session.setBreakRemainingSecondsAtClose(request.breakRemainingSeconds());
+
+        focusSessionRepository.save(session);
     }
 
     @Override
@@ -443,14 +498,11 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
         }
 
-        // Hỏi AI phân loại app này là học tập hay giải trí
-        String classifyPrompt = String.format("""
-        Ứng dụng "%s" - tiêu đề cửa sổ "%s" đang được người dùng mở trong lúc học tập.
-        Hãy phân loại: đây có phải là app/hoạt động GIẢI TRÍ, XAO NHÃNG (game, video giải trí,
-        mạng xã hội, xem phim...) hay là app PHỤC VỤ HỌC TẬP/LÀM VIỆC (IDE, tài liệu, công cụ...)?
-        CHỈ trả lời đúng 1 từ duy nhất: "VIOLATION" nếu là giải trí/xao nhãng, hoặc "SAFE" nếu là học tập/làm việc.
-        Không giải thích gì thêm.
-        """, request.appName(), request.windowTitle());
+        Map<String, String> classifyValues = Map.of(
+                "appName", request.appName() != null ? request.appName() : "",
+                "windowTitle", request.windowTitle() != null ? request.windowTitle() : ""
+        );
+        String classifyPrompt = promptTemplateService.render("CLASSIFY_APP_SAFETY", classifyValues);
 
         String classifyResult = aiCloudService.requestAiSpeech(classifyPrompt, "Phân loại ứng dụng này.");
         boolean isViolation = classifyResult != null && classifyResult.trim().toUpperCase().contains("VIOLATION");
@@ -502,10 +554,10 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         }
 
         if (aiSpeech == null || aiSpeech.isEmpty()) {
-            aiSpeech = "Ơ, đang làm gì đấy? Quay lại học thôi!";
+            aiSpeech = "Tắt tab đó đi và quay lại học ngay nào!";
         }
         if (aiAction == null || aiAction.isEmpty()) {
-            aiAction = "question";
+            aiAction = "angry";
         }
 
         return ClassifyAndHandleViolationResponse.builder()
@@ -601,4 +653,5 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 ? user.getAiUserAddress() : "bạn";
         return new String[]{selfAddress, userAddress};
     }
+
 }

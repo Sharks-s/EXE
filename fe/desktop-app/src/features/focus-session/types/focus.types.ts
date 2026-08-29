@@ -71,6 +71,10 @@ export interface FocusSessionResponse {
   personalityId: number | null;
   violations: ViolationResponseItem[];
   breakCount: number;
+  pausedMinutes: number;
+  currentElapsedSeconds: number;
+  wasBreakingWhenClosed: boolean | null;
+  breakRemainingSecondsAtClose: number | null;
 }
 
 export interface HandleViolationResponse {
@@ -166,12 +170,14 @@ export interface FocusState {
   isBubbleVisible: boolean;
 
   isResumeConfirmPending: boolean;
+  isClosing: boolean;
   // AI
   aiMessages: AiMessageItem[];
 
   violatingCache: Set<string>; // cache app đã bị AI phán là vi phạm, tránh hỏi AI lại trong session
 
   dailyUsage: { dailyUsedMinutes: number; dailyLimitMinutes: number } | null;
+
 
   // Actions
   setSession: (session: FocusSessionResponse) => void;
@@ -192,6 +198,7 @@ export interface FocusState {
   addToAllowedCache: (appOrTitle: string) => void;
   clearAppRules: () => void;
   setResumeConfirmPending: (pending: boolean) => void;
+  setIsClosing: (closing: boolean) => void;
   addAiMessage: (message: string) => void;
   addToViolatingCache: (appOrTitle: string) => void;
 

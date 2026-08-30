@@ -132,10 +132,12 @@ function NavItem({
   disabled?: boolean;
 }) {
   const isActive = currentPage === page;
+  const isCollapsedUpgrade = collapsed && variant === "upgrade";
 
   const baseClasses = `
-    w-full flex items-center px-3 py-2.5 rounded-xl
+    w-full flex items-center py-2.5 rounded-xl
     text-sm transition-colors duration-200 overflow-hidden
+    ${isCollapsedUpgrade ? "justify-center px-0" : "px-3"}
     ${disabled ? "opacity-40 cursor-not-allowed" : ""}
   `;
 
@@ -286,9 +288,8 @@ export default function Sidebar({
           disabled={isLocked}
         />
 
-      </nav>
+        <div className="my-2 border-t border-slate-100" />
 
-      <div className="p-3 border-t border-slate-100 space-y-1">
         <NavItem
           page="upgrade"
           label={t("sidebar.upgrade", { defaultValue: "Upgrade" })}
@@ -300,6 +301,9 @@ export default function Sidebar({
           disabled={isLocked}
         />
 
+      </nav>
+
+      <div className="p-3 border-t border-slate-100 space-y-1">
         <DailyUsageCard usage={effectiveDailyUsage} collapsed={collapsed} />
 
         <NavItem

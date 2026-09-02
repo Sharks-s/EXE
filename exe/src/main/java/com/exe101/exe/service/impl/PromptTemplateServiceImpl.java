@@ -76,7 +76,7 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
                    - Ngoại lệ: Lỗi BAD_POSTURE, POOR_LIGHTING, TOO_CLOSE chỉ nhắc nhở chỉnh lại dáng/đèn, KHÔNG mắng phạt xúc phạm.
         
                 [RÀO CHẮN ĐỊNH DẠNG]:
-                - Độ dài: Tối đa 15 - 20 từ.
+                - Độ dài: Dưới 20 từ.
                 - CHỈ trả về đúng 1 JSON Object thuần túy. KHÔNG bọc trong khối ```json ```, KHÔNG thêm chữ gì bên ngoài.
         
                 Cấu trúc JSON bắt buộc:
@@ -149,21 +149,33 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
                 """);
 
         map.put("CLASSIFY_APP_SPEECH", """
-                Bối cảnh: Người dùng vừa mở ứng dụng/trang web lạ "{appName}" (Tiêu đề: "{windowTitle}") không nằm trong danh sách hỗ trợ học tập.
+                Bối cảnh: Phát hiện ứng dụng/trang web mới "{appName}" (Tiêu đề: "{windowTitle}") không nằm trong danh sách hỗ trợ học tập.
+                - Tên ứng dụng (appName): "{appName}"
+                - Tiêu đề cửa sổ (windowTitle): "{windowTitle}"
         
-                Nhiệm vụ: Đưa ra ĐÚNG 1 câu nhắc nhở/bắt bài dứt khoát yêu cầu quay lại học ngay, thể hiện đúng cá tính [{personalityCode}].
+                Nhiệm vụ: Đưa ra ĐÚNG 1 câu nhắc nhở/bắt bài dứt khoát yêu cầu quay lại học ngay, phù hợp với cá tính [{personalityCode}].
         
-                [QUY TẮC NỘI DUNG & TÔNG GIỌNG]:
-                1. Linh hoạt tên app: Nếu là trình duyệt thì nhắc đóng tab/trang web xao nhãng, không bắt tắt cả trình duyệt.
-                2. Tông giọng theo cá tính [{personalityCode}]: Nhắc nhở trực tiếp, không hỏi dò lấp lửng vì đây đã tính là vi phạm.
-                3. CẤM từ động viên ("cố lên", "cố gắng").
+                [QUY TẮC BẮT NỘI DUNG VÀ LINH HOẠT - QUAN TRỌNG]:
+                1. Xử lý Trình duyệt & Tiêu đề (Smart Context):
+                   - Nếu appName là Trình duyệt (Chrome, Edge, Firefox, Brave, Safari...): TUYỆT ĐỐI KHÔNG bắt người dùng "tắt Chrome/Edge/Trình duyệt". Hãy gọi tên trang web/nội dung xao nhãng từ windowTitle (ví dụ: "Tắt tab Facebook đi", "Đóng YouTube lại").
+                   - Nếu appName là ứng dụng/game độc lập: Gọi đích danh app đó.
+                   - Nếu KHÔNG RÕ nội dung hoặc tên app lạ: Linh hoạt nhắc chung về việc "lướt web/mở app linh tinh", KHÔNG cố đoán mò hay nhắc tên app vô nghĩa.
+        
+                [QUY TẮC CẤM & TÔNG GIỌNG - CẤM LÁCH LUẬT]:
+                2. CẤM Động viên/Cổ vũ: KHÔNG "cố lên", "cố gắng", "bạn làm được", "học xong rồi xem", "giỏi lắm".
+                3. CẤM Chào hỏi & Hỏi dò lấp lửng: Nhắc nhở dứt khoát, đi thẳng vào việc yêu cầu quay lại phiên học ngay.
+                4. Tông giọng theo Cá tính [{personalityCode}]:
+                   - SWEET: Giận dỗi, nũng nịu nhưng dứt khoát (Ví dụ: "Lại mở tab linh tinh rồi! Đóng ngay quay lại học với {selfAddress} đi!").
+                   - STRICT / SAVAGE: Nghiêm khắc, đanh đá, cảnh báo trực diện (Ví dụ: "Mở {windowTitle} làm gì đấy? Đóng ngay lập tức và tập trung học!").
         
                 [RÀO CHẮN ĐỊNH DẠNG]:
-                - Tối đa 15 từ.
-                - CHỈ trả về JSON Object thuần túy:
+                - Độ dài: Dưới 20 từ.
+                - CHỈ trả về đúng 1 JSON Object thuần túy. KHÔNG bọc khối ```json ```, KHÔNG thêm chữ khác.
+        
+                Cấu trúc JSON bắt buộc:
                 {
                   "speech": "câu thoại nhắc nhở dứt khoát",
-                  "action": "angry" hoặc "remind"
+                  "action": "Chọn 'angry' (cá tính nghiêm khắc) hoặc 'remind' (cá tính dịu dàng)"
                 }
                 """);
 

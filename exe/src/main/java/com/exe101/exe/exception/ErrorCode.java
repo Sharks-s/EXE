@@ -99,8 +99,12 @@ public enum ErrorCode {
     AI_CLOUD_PARSE_ERROR("AI_001", HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse AI response"),
 
     // ===== PROMPT =====
-    PROMPT_TEMPLATE_NOT_FOUND("AI_002", HttpStatus.NOT_FOUND, "Prompt template not found")
+    PROMPT_TEMPLATE_NOT_FOUND("AI_002", HttpStatus.NOT_FOUND, "Prompt template not found"),
 
+    // ===== SONG =====
+    SONG_NOT_FOUND("SONG_001", HttpStatus.NOT_FOUND, "Song not found"),
+    SONG_UNAUTHORIZED_ACCESS("SONG_002", HttpStatus.FORBIDDEN, "Unauthorized access to song"),
+    SONG_CANNOT_DELETE_SYSTEM("SONG_003", HttpStatus.BAD_REQUEST, "Cannot delete system song"),
     ;
     private final String code;
     private final HttpStatus httpStatus;

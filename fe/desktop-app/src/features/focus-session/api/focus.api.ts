@@ -115,7 +115,7 @@ export const focusApi = {
 
   saveCloseSnapshot: async (
     sessionId: number,
-    data: { wasBreaking: boolean; breakRemainingSeconds: number | null },
+    data: { elapsedSeconds: number; wasBreaking: boolean; breakRemainingSeconds: number | null },
   ): Promise<void> => {
     await api.patch(`/focus-sessions/${sessionId}/close-snapshot`, data);
   },

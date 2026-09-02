@@ -498,9 +498,13 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
         }
 
+        // Xử lý an toàn tránh NullPointerException khi truyền vào Map
+        String safeAppName = request.appName() != null ? request.appName() : "";
+        String safeWindowTitle = request.windowTitle() != null ? request.windowTitle() : "";
+
         Map<String, String> classifyValues = Map.of(
-                "appName", request.appName() != null ? request.appName() : "",
-                "windowTitle", request.windowTitle() != null ? request.windowTitle() : ""
+                "appName", safeAppName,
+                "windowTitle", safeWindowTitle
         );
         String classifyPrompt = promptTemplateService.render("CLASSIFY_APP_SAFETY", classifyValues);
 
@@ -515,9 +519,9 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                     .build();
         }
 
-        // Nếu vi phạm->trừ điểm + sinh lời thoại luôn trong cùng request
+        // Nếu vi phạm -> trừ điểm + sinh lời thoại luôn trong cùng request
         FocusSession savedSession = applyPenaltyAndRecordViolation(
-                session, ViolationType.ENTERTAINMENT, request.appName(), request.windowTitle(), 1);
+                session, ViolationType.ENTERTAINMENT, safeAppName, safeWindowTitle, 1);
         int violationCount = savedSession.getViolations() != null ? savedSession.getViolations().size() : 0;
 
         String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "SWEET";
@@ -526,15 +530,17 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         String personalityInstruction = personalityService.getPersonalityDescriptionByCode(pCode);
         String[] addressPair = getAddressPair(session.getUser());
 
+        // Bổ sung ĐẦY ĐỦ các biến mà CLASSIFY_APP_SPEECH yêu cầu
         Map<String, String> promptValues = new HashMap<>();
         promptValues.put("petName", pName);
         promptValues.put("petSpecies", pPet);
         promptValues.put("personalityCode", pCode);
-        promptValues.put("personalityDescription", personalityInstruction);
-        promptValues.put("selfAddress", addressPair[0]);
-        promptValues.put("userAddress", addressPair[1]);
+        promptValues.put("personalityDescription", personalityInstruction != null ? personalityInstruction : "");
+        promptValues.put("selfAddress", addressPair[0] != null ? addressPair[0] : "tôi");
+        promptValues.put("userAddress", addressPair[1] != null ? addressPair[1] : "bạn");
         promptValues.put("language", "vi");
-        promptValues.put("appName", request.appName());
+        promptValues.put("appName", safeAppName);
+        promptValues.put("windowTitle", safeWindowTitle);
 
         String speechPrompt = promptTemplateService.renderWithPersona("CLASSIFY_APP_SPEECH", promptValues);
         String rawResponse = aiCloudService.requestAiSpeech(speechPrompt, "Nhắc user quay lại học ngay!");
@@ -542,21 +548,27 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         String aiSpeech = null;
         String aiAction = null;
 
-        if (rawResponse != null && !rawResponse.isEmpty()) {
+        if (rawResponse != null && !rawResponse.isBlank()) {
             try {
-                String cleanJson = rawResponse.replaceAll("```json|```", "").trim();
-                Map<String, String> parsed = objectMapper.readValue(cleanJson, Map.class);
-                aiSpeech = parsed.get("speech");
-                aiAction = parsed.get("action");
+                // Dùng Regex xóa mọi block markdown json hoặc dư thừa
+                String cleanJson = rawResponse.replaceAll("(?s)```json\\s*|```", "").trim();
+                com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(cleanJson);
+
+                if (rootNode.has("speech")) {
+                    aiSpeech = rootNode.get("speech").asText();
+                }
+                if (rootNode.has("action")) {
+                    aiAction = rootNode.get("action").asText();
+                }
             } catch (Exception e) {
                 System.err.println("[FocusSessionService] Lỗi parse JSON câu thoại classify: " + e.getMessage());
             }
         }
 
-        if (aiSpeech == null || aiSpeech.isEmpty()) {
+        if (aiSpeech == null || aiSpeech.isBlank()) {
             aiSpeech = "Tắt tab đó đi và quay lại học ngay nào!";
         }
-        if (aiAction == null || aiAction.isEmpty()) {
+        if (aiAction == null || aiAction.isBlank()) {
             aiAction = "angry";
         }
 
@@ -567,7 +579,6 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 .aiAction(aiAction)
                 .violationCount(violationCount)
                 .build();
-
     }
 
     // Helper

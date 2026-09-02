@@ -14,7 +14,8 @@ export type Page =
   | "settings"
   | "pet"
   | "profile"
-  | "upgrade";
+  | "upgrade"
+  | "songs";
 
 interface SidebarProps {
   currentPage: Page;
@@ -107,7 +108,7 @@ function DailyUsageCard({
           Đã dùng {formatUsageMinutes(usage.dailyUsedMinute)} /{" "}
           {formatUsageMinutes(usage.dailyLimitMinute)}
         </p>
-      </div>  
+      </div>
     </div>
   );
 }
@@ -132,12 +133,11 @@ function NavItem({
   disabled?: boolean;
 }) {
   const isActive = currentPage === page;
-  const isCollapsedUpgrade = collapsed && variant === "upgrade";
 
+  // Sửa căn chỉnh padding và flexbox tại đây
   const baseClasses = `
-    w-full flex items-center py-2.5 rounded-xl
-    text-sm transition-colors duration-200 overflow-hidden
-    ${isCollapsedUpgrade ? "justify-center px-0" : "px-3"}
+    w-full flex items-center py-2.5 rounded-xl text-sm transition-colors duration-200 overflow-hidden
+    ${collapsed ? "justify-center px-0" : "px-3"}
     ${disabled ? "opacity-40 cursor-not-allowed" : ""}
   `;
 
@@ -145,7 +145,7 @@ function NavItem({
     variant === "upgrade"
       ? "font-semibold bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transition-transform"
       : isActive
-        ? "bg-blue-50 text-blue-600 font-semibold"
+        ? "bg-blue-100 text-blue-600 font-semibold"
         : "text-slate-500 hover:bg-slate-50 hover:text-slate-800";
 
   return (
@@ -161,7 +161,8 @@ function NavItem({
       }
       className={`${baseClasses} ${variantClasses}`}
     >
-      <span className="shrink-0 w-[18px] h-[18px] flex items-center justify-center">
+      {/* Thêm mx-auto nếu collapsed để căn giữa tuyệt đối */}
+      <span className={`shrink-0 w-[18px] h-[18px] flex items-center justify-center ${collapsed ? "mx-auto" : ""}`}>
         {icon}
       </span>
       <span
@@ -175,7 +176,6 @@ function NavItem({
     </button>
   );
 }
-
 export default function Sidebar({
   currentPage,
   onNavigate,
@@ -234,7 +234,7 @@ export default function Sidebar({
         ${collapsed ? "w-16" : "w-56"}
       `}
     >
-      <div className="flex items-center px-3 py-5 border-b border-slate-100 overflow-hidden">
+      <div className={`flex items-center py-5 border-b border-slate-300 overflow-hidden ${collapsed ? "justify-center px-0" : "px-4"}`}>
         <img
           src={logoIcon}
           alt="FocusBuddy"
@@ -250,7 +250,6 @@ export default function Sidebar({
           FocusBuddy
         </span>
       </div>
-
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         <NavItem
           page="dashboard"
@@ -288,7 +287,17 @@ export default function Sidebar({
           disabled={isLocked}
         />
 
-        <div className="my-2 border-t border-slate-100" />
+        <NavItem
+          page="songs"
+          label={t("sidebar.songs", { defaultValue: "Music" })}
+          icon={icons.songs}
+          currentPage={currentPage}
+          onNavigate={onNavigate}
+          collapsed={collapsed}
+          disabled={isLocked}
+        />
+
+        <div className="my-2 border-t border-slate-300" />
 
         <NavItem
           page="upgrade"
@@ -303,13 +312,13 @@ export default function Sidebar({
 
       </nav>
 
-      <div className="p-3 border-t border-slate-100 space-y-1">
+      <div className="p-3 border-t border-slate-300 space-y-1">
         <DailyUsageCard usage={effectiveDailyUsage} collapsed={collapsed} />
 
         <NavItem
           page="profile"
           label={
-            user?.email ?? t("sidebar.profile", { defaultValue: "Profile" })
+            user?.fullName ?? t("sidebar.profile", { defaultValue: "Profile" })
           }
           icon={icons.profile}
           currentPage={currentPage}

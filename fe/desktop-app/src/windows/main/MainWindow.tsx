@@ -12,6 +12,8 @@ import SettingsPage from "../../features/settings/pages/SettingsPage";
 import ProfilePage from "../../features/profile/pages/ProfilePage";
 import UpgradePage from "../../features/upgrade/pages/UpgradePage";
 import Pet from "../../features/pet/pages/PetsPage";
+import SongLibraryView from "../../features/song/pages/SongLibraryView";
+import { SongPlayerProvider } from "../../features/song/pages/SongPlayerContext";
 
 export default function MainWindow() {
   const { bootstrap, isInitializing, isAuthenticated } = useAuthStore();
@@ -101,22 +103,25 @@ export default function MainWindow() {
 
   // Đã đăng nhập → Dashboard
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar
-        currentPage={currentPage}
-        onNavigate={handleNavigate}
-        isLocked={isSessionActive}
-      />
+    <SongPlayerProvider>
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar
+          currentPage={currentPage}
+          onNavigate={handleNavigate}
+          isLocked={isSessionActive}
+        />
 
-      <main className="app-main flex-1 overflow-auto bg-slate-50">
-        {currentPage === "dashboard" && <Dashboard onNavigate={handleNavigate} />}
-        {currentPage === "analytics" && <AnalyticsPage />}
-        {currentPage === "settings" && <SettingsPage />}
-        {currentPage === "profile" && <ProfilePage />}
-        {currentPage === "upgrade" && <UpgradePage />}
-        {currentPage === "pet" && <Pet />}
-      </main>
+        <main className="app-main flex-1 overflow-auto bg-slate-50">
+          {currentPage === "dashboard" && <Dashboard onNavigate={handleNavigate} />}
+          {currentPage === "analytics" && <AnalyticsPage />}
+          {currentPage === "settings" && <SettingsPage />}
+          {currentPage === "profile" && <ProfilePage />}
+          {currentPage === "upgrade" && <UpgradePage />}
+          {currentPage === "pet" && <Pet />}
+          {currentPage === "songs" && <SongLibraryView />}
+        </main>
 
-    </div>
+      </div>
+    </SongPlayerProvider>
   );
 }

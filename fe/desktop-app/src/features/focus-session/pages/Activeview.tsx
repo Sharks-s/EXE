@@ -9,6 +9,7 @@ import { ResumeConfirmPopup } from "../../../shared/components/ResumeConfirmPopu
 import { focusApi } from "../api/focus.api";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
+import { MiniPlayer } from "../../song/components/Miniplayer";
 
 const VIOLATION_LABEL_KEYS: Record<string, string> = {
   AWAY: "focusSession.activeView.violation_away",
@@ -130,6 +131,9 @@ function ActiveViewContent() {
         <div>
           <h1>{t("focusSession.activeView.header_title")}</h1>
           <p>{session.goal || t("focusSession.activeView.no_goal")}</p>
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[360px] max-w-lg">
+          <MiniPlayer />
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import type {
   FocusSessionResponse,
 } from "../types/focus.types";
 import { cameraApi } from "../api/cameraApi";
+import { useSongStore } from "../../song/stores/songStore";
 
 export async function startFocusSessionService(
   data: CreateSessionRequest,
@@ -17,6 +18,10 @@ export async function startFocusSessionService(
 
   // 3. Gọi Tauri Core ẩn Main Window và đưa Widget Window lên
   await invoke("toggle_windows_to_session");
+
+  // 4. Ngừng nhạc đang nghe thử ở tab quản lý (nếu có), lấy lại danh sách mới nhất
+  //    từ BE và tự động phát bài đầu tiên đã tích trong session
+  useSongStore.getState().startSessionPlayback();
 
   return sessionData;
 }

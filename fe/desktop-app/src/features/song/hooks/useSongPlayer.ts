@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useSongStore } from "../stores/songStore";
 
+const DEFAULT_VOLUME = 0.7;
+
 export function useSongPlayer() {
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -11,6 +13,7 @@ export function useSongPlayer() {
 
     const [currentTime, setCurrentTime] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
+    const [volume, setVolumeState] = useState<number>(DEFAULT_VOLUME);
 
     const currentSong = songs.find((s) => s.id === currentSongId) ?? null;
 
@@ -19,6 +22,7 @@ export function useSongPlayer() {
         if (!audioRef.current || !currentSong) return;
 
         audioRef.current.src = convertFileSrc(currentSong.filePath);
+        audioRef.current.volume = volume;
         setCurrentTime(0);
         setDuration(0);
 
@@ -94,6 +98,22 @@ export function useSongPlayer() {
         }
     };
 
+    const seekForward10s = () => {
+        if (audioRef.current) {
+            const maxTime = audioRef.current.duration || Infinity;
+            audioRef.current.currentTime = Math.min(
+                maxTime,
+                audioRef.current.currentTime + 10,
+            );
+        }
+    };
+
+    const setVolume = (value: number) => {
+        const clamped = Math.min(1, Math.max(0, value));
+        if (audioRef.current) audioRef.current.volume = clamped;
+        setVolumeState(clamped);
+    };
+
     const playSpecificSong = (songId: number) => {
         playSong(songId);
     };
@@ -104,8 +124,11 @@ export function useSongPlayer() {
         isPlaying,
         currentTime,
         duration,
+        volume,
+        setVolume,
         togglePlayPause,
         seekBackward10s,
+        seekForward10s,
         playSpecificSong,
         handleEnded,
         handleTimeUpdate,

@@ -57,7 +57,8 @@
     "settings": "Cài đặt",
     "profile": "Hồ sơ cá nhân",
     "upgrade": "Nâng cấp Pro",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "songs": "Thư viện nhạc"
   },
   "focusSession": {
     "activeView": {
@@ -192,5 +193,42 @@
     "slider": {
       "minutes_format": "{{count}} phút"
     }
+  },
+  "songLibrary": {
+    "title": "Thư viện nhạc",
+    "subtitle": "Quản lý playlist và nghe thử nhạc nền phát lúc học tập trung",
+    "player": {
+      "now_playing": "Đang phát nghe thử",
+      "player_title": "Trình phát nhạc",
+      "no_song_selected": "Chưa chọn bài hát",
+      "rewind_10s": "-10s",
+      "forward_10s": "+10s",
+      "pause": "Tạm dừng",
+      "play": "Phát"
+    },
+    "my_library": {
+      "title": "Thư viện của bạn",
+      "subtitle": "Quản lý và bật/tắt các bài hát bạn muốn phát",
+      "scan_button": "+ Chọn thư mục nhạc",
+      "scanning": "Đang quét thư mục...",
+      "user_songs_title": "Nhạc cá nhân ({{count}})",
+      "no_user_songs": "Chưa có bài hát cá nhân. Bấm nút trên để chọn thư mục nhạc.",
+      "system_songs_title": "Nhạc hệ thống ({{count}})",
+      "no_system_songs": "Không có nhạc hệ thống.",
+      "system_badge": "Hệ thống",
+      "delete_tooltip": "Xóa bài hát"
+    },
+    "playlist": {
+      "title": "Danh sách phát",
+      "subtitle": "Các bài hát đã tích — sẽ phát trong Session học",
+      "count_badge": "{{count}} bài",
+      "no_enabled_songs": "Chưa có bài hát nào được chọn. Hãy tích chọn bài hát ở cột bên trái để thêm vào danh sách phát.",
+      "currently_playing": "Đang phát"
+    }
+  },
+  "miniPlayer": {
+    "no_song_selected": "Chưa chọn bài nào",
+    "playlist_tooltip": "Danh sách phát",
+    "no_enabled_songs": "Chưa có bài hát nào được chọn. Vào \"Thư viện âm thanh\" để thêm nhạc."
   }
 }

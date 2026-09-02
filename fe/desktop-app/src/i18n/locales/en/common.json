@@ -57,7 +57,8 @@
     "settings": "Settings",
     "profile": "Profile",
     "upgrade": "Upgrade Pro",
-    "logout": "Logout"
+    "logout": "Logout",
+    "songs": "Music"
   },
   "focusSession": {
     "activeView": {
@@ -192,5 +193,42 @@
     "slider": {
       "minutes_format": "{{count}} mins"
     }
+  },
+  "songLibrary": {
+    "title": "Music Library",
+    "subtitle": "Manage playlists and preview background music played during focus sessions",
+    "player": {
+      "now_playing": "Now Playing (Preview)",
+      "player_title": "Music Player",
+      "no_song_selected": "No song selected",
+      "rewind_10s": "-10s",
+      "forward_10s": "+10s",
+      "pause": "Pause",
+      "play": "Play"
+    },
+    "my_library": {
+      "title": "Your Library",
+      "subtitle": "Manage and enable/disable songs you want to play",
+      "scan_button": "+ Select Music Folder",
+      "scanning": "Scanning folder...",
+      "user_songs_title": "Personal Songs ({{count}})",
+      "no_user_songs": "No personal songs yet. Click the button above to select a music folder.",
+      "system_songs_title": "System Songs ({{count}})",
+      "no_system_songs": "No system songs.",
+      "system_badge": "System",
+      "delete_tooltip": "Delete song"
+    },
+    "playlist": {
+      "title": "Playlist",
+      "subtitle": "Selected songs — will play during Focus Sessions",
+      "count_badge": "{{count}} tracks",
+      "no_enabled_songs": "No songs selected. Check songs from the left column to add them to the playlist.",
+      "currently_playing": "Playing"
+    }
+  },
+  "miniPlayer": {
+    "no_song_selected": "No song selected",
+    "playlist_tooltip": "Playlist",
+    "no_enabled_songs": "No songs selected. Go to \"Music Library\" to add songs."
   }
 }

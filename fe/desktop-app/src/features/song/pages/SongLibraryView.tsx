@@ -73,46 +73,33 @@ export default function SongLibraryView() {
     );
 
     return (
-        <div className="p-6 space-y-6 max-w-6xl mx-auto">
-            {/* Header trang (chuẩn style petpages/analyticspages) */}
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-                <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm shrink-0">
-                        <svg
-                            className="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3"
-                            />
-                        </svg>
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-                            {t("songLibrary.title", { defaultValue: "Music Library" })}
-                        </h1>
-                        <p className="text-sm text-slate-500">
+        <div className="min-h-screen bg-[#fcf8ff]">
+            <div className="max-w-[1280px] mx-auto p-6 md:px-8 space-y-6">
+                {/* Header trang (Chuẩn format hệ thống app-page-header) */}
+                <header className="app-page-header">
+                    <div className="app-page-title">
+                        <div className="app-page-title-row">
+                            <span className="app-page-title-icon">
+                                <span className="material-symbols-outlined">music_note</span>
+                            </span>
+                            <h1>{t("sidebar.songs", { defaultValue: "Thư viện nhạc" })}</h1>
+                        </div>
+                        <p>
                             {t("songLibrary.subtitle", {
-                                defaultValue: "Manage playlists and preview background music played during focus sessions",
+                                defaultValue: "Quản lý danh sách phát và nghe thử nhạc nền trong phiên tập trung",
                             })}
                         </p>
                     </div>
-                </div>
-            </header>
+                </header>
 
-            {/* Player Panel nổi khối bên dưới Header */}
-            <section className="bg-white rounded-2xl p-5 sm:p-6 border-2 border-slate-200 shadow-xl relative overflow-hidden transition-all">
-                <div className="flex flex-col md:flex-row items-center gap-5 sm:gap-6">
-                    {/* Icon đĩa nhạc đen to nổi bật */}
-                    <div className="relative group shrink-0">
-                        <div
-                            className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-900 flex items-center justify-center shadow-lg border-4 border-slate-800 transition-transform ${isPlaying ? "animate-spin" : ""
-                                }`}
+                {/* Player Panel nổi khối bên dưới Header */}
+                <section className="bg-white rounded-2xl p-5 sm:p-6 border-2 border-slate-200 shadow-xl relative overflow-hidden transition-all">
+                    <div className="flex flex-col md:flex-row items-center gap-5 sm:gap-6">
+                        {/* Icon đĩa nhạc đen to nổi bật */}
+                        <div className="relative group shrink-0">
+                            <div
+                                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-900 flex items-center justify-center shadow-lg border-4 border-slate-800 transition-transform ${isPlaying ? "animate-spin" : ""
+                                    }`}
                             style={{ animationDuration: "8s" }}
                         >
                             {/* Vòng vân đĩa than */}
@@ -336,7 +323,7 @@ export default function SongLibraryView() {
                             </span>
 
                             {userSongs.length === 0 ? (
-                                <div className="text-center py-6 text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                <div className="text-center py-6 text-slate-400 text-xs italic bg-[#f5f2ff] rounded-xl border border-dashed border-slate-200">
                                     {t("songLibrary.my_library.no_user_songs", {
                                         defaultValue: "No personal songs yet. Click the button above to select a music folder.",
                                     })}
@@ -348,8 +335,8 @@ export default function SongLibraryView() {
                                             key={song.id}
                                             onClick={() => toggleEnabled(song.id, !song.isEnabled)}
                                             className={`flex items-center justify-between p-2.5 rounded-xl transition-colors cursor-pointer select-none border ${song.isEnabled
-                                                ? "bg-slate-50/80 border-slate-200 text-slate-900"
-                                                : "hover:bg-slate-50 border-transparent text-slate-600"
+                                                ? "bg-[#f5f2ff]/80 border-slate-200 text-slate-900"
+                                                : "hover:bg-[#f5f2ff] border-transparent text-slate-600"
                                                 }`}
                                         >
                                             <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
@@ -426,8 +413,8 @@ export default function SongLibraryView() {
                                             key={song.id}
                                             onClick={() => toggleEnabled(song.id, !song.isEnabled)}
                                             className={`flex items-center justify-between p-2.5 rounded-xl transition-colors cursor-pointer select-none border ${song.isEnabled
-                                                ? "bg-slate-50/80 border-slate-200 text-slate-900"
-                                                : "hover:bg-slate-50 border-transparent text-slate-600"
+                                                ? "bg-[#f5f2ff]/80 border-slate-200 text-slate-900"
+                                                : "hover:bg-[#f5f2ff] border-transparent text-slate-600"
                                                 }`}
                                         >
                                             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -478,7 +465,7 @@ export default function SongLibraryView() {
                         </div>
 
                         {enabledPlaylist.length === 0 ? (
-                            <div className="text-center py-12 px-4 text-slate-400 text-sm italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                            <div className="text-center py-12 px-4 text-slate-400 text-sm italic bg-[#f5f2ff] rounded-2xl border border-dashed border-slate-200">
                                 {t("songLibrary.playlist.no_enabled_songs", {
                                     defaultValue: "No songs selected. Check songs from the left column to add them to the playlist.",
                                 })}
@@ -494,7 +481,7 @@ export default function SongLibraryView() {
                                             onClick={() => playSpecificSong(song.id)}
                                             className={`flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer select-none border ${isCurrent
                                                 ? "bg-blue-50/90 border-blue-200 text-blue-900 shadow-sm"
-                                                : "hover:bg-slate-50 border-transparent text-slate-700"
+                                                : "hover:bg-[#f5f2ff] border-transparent text-slate-700"
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -534,6 +521,7 @@ export default function SongLibraryView() {
                         )}
                     </div>
                 </section>
+            </div>
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
-
+/* 
 :root {
   --primary: #2b08e6;
   --primary-container: #483bfc;
@@ -23,7 +23,7 @@
   --warning: #e37400;
   --warning-bg: #fef7e0;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-}
+} */
 
 * {
   box-sizing: border-box;
@@ -33,7 +33,7 @@ body {
   margin: 0;
   overflow-x: hidden;
   font-family: "Plus Jakarta Sans", sans-serif;
-  background: var(--surface-container-low);
+  background: #fcf8ff;
   color: var(--on-surface);
 }
 
@@ -44,7 +44,7 @@ a {
 
 .statistics-page {
   min-height: 100vh;
-  background: var(--surface-container-low);
+  background: #fcf8ff;
 }
 
 .statistics-main {
@@ -59,8 +59,8 @@ a {
   margin-bottom: 24px;
 }
 
-.page-header h1 {
-}
+/* .page-header h1 {
+} */
 
 .page-header p {
   color: var(--on-surface-variant);

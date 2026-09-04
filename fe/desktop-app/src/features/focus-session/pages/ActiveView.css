@@ -1,8 +1,10 @@
 /* ── Container chính ── */
 .active-view-container {
   min-height: 100vh;
-  background-color: #f8fafc;
-  padding: 24px 28px;
+  background-color: #fcf8ff;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 32px 32px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -42,10 +44,8 @@
 }
 
 .btn-back-dashboard:hover {
-  background-color: #f1f5f9;
+  background-color: #f5f2ff;
 }
-
-/* ── Progress Ring Component ── */
 .progress-ring-wrapper {
   position: relative;
 }
@@ -126,7 +126,7 @@
 /* Thanh Tiến Độ Base */
 .progress-bar-bg {
   height: 6px;
-  background-color: #f1f5f9;
+  background-color: #efecfb;
   border-radius: 99px;
   overflow: hidden;
 }

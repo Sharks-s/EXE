@@ -185,7 +185,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               <span className="app-page-title-icon">
                 <MaterialIcon name="dashboard" />
               </span>
-              <h2>{t("focusSession.setup.greeting")}</h2>
+              <h1>{t("focusSession.setup.greeting")}</h1>
             </div>
             <p>{t("focusSession.setup.subtitle")}</p>
           </div>

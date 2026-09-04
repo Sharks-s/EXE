@@ -146,7 +146,7 @@ function NavItem({
       ? "font-semibold bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transition-transform"
       : isActive
         ? "bg-blue-100 text-blue-600 font-semibold"
-        : "text-slate-500 hover:bg-slate-50 hover:text-slate-800";
+        : "text-slate-500 hover:bg-[#f5f2ff] hover:text-slate-800";
 
   return (
     <button
@@ -229,7 +229,7 @@ export default function Sidebar({
     <aside
       className={`
         relative h-full flex flex-col
-        border-r border-blue-200 rounded-r-2xl
+        bg-[#fcf8ff] border-r border-blue-200 rounded-r-2xl
         transition-[width] duration-300 ease-in-out
         ${collapsed ? "w-16" : "w-56"}
       `}

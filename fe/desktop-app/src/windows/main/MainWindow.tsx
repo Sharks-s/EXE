@@ -111,7 +111,7 @@ export default function MainWindow() {
           isLocked={isSessionActive}
         />
 
-        <main className="app-main flex-1 overflow-auto bg-slate-50">
+        <main className="app-main flex-1 overflow-auto bg-[#fcf8ff]">
           {currentPage === "dashboard" && <Dashboard onNavigate={handleNavigate} />}
           {currentPage === "analytics" && <AnalyticsPage />}
           {currentPage === "settings" && <SettingsPage />}

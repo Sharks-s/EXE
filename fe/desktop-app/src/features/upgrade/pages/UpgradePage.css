@@ -4,7 +4,7 @@
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  background: #f2f5ff;
+  background: #fcf8ff;
 }
 
 .upgrade-header {
@@ -72,7 +72,7 @@
 
 .plan-card.highlight {
   border: 2px solid #3f9dff;
-  background: linear-gradient(160deg, #ffffff 0%, #f0f8ff 100%);
+  background: linear-gradient(160deg, #ffffff 0%, #f5f2ff 100%);
   box-shadow: 0 12px 40px rgba(63, 157, 255, 0.18),
     0 2px 8px rgba(0, 0, 0, 0.04);
 }

@@ -4,17 +4,8 @@
 
 .pet-page {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(124, 92, 255, 0.12), transparent 28%),
-    linear-gradient(180deg, #f8fbff 0%, #edf3ff 100%);
+  background: #fcf8ff;
   color: #0f172a;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
 }
 
 .pet-shell {
@@ -22,46 +13,6 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 24px 32px 32px;
-}
-
-.pet-header {
-  margin-bottom: 20px;
-}
-
-.pet-title-wrap {
-  display: block;
-}
-
-.pet-logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  color: #ffffff;
-  background: linear-gradient(135deg, #7c5cff, #5f3deb);
-  box-shadow: 0 12px 28px rgba(124, 92, 255, 0.3);
-}
-
-.pet-logo svg {
-  display: block;
-}
-
-.pet-header h1 {
-}
-
-.pet-header p {
-  color: #8b9bb0;
-}
-
-.pet-premium-btn {
-  border: 0;
-  border-radius: 14px;
-  padding: 13px 24px;
-  background: linear-gradient(135deg, #7c5cff, #5f3deb);
-  color: #ffffff;
-  font-weight: 800;
-  box-shadow: 0 14px 28px rgba(124, 92, 255, 0.32);
 }
 
 .pet-navbar {

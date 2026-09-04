@@ -184,17 +184,16 @@ export default function PetsPage() {
 
 function PetHeader() {
   return (
-    <header className="pet-header app-page-header">
-      <div className="pet-title-wrap app-page-title">
+    <header className="app-page-header">
+      <div className="app-page-title">
         <div className="app-page-title-row">
           <span className="app-page-title-icon">
             <span className="material-symbols-outlined">pets</span>
           </span>
-          <h1>Bạn đồng hành của tôi</h1>
+          <h1>Bạn đồng hành</h1>
         </div>
-        <p>Quản lý, trang bị và nâng cấp bạn đồng hành đồng hành.</p>
+        <p>Quản lý, trang bị và nâng cấp các bạn đồng hành trong ứng dụng.</p>
       </div>
-
     </header>
   );
 }

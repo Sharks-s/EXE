@@ -10,4 +10,7 @@ public interface SongService {
     List<SongResponse> getSongsByUser(Long userId);
     SongResponse toggleEnabled(Long userId, Long songId, boolean isEnabled);
     void deleteSong(Long userId, Long songId);
+    // SongService.java
+    List<SongResponse> seedSystemSongs(Long userId, ScanFolderRequest request);
+
 }

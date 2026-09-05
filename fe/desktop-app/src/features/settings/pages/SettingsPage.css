@@ -1,0 +1,245 @@
+/* ── Xưng hô AI ── */
+.ai-address-form {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(199, 196, 218, 0.3);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.ai-address-form label {
+    color: var(--on-surface-variant);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ai-address-form input {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px 14px;
+    color: var(--on-surface);
+    background: var(--surface-bright);
+    border: 1px solid rgba(199, 196, 218, 0.5);
+    border-radius: 14px;
+    outline: none;
+}
+
+.ai-address-form input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.ai-address-save {
+    grid-column: span 2;
+    justify-self: end;
+}
+
+/* ── Ngôn ngữ ── */
+.language-options {
+    display: grid;
+    gap: 12px;
+}
+
+.language-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface-bright);
+    border: 1px solid var(--outline-variant);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: 0.2s ease;
+    text-align: left;
+}
+
+.language-option:hover {
+    border-color: rgba(44, 7, 230, 0.5);
+}
+
+.language-option-active {
+    border: 2px solid var(--primary);
+    background: rgba(44, 7, 230, 0.05);
+}
+
+.language-flag {
+    font-size: 20px;
+}
+
+.language-option span:nth-child(2) {
+    flex: 1;
+    font-weight: 600;
+    color: var(--on-surface);
+}
+
+/* ── Toggle switch ── */
+.toggle-list {
+    display: grid;
+    gap: 16px;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px;
+    border-radius: 14px;
+    transition: background 0.2s ease;
+}
+
+.toggle-row:hover {
+    background: var(--surface-container-low);
+}
+
+.toggle-row p {
+    margin: 0;
+    color: var(--on-surface);
+    font-weight: 600;
+}
+
+.toggle-row small {
+    color: var(--on-surface-variant);
+    font-size: 12px;
+}
+
+.toggle-switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 26px;
+    background: var(--surface-container-highest);
+    border-radius: 999px;
+    transition: background 0.2s ease;
+}
+
+.toggle-switch-on {
+    background: var(--primary);
+}
+
+.toggle-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.toggle-switch-on .toggle-knob {
+    transform: translateX(18px);
+}
+
+/* ── Danh sách ứng dụng (tabs + chips) ── */
+.app-list-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.app-list-tab {
+    padding: 8px 16px;
+    color: var(--on-surface-variant);
+    background: var(--surface-container);
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+    transition: 0.2s ease;
+}
+
+.app-list-tab:hover {
+    background: var(--surface-container-high);
+}
+
+.app-list-tab-active {
+    color: var(--on-primary);
+    background: var(--primary);
+}
+
+.app-list-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.app-list-input-row input {
+    flex: 1;
+    padding: 10px 14px;
+    color: var(--on-surface);
+    background: var(--surface-bright);
+    border: 1px solid rgba(199, 196, 218, 0.5);
+    border-radius: 14px;
+    outline: none;
+}
+
+.app-list-input-row input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag-list-empty {
+    color: var(--on-surface-variant);
+    font-size: 13px;
+    font-style: italic;
+}
+
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px 6px 14px;
+    color: var(--primary);
+    background: rgba(44, 7, 230, 0.08);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tag-chip button {
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    color: inherit;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 999px;
+}
+
+.tag-chip button .material-symbols-outlined {
+    font-size: 14px;
+}
+
+.tag-chip-danger {
+    color: var(--error);
+    background: rgba(186, 26, 26, 0.08);
+}
+
+/* ── Danh sách thiết bị (modal) ── */
+.device-list {
+    display: grid;
+    gap: 12px;
+}
+
+.device-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px;
+    background: var(--surface-container-low);
+    border-radius: 14px;
+}
+
+.device-revoke {
+    color: var(--error);
+}

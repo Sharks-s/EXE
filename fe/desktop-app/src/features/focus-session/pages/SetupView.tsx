@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import "./SetupView.css";
 import { CameraSetupModal } from "../components/CameraSetupModal";
-import { analyticsApi } from "../../analytics/api/analytics.api";
-import type {
-  AnalyticsSummary,
-  FocusTimeAnalytics,
-  HourlyAnalytics,
-} from "../../analytics/types/analytics.types";
-import { petApi } from "../../pet/api/petApi";
-import type { UserPet } from "../../pet/types/pet.type";
-import { profileApi } from "../../profile/api/profile.api";
-import { toast } from "../../../shared/store/toastStore";
-import type { Page } from "../../../shared/components/Sidebar";
+import {
+  analyticsApi,
+  type AnalyticsSummary,
+  type FocusTimeAnalytics,
+  type HourlyAnalytics,
+} from "@/features/analytics";
+import { petApi, type UserPet } from "@/features/pet";
+import { profileApi } from "@/features/profile";
+import { toast } from "@/shared/store/toastStore";
+import type { Page } from "@/shared/components/Sidebar";
 import { useTranslation } from "react-i18next";
+
 
 const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
 const presets = [5, 25, 50, 90, 120];

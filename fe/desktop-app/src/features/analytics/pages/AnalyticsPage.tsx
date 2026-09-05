@@ -1,14 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { analyticsApi } from "../api/analytics.api";
-import type {
-  AnalyticsRange,
-  AnalyticsSummary,
-  CalendarHeatmap,
-  FocusTimeAnalytics,
-  GoalAnalytics,
-  HourlyAnalytics,
-  ViolationAnalytics,
-} from "../types/analytics.types";
+import { useMemo } from "react";
+import { useAnalytics } from "../hooks/useAnalytics";
+import type { AnalyticsRange } from "../types/analytics.types";
 import "./AnalyticsPage.css";
 
 type StatTone = "primary" | "success" | "danger" | "warning";
@@ -31,9 +23,7 @@ const violationLabels: Record<string, string> = {
   ENTERTAINMENT: "Ứng dụng giải trí",
 };
 
-const formatMinutes = (minutes?: number) => {
-  return `${Math.max(Math.round(minutes ?? 0), 0)} phút`;
-};
+const formatMinutes = (minutes?: number) => `${Math.max(Math.round(minutes ?? 0), 0)} phút`;
 
 const formatChange = (value?: number, suffix = "") => {
   if (value === undefined || value === null) return "0";
@@ -49,170 +39,50 @@ const trendFromNumber = (value?: number): Trend => {
 const formatHourRange = (hour: number | null) => {
   if (hour === null) return "Chưa có dữ liệu";
   const endHour = (hour + 1) % 24;
-  return `${String(hour).padStart(2, "0")}:00 - ${String(endHour).padStart(
-    2,
-    "0",
-  )}:00`;
+  return `${String(hour).padStart(2, "0")}:00 - ${String(endHour).padStart(2, "0")}:00`;
 };
 
 const formatChartLabel = (dateValue: string) => {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return dateValue;
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(date);
+  return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit" }).format(date);
 };
 
 const formatCalendarMonth = (date: Date) =>
-  new Intl.DateTimeFormat("vi-VN", {
-    month: "long",
-    year: "numeric",
-  }).format(date);
+  new Intl.DateTimeFormat("vi-VN", { month: "long", year: "numeric" }).format(date);
 
-const buildChartPath = (items: FocusTimeAnalytics["items"]) => {
+const buildChartPath = (items: { focusMinutes: number }[]) => {
   if (!items.length) return "";
-
   const maxMinutes = Math.max(...items.map((item) => item.focusMinutes), 1);
   const lastIndex = Math.max(items.length - 1, 1);
-  const points = items.map((item, index) => {
-    const x = (index / lastIndex) * 1000;
-    const y = 280 - (item.focusMinutes / maxMinutes) * 220;
-    return { x, y };
-  });
+  const points = items.map((item, index) => ({
+    x: (index / lastIndex) * 1000,
+    y: 280 - (item.focusMinutes / maxMinutes) * 220,
+  }));
 
-  const line = points
-    .map((point, index) =>
-      index === 0 ? `M${point.x},${point.y}` : `L${point.x},${point.y}`,
-    )
-    .join(" ");
+  const line = points.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(" ");
   const area = `${line} L1000,300 L0,300 Z`;
-
   return { line, area };
 };
 
 export default function StatisticsPage() {
-  const [range, setRange] = useState<AnalyticsRange>("WEEK");
-  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
-  const [focusTime, setFocusTime] = useState<FocusTimeAnalytics | null>(null);
-  const [hourly, setHourly] = useState<HourlyAnalytics | null>(null);
-  const [goals, setGoals] = useState<GoalAnalytics | null>(null);
-  const [violations, setViolations] = useState<ViolationAnalytics | null>(null);
-  const [calendar, setCalendar] = useState<CalendarHeatmap | null>(null);
-  const [calendarDate, setCalendarDate] = useState(() => new Date());
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const calendarYear = calendarDate.getFullYear();
-  const calendarMonth = calendarDate.getMonth() + 1;
-  const calendarMonthLabel = useMemo(
-    () => formatCalendarMonth(calendarDate),
-    [calendarDate],
-  );
-  const canGoNextCalendarMonth = useMemo(() => {
-    const today = new Date();
-    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const selectedMonthStart = new Date(calendarYear, calendarMonth - 1, 1);
+  const {
+    range,
+    setRange,
+    summary,
+    focusTime,
+    hourly,
+    goals,
+    violations,
+    calendar,
+    calendarDate,
+    isLoading,
+    error,
+    canGoNextCalendarMonth,
+    changeCalendarMonth,
+  } = useAnalytics();
 
-    return selectedMonthStart.getTime() < currentMonthStart.getTime();
-  }, [calendarMonth, calendarYear]);
-
-  const changeCalendarMonth = (offset: number) => {
-    setCalendarDate((current) => {
-      const next = new Date(current.getFullYear(), current.getMonth() + offset, 1);
-      const today = new Date();
-      const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-
-      if (next.getTime() > currentMonthStart.getTime()) {
-        return currentMonthStart;
-      }
-
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadAnalytics = async () => {
-      try {
-        setIsLoading(true);
-        setError("");
-
-        const [
-          summaryResult,
-          focusTimeResult,
-          hourlyResult,
-          goalsResult,
-          violationsResult,
-        ] = await Promise.allSettled([
-          analyticsApi.getSummary({ range }),
-          analyticsApi.getFocusTime({ range }),
-          analyticsApi.getHourly({ range }),
-          analyticsApi.getGoals({ range }),
-          analyticsApi.getViolations({ range }),
-        ]);
-
-        if (cancelled) return;
-
-        if (summaryResult.status === "fulfilled") setSummary(summaryResult.value);
-        if (focusTimeResult.status === "fulfilled") {
-          setFocusTime(focusTimeResult.value);
-        }
-        if (hourlyResult.status === "fulfilled") setHourly(hourlyResult.value);
-        if (goalsResult.status === "fulfilled") setGoals(goalsResult.value);
-        if (violationsResult.status === "fulfilled") {
-          setViolations(violationsResult.value);
-        }
-
-        const hasFailure = [
-          summaryResult,
-          focusTimeResult,
-          hourlyResult,
-          goalsResult,
-          violationsResult,
-        ].some((result) => result.status === "rejected");
-
-        if (hasFailure) {
-          setError("Một vài thống kê chưa tải được, đang hiển thị phần còn lại.");
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    loadAnalytics();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [range]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadCalendar = async () => {
-      try {
-        const calendarResult = await analyticsApi.getCalendar(
-          calendarYear,
-          calendarMonth,
-        );
-
-        if (!cancelled) setCalendar(calendarResult);
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) {
-          setCalendar(null);
-          setError("Chưa tải được tần suất tập trung của tháng này.");
-        }
-      }
-    };
-
-    loadCalendar();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [calendarMonth, calendarYear]);
+  const calendarMonthLabel = useMemo(() => formatCalendarMonth(calendarDate), [calendarDate]);
 
   const stats = useMemo(
     () => [
@@ -220,13 +90,9 @@ export default function StatisticsPage() {
         icon: "timer",
         title: "Tổng thời gian",
         value: formatMinutes(summary?.totalFocusMinutes),
-        change: formatChange(
-          summary?.compareWithPreviousRange.focusMinutesPercent,
-          "%",
-        ),
+        change: formatChange(summary?.compareWithPreviousRange.focusMinutesPercent, "%"),
         trendIcon:
-          trendFromNumber(summary?.compareWithPreviousRange.focusMinutesDiff) ===
-          "down"
+          trendFromNumber(summary?.compareWithPreviousRange.focusMinutesDiff) === "down"
             ? "trending_down"
             : "trending_up",
         trend: trendFromNumber(summary?.compareWithPreviousRange.focusMinutesDiff),
@@ -238,8 +104,7 @@ export default function StatisticsPage() {
         value: String(summary?.totalSessions ?? 0),
         change: formatChange(summary?.compareWithPreviousRange.sessionsDiff),
         trendIcon:
-          trendFromNumber(summary?.compareWithPreviousRange.sessionsDiff) ===
-          "down"
+          trendFromNumber(summary?.compareWithPreviousRange.sessionsDiff) === "down"
             ? "trending_down"
             : "trending_up",
         trend: trendFromNumber(summary?.compareWithPreviousRange.sessionsDiff),
@@ -251,8 +116,7 @@ export default function StatisticsPage() {
         value: String(violations?.totalViolations ?? summary?.totalViolations ?? 0),
         change: formatChange(summary?.compareWithPreviousRange.violationsDiff),
         trendIcon:
-          trendFromNumber(summary?.compareWithPreviousRange.violationsDiff) ===
-          "down"
+          trendFromNumber(summary?.compareWithPreviousRange.violationsDiff) === "down"
             ? "trending_down"
             : "trending_up",
         trend: trendFromNumber(summary?.compareWithPreviousRange.violationsDiff),
@@ -272,11 +136,11 @@ export default function StatisticsPage() {
 
   const chartItems = focusTime?.items ?? [];
   const chartPath = buildChartPath(chartItems);
-  const bestFocusItem = chartItems.reduce<FocusTimeAnalytics["items"][number] | null>(
-    (best, item) =>
-      !best || item.focusMinutes > best.focusMinutes ? item : best,
+  const bestFocusItem = chartItems.reduce<(typeof chartItems)[number] | null>(
+    (best, item) => (!best || item.focusMinutes > best.focusMinutes ? item : best),
     null,
   );
+
   const heatmapLevels = calendar?.items.map((item) => item.level) ?? [];
   const topHourlyItems = [...(hourly?.items ?? [])]
     .sort((a, b) => b.focusMinutes - a.focusMinutes)
@@ -302,12 +166,13 @@ export default function StatisticsPage() {
             {error && <p className="analytics-error">{error}</p>}
           </div>
 
+          {/* BỘ LỌC THỜI GIAN */}
           <div className="time-tabs app-page-actions" role="tablist" aria-label="Bộ lọc thời gian">
             {rangeLabels.map((item) => (
               <button
                 key={item.range}
                 type="button"
-                className={range === item.range ? "active" : ""}
+                className={`time-tab-btn ${range === item.range ? "active" : ""}`}
                 onClick={() => setRange(item.range)}
               >
                 {item.label}
@@ -323,17 +188,13 @@ export default function StatisticsPage() {
                 <div className={`stat-icon ${stat.tone}`}>
                   <span className="material-symbols-outlined">{stat.icon}</span>
                 </div>
-
                 <span className={`trend-badge ${stat.trend}`}>
                   {stat.trendIcon && (
-                    <span className="material-symbols-outlined">
-                      {stat.trendIcon}
-                    </span>
+                    <span className="material-symbols-outlined">{stat.trendIcon}</span>
                   )}
                   {stat.change}
                 </span>
               </div>
-
               <div>
                 <h3>{stat.title}</h3>
                 <p>{isLoading ? "..." : stat.value}</p>
@@ -344,15 +205,12 @@ export default function StatisticsPage() {
           <article className="focus-chart-card">
             <div className="card-header">
               <h2>Thời gian tập trung</h2>
-
               <div className="best-day-badge">
                 <span className="material-symbols-outlined">star</span>
                 <span>
                   Cao nhất:{" "}
                   {bestFocusItem
-                    ? `${formatChartLabel(bestFocusItem.date)} (${formatMinutes(
-                        bestFocusItem.focusMinutes,
-                      )})`
+                    ? `${formatChartLabel(bestFocusItem.date)} (${formatMinutes(bestFocusItem.focusMinutes)})`
                     : "Chưa có dữ liệu"}
                 </span>
               </div>
@@ -360,25 +218,16 @@ export default function StatisticsPage() {
 
             <div className="chart-box">
               {chartPath ? (
-                <svg
-                  className="chart-svg"
-                  preserveAspectRatio="none"
-                  viewBox="0 0 1000 300"
-                >
+                <svg className="chart-svg" preserveAspectRatio="none" viewBox="0 0 1000 300">
                   <path d={chartPath.area} fill="#483bfc" opacity="0.1" />
-                  <path
-                    d={chartPath.line}
-                    fill="none"
-                    stroke="#483bfc"
-                    strokeWidth="4"
-                  />
+                  <path d={chartPath.line} fill="none" stroke="#483bfc" strokeWidth="4" />
                 </svg>
               ) : (
                 <div className="chart-empty">Chưa có dữ liệu tập trung.</div>
               )}
 
               <div className="chart-labels">
-                {(chartItems.length ? chartItems : []).map((item) => (
+                {chartItems.map((item) => (
                   <span key={item.date}>{formatChartLabel(item.date)}</span>
                 ))}
               </div>
@@ -388,13 +237,8 @@ export default function StatisticsPage() {
           <article className="heatmap-card">
             <div className="heatmap-header">
               <h2>Tần suất tập trung</h2>
-
               <div className="calendar-controls" aria-label="Chọn tháng tần suất tập trung">
-                <button
-                  type="button"
-                  aria-label="Tháng trước"
-                  onClick={() => changeCalendarMonth(-1)}
-                >
+                <button type="button" aria-label="Tháng trước" onClick={() => changeCalendarMonth(-1)}>
                   <span className="material-symbols-outlined">chevron_left</span>
                 </button>
                 <span>{calendarMonthLabel}</span>
@@ -415,7 +259,6 @@ export default function StatisticsPage() {
                   <span key={day}>{day}</span>
                 ))}
               </div>
-
               <div className="heatmap-grid" aria-label="Tan suat tap trung">
                 {heatmapLevels.map((level, index) => (
                   <span key={index} className={`heatmap-cell level-${level}`} />
@@ -425,27 +268,20 @@ export default function StatisticsPage() {
 
             <div className="heatmap-legend">
               <span>Ít</span>
-
               <div className="legend-cells">
                 {[0, 1, 2, 3, 4].map((level) => (
                   <span key={level} className={`heatmap-cell level-${level}`} />
                 ))}
               </div>
-
               <span>Nhiều</span>
             </div>
-
-            <p>
-              Dựa trên lịch tập trung của {calendarMonthLabel}. Màu càng đậm nghĩa là thời
-              gian tập trung càng cao.
-            </p>
+            <p>Dựa trên lịch tập trung của {calendarMonthLabel}. Màu càng đậm nghĩa là thời gian tập trung càng cao.</p>
           </article>
         </section>
 
         <section className="bottom-grid" aria-label="Thông tin bổ sung">
           <article className="info-card">
             <h2>Giờ hiệu quả nhất</h2>
-
             {(topHourlyItems.length
               ? topHourlyItems
               : [{ hour: hourly?.bestHour ?? null, focusMinutes: 0, sessions: 0 }]
@@ -455,17 +291,11 @@ export default function StatisticsPage() {
                   <span>{formatHourRange(item.hour)}</span>
                   <strong>{index === 0 ? "Tối ưu" : "Khá"}</strong>
                 </div>
-
                 <div className="progress-track">
                   <div
-                    className={`progress-fill ${
-                      index === 0 ? "primary" : "secondary"
-                    }`}
+                    className={`progress-fill ${index === 0 ? "primary" : "secondary"}`}
                     style={{
-                      width: `${Math.max(
-                        8,
-                        Math.min(100, (item.focusMinutes / 120) * 100),
-                      )}%`,
+                      width: `${Math.max(8, Math.min(100, (item.focusMinutes / 120) * 100))}%`,
                     }}
                   />
                 </div>
@@ -475,18 +305,14 @@ export default function StatisticsPage() {
 
           <article className="info-card">
             <h2>Mục tiêu hiện tại</h2>
-
             <div className="goal-list">
               {goalItems.length ? (
                 goalItems.map((goal, index) => (
                   <div className="goal-item" key={goal.goal}>
                     <div>
                       <h3>{goal.goal}</h3>
-                      <p>
-                        {formatMinutes(goal.focusMinutes)} • {goal.sessions} phiên
-                      </p>
+                      <p>{formatMinutes(goal.focusMinutes)} • {goal.sessions} phiên</p>
                     </div>
-
                     <div className={`goal-ring ${index === 0 ? "primary" : "secondary"}`}>
                       {Math.round(goal.completionRate)}%
                     </div>
@@ -503,7 +329,6 @@ export default function StatisticsPage() {
               <h2>Chi tiết số lần mất tập trung</h2>
               <span>{formatMinutes(violations?.penaltyMinutes)} bị phạt</span>
             </div>
-
             <div className="violation-list">
               {violationItems.length ? (
                 violationItems.map((item) => (

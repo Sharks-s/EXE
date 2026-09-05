@@ -4,16 +4,16 @@ import { useForm, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
-
 import {
   CompleteRegisterSchema,
   CompleteRegisterBaseShape,
 } from "../schemas/auth.schemas";
 import { useAuthStore } from "../stores/authStore";
-import { getStringLimits } from "../../../utils/zod-utils";
-import { parseApiError } from "../../../utils/error-mapper";
-import { toast } from "../../../shared/store/toastStore";
-import type { ApiErrorResponse } from "../../../types";
+import { getStringLimits } from "@/utils/zod-utils";
+import { parseApiError } from "@/utils/error-mapper";
+import { toast } from "@/shared/store/toastStore";
+import type { ApiErrorResponse } from "@/types";
+import { seedSystemSongsService } from "@/features/song";
 
 type FormData = z.infer<typeof CompleteRegisterSchema>;
 
@@ -61,6 +61,11 @@ export function usePasswordForm({
       await completeRegister({
         sessionToken,
         password: data.password,
+      });
+
+      // Seed sẵn nhạc hệ thống cho tài khoản mới — không chặn luồng nếu lỗi
+      seedSystemSongsService().catch((err) => {
+        console.error("[usePasswordForm] Lỗi seed nhạc hệ thống:", err);
       });
 
       onSuccess?.();

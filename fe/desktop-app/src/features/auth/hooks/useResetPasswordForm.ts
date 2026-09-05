@@ -10,10 +10,10 @@ import {
     CompleteRegisterBaseShape,
 } from "../schemas/auth.schemas";
 import { resetPasswordService } from "../services/auth.service";
-import { getStringLimits } from "../../../utils/zod-utils";
-import { parseApiError } from "../../../utils/error-mapper";
-import { toast } from "../../../shared/store/toastStore";
-import type { ApiErrorResponse } from "../../../types";
+import { getStringLimits } from "@/utils/zod-utils";
+import { parseApiError } from "@/utils/error-mapper";
+import { toast } from "@/shared/store/toastStore";
+import type { ApiErrorResponse } from "@/types";
 
 type FormData = z.infer<typeof CompleteRegisterSchema>;
 

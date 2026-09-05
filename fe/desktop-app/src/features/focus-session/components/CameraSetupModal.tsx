@@ -6,7 +6,8 @@ import { useCameraSetup } from "../hooks/useCameraSetup";
 import { useFocusStore } from "../stores/focusStore";
 import { focusApi } from "../api/focus.api";
 import { cameraApi } from "../api/cameraApi";
-import { tauriStore } from "../../../lib/tauriStore";
+import { tauriStore } from "@/lib/tauriStore";
+
 import { CheckItem } from "./CheckItemProps";
 
 interface CameraSetupModalProps {

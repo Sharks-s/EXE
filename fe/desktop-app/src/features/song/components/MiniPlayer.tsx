@@ -1,4 +1,4 @@
-import { type ChangeEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useSongStore } from "../stores/songStore";
 import { useSongPlayerContext } from "../pages/SongPlayerContext";
@@ -13,6 +13,7 @@ function formatTime(seconds: number): string {
 export function MiniPlayer() {
     const { t } = useTranslation("common");
     const { songs, isListOpen, toggleListOpen } = useSongStore();
+    const [isVolumeOpen, setIsVolumeOpen] = useState(false);
 
     const {
         audioRef,
@@ -83,31 +84,35 @@ export function MiniPlayer() {
                     </div>
                 </div>
 
-                {/* Volume */}
-                <div className="hidden sm:flex items-center gap-1.5 w-20 shrink-0">
-                    <svg
-                        className="w-3.5 h-3.5 text-slate-400 shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"
-                        />
+                {/* Nút Loa âm lượng */}
+                <button
+                    type="button"
+                    onClick={() => setIsVolumeOpen((prev) => !prev)}
+                    className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                        isVolumeOpen
+                            ? "bg-blue-50 text-blue-600"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    }`}
+                    title={t("miniPlayer.volume_tooltip", { defaultValue: "Volume" })}
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {volume === 0 ? (
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M11 5L6 9H2v6h4l5 4V5zM17 9l6 6M23 9l-6 6"
+                            />
+                        ) : (
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"
+                            />
+                        )}
                     </svg>
-                    <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={volume}
-                        onChange={(e) => setVolume(Number(e.target.value))}
-                        className="w-full h-1.5 rounded-lg cursor-pointer accent-slate-600 bg-slate-200"
-                    />
-                </div>
+                </button>
 
                 {/* Nút xổ List */}
                 <button
@@ -129,6 +134,37 @@ export function MiniPlayer() {
                     </svg>
                 </button>
             </div>
+
+            {/* ── Dropdown chỉnh âm lượng ── */}
+            {isVolumeOpen && (
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 p-3 flex items-center gap-3 w-52">
+                    <button
+                        type="button"
+                        onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
+                        className="text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {volume === 0 ? (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5L6 9H2v6h4l5 4V5zM17 9l6 6M23 9l-6 6" />
+                            ) : (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07" />
+                            )}
+                        </svg>
+                    </button>
+                    <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={volume}
+                        onChange={(e) => setVolume(Number(e.target.value))}
+                        className="w-full h-1.5 rounded-lg cursor-pointer accent-emerald-500 bg-slate-200"
+                    />
+                    <span className="text-xs font-mono text-slate-500 w-8 text-right shrink-0">
+                        {Math.round(volume * 100)}%
+                    </span>
+                </div>
+            )}
 
             {/* ── Danh sách phát — floating overlay bên dưới ── */}
             {isListOpen && (

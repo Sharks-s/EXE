@@ -1,5 +1,6 @@
 package com.exe101.exe.security.oauth;
 
+import com.exe101.exe.config.OAuth2Properties;
 import com.exe101.exe.dto.response.OAuthLoginResult;
 import com.exe101.exe.model.enums.AuthProvider;
 import com.exe101.exe.security.CookieUtil;
@@ -24,6 +25,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final AuthService authService;
     private final CookieUtil cookieUtil;
+    private final OAuth2Properties oauth2Properties;
 
     @Override
     public void onAuthenticationSuccess(
@@ -61,7 +63,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 cookieUtil.createRefreshCookie(result.getRefreshToken()).toString()
         );
 
+        String redirectUrl = oauth2Properties.getFrontendRedirectUrl()
+                + "?oauth_success=true&isNewUser=" + result.isNewUser();
+
         // 7. Redirect về luồng xử lý của Frontend (Sau này làm Deep Link hoặc Web tĩnh trung gian)
-        response.sendRedirect("http://localhost:1420/?oauth_success=true");
+        response.sendRedirect(redirectUrl);
     }
 }

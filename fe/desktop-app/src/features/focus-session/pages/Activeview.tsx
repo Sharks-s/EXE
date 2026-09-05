@@ -4,12 +4,13 @@ import { useFocusSession } from "../hooks/useFocusSession";
 import "./ActiveView.css";
 import { ProgressRing } from "../components/ProgressRing";
 import { StatCard } from "../components/StatCard";
-import { BreakPromptPopup } from "../../../shared/components/BreakPromptPopup";
-import { ResumeConfirmPopup } from "../../../shared/components/ResumeConfirmPopup";
+import { BreakPromptPopup } from "@/shared/components/BreakPromptPopup";
+import { ResumeConfirmPopup } from "@/shared/components/ResumeConfirmPopup";
 import { focusApi } from "../api/focus.api";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
-import { MiniPlayer } from "../../song/components/Miniplayer";
+import { MiniPlayer } from "@/features/song";
+
 
 const VIOLATION_LABEL_KEYS: Record<string, string> = {
   AWAY: "focusSession.activeView.violation_away",

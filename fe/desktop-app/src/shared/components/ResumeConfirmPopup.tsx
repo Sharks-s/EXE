@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
-import type { FocusSessionResponse } from "../../features/focus-session/types/focus.types";
+import type { FocusSessionResponse } from "@/features/focus-session";
+
+
 
 interface ResumeConfirmPopupProps {
   session: FocusSessionResponse;

@@ -1,4 +1,4 @@
-import { pyApi } from "../../../lib/axios-py";
+import { pyApi } from "@/lib/axios-py";
 import {
   CameraStatusResponse,
   CameraStartResponse,

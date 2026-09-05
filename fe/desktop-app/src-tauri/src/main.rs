@@ -5,6 +5,7 @@ use tauri::{Manager, Position, PhysicalPosition};
 use active_win_pos_rs::get_active_window; 
 use std::fs;
 use std::path::Path;
+use tauri::path::BaseDirectory;
 
 // Struct định nghĩa dữ liệu trả về cho Frontend dễ đọc
 #[derive(serde::Serialize)]
@@ -216,6 +217,16 @@ fn scan_folder_for_audio(folder_path: &Path) -> Result<Vec<ScannedSong>, String>
     Ok(songs)
 }
 
+#[tauri::command]
+fn scan_system_sounds_folder(app_handle: tauri::AppHandle) -> Result<Vec<ScannedSong>, String> {
+    let resource_path = app_handle
+        .path()
+        .resolve("resources/system-sounds", BaseDirectory::Resource)
+        .map_err(|e| e.to_string())?;
+
+    scan_folder_for_audio(&resource_path)
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -224,7 +235,8 @@ fn main() {
             toggle_windows_to_session,
             get_active_window_info,
             back_to_widget,
-            scan_music_folder  
+            scan_music_folder,
+            scan_system_sounds_folder  
         ])
         .setup(|_app| {
             Ok(())

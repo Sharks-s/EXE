@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuthStore } from "../../features/auth/stores/authStore";
-import type { User } from "../../features/auth/types/auth.types";
-import { profileApi } from "../../features/profile/api/profile.api";
-import type { DailyUsageResponse } from "../../features/profile/types/profile.types";
-import logoIcon from "../../assets/logo/MonkeyLogo.png";
+import { useAuthStore, type User } from "@/features/auth";
+import { profileApi, type DailyUsageResponse } from "@/features/profile";
+import { useFocusStore } from "@/features/focus-session";
+import logoIcon from "@/assets/logo/MonkeyLogo.png";
 import { icons } from "./sidebarIcons";
-import { useFocusStore } from "../../features/focus-session/stores/focusStore";
+
 
 export type Page =
   | "dashboard"

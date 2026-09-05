@@ -5,7 +5,8 @@ import type {
   FocusSessionResponse,
 } from "../types/focus.types";
 import { cameraApi } from "../api/cameraApi";
-import { useSongStore } from "../../song/stores/songStore";
+import { useSongStore } from "@/features/song";
+
 
 export async function startFocusSessionService(
   data: CreateSessionRequest,

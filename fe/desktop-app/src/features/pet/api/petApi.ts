@@ -1,5 +1,5 @@
-import api from "../../../lib/axios";
-import type { ApiResponse } from "../../../types";
+import api from "@/lib/axios";
+import type { ApiResponse } from "@/types";
 import type { ShopPet, UserPet } from "../types/pet.type";
 
 const USER_PET_ENDPOINT = "/user-pets";

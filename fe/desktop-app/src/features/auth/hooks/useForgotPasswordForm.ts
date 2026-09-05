@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 
 import { RegisterInitSchema } from "../schemas/auth.schemas";
 import { forgotPasswordService } from "../services/auth.service";
-import { parseApiError } from "../../../utils/error-mapper";
-import { toast } from "../../../shared/store/toastStore";
-import type { ApiErrorResponse } from "../../../types";
+import { parseApiError } from "@/utils/error-mapper";
+import { toast } from "@/shared/store/toastStore";
+import type { ApiErrorResponse } from "@/types";
 import type {
     ForgotPasswordRequest,
     ForgotPasswordResponse,

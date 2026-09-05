@@ -6,7 +6,7 @@ import lombok.*;
 @Getter
 @AllArgsConstructor
 public class OAuthLoginResult {
-
-    private final String accessToken;
-    private final String refreshToken;
+    private String accessToken;
+    private String refreshToken;
+    private boolean isNewUser;
 }

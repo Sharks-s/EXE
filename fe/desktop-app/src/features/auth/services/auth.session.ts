@@ -1,5 +1,5 @@
 // features/auth/services/auth.session.ts
-import { tauriStore } from "../../../lib/tauriStore";
+import { tauriStore } from "@/lib/tauriStore";
 
 const SESSION_KEY = "auth:logged_in";
 

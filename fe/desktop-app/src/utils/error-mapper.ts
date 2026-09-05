@@ -1,7 +1,7 @@
-import type { ApiErrorResponse } from "../types";
-import i18n from "../i18n";
-import viBusinessErrors from "../i18n/locales/vi/businessErrors.json";
-import enBusinessErrors from "../i18n/locales/en/businessErrors.json";
+import type { ApiErrorResponse } from "@/types";
+import i18n from "@/i18n";
+import viBusinessErrors from "@/i18n/locales/vi/businessErrors.json";
+import enBusinessErrors from "@/i18n/locales/en/businessErrors.json";
 
 const businessDict: Record<string, Record<string, string>> = {
   vi: viBusinessErrors,

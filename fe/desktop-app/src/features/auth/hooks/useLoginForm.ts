@@ -5,11 +5,11 @@ import { z } from "zod";
 import { useTranslation } from "react-i18next";
 
 import { LoginSchema } from "../schemas/auth.schemas";
-import { getStringLimits } from "../../../utils/zod-utils";
-import { parseApiError } from "../../../utils/error-mapper";
+import { getStringLimits } from "@/utils/zod-utils";
+import { parseApiError } from "@/utils/error-mapper";
 import { useAuthStore } from "../stores/authStore";
-import { toast } from "../../../shared/store/toastStore";
-import type { ApiErrorResponse } from "../../../types";
+import { toast } from "@/shared/store/toastStore";
+import type { ApiErrorResponse } from "@/types";
 
 type LoginFormData = z.infer<typeof LoginSchema>;
 

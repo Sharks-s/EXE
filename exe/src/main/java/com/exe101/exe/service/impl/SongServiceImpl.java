@@ -41,7 +41,7 @@ public class SongServiceImpl implements SongService {
             Song song = Song.builder()
                     .user(user)
                     .filePath(item.filePath())
-                    .fileName(item.fileName())
+                    .fileName(stripFileExtension(item.fileName()))
                     .orderIndex(nextOrderIndex)
                     .isEnabled(true)
                     .isSystem(false)
@@ -82,6 +82,35 @@ public class SongServiceImpl implements SongService {
         songRepository.delete(song);
     }
 
+    @Override
+    @Transactional
+    public List<SongResponse> seedSystemSongs(Long userId, ScanFolderRequest request) {
+        User user = userService.findById(userId);
+
+        int nextOrderIndex = songRepository.findMaxOrderIndexByUserId(userId)
+                .map(max -> max + 1)
+                .orElse(0);
+
+        for (ScanFolderRequest.SongItem item : request.songs()) {
+            boolean alreadyExists = songRepository.existsByUserIdAndFilePath(userId, item.filePath());
+            if (alreadyExists) continue;
+
+            Song song = Song.builder()
+                    .user(user)
+                    .filePath(item.filePath())
+                    .fileName(stripFileExtension(item.fileName()))  // ← sửa dòng này
+                    .orderIndex(nextOrderIndex)
+                    .isEnabled(true)
+                    .isSystem(true)
+                    .build();
+
+            songRepository.save(song);
+            nextOrderIndex++;
+        }
+
+        return getSongsByUser(userId);
+    }
+
     private Song loadOwnedSong(Long userId, Long songId) {
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SONG_NOT_FOUND));
@@ -90,5 +119,10 @@ public class SongServiceImpl implements SongService {
             throw new BusinessException(ErrorCode.SONG_UNAUTHORIZED_ACCESS);
         }
         return song;
+    }
+
+    private String stripFileExtension(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf('.');
+        return lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
     }
 }

@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
-import { authStorage } from "../features/auth/services/auth.storage";
-import { authSession } from "../features/auth/services/auth.session";
+import { authStorage, authSession } from "@/features/auth";
+
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
@@ -77,7 +77,7 @@ api.interceptors.response.use(
       try {
         // Import động để tránh circular dependency
         const { exchangeService } =
-          await import("../features/auth/services/auth.service");
+          await import("@/features/auth/services/auth.service");
         await exchangeService();
         const newToken = authStorage.getAccessToken();
         if (newToken) {
@@ -114,7 +114,7 @@ api.interceptors.response.use(
 
       try {
         const { refreshService } =
-          await import("../features/auth/services/auth.service");
+          await import("@/features/auth/services/auth.service");
         await refreshService();
         const newToken = authStorage.getAccessToken();
 

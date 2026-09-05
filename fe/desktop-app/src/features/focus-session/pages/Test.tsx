@@ -1,5 +1,6 @@
-import { useAuthStore } from "../../auth/stores/authStore";
-import { useBotStatus } from "../../bot-monitor/hooks/useBotStatus";
+import { useAuthStore } from "@/features/auth";
+import { useBotStatus } from "@/features/bot-monitor";
+
 
 import { useState } from "react";
 

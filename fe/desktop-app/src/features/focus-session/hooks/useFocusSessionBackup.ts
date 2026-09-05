@@ -187,7 +187,7 @@ export function useFocusSession() {
                 HEARTBEAT_INTERVAL_SECONDS
             ) {
                 lastHeartbeatElapsedRef.current = currentElapsed;
-                focusApi.heartbeat(latestSession.id).catch((err) => {
+                focusApi.heartbeat(latestSession.id, currentElapsed).catch((err) => {
                     console.error(
                         "[useFocusSession] Heartbeat thất bại (có thể do mất mạng):",
                         err,

@@ -1,4 +1,4 @@
-import api from "../../../lib/axios";
+import api from "@/lib/axios";
 import type { LocationOption } from "../types/profile.types";
 
 export const locationApi = {

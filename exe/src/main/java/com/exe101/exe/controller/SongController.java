@@ -54,4 +54,13 @@ public class SongController {
         songService.deleteSong(userDetails.getId(), songId);
         return ApiResponse.success(null);
     }
+
+    @PostMapping("/seed-system")
+    public ApiResponse<List<SongResponse>> seedSystemSongs(
+            @Valid @RequestBody ScanFolderRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<SongResponse> response = songService.seedSystemSongs(userDetails.getId(), request);
+        return ApiResponse.success(response);
+    }
 }

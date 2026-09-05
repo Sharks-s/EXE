@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-import type { ApiErrorResponse } from "../../../types";
-import { parseApiError } from "../../../utils/error-mapper";
-import { toast } from "../../../shared/store/toastStore";
+import type { ApiErrorResponse } from "@/types";
+import { parseApiError } from "@/utils/error-mapper";
+import { toast } from "@/shared/store/toastStore";
 
 interface UseVerifyFormProps {
     verifyId: string;

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { ChatBubble } from "../../shared/components/ChatBubble";
+import { ChatBubble } from "@/shared/components/ChatBubble";
+
 
 interface BubbleContent {
   message: string | null;

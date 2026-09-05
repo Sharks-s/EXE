@@ -62,6 +62,7 @@ public class AuthServiceImpl implements AuthService {
                 );
 
         User user;
+        boolean[] isNewUser = {false};
 
         if (identityOpt.isPresent()) {
             user = identityOpt.get().getUser();
@@ -84,6 +85,7 @@ public class AuthServiceImpl implements AuthService {
                         if (!userPetService.hasAnyPet(newUser.getId())) {
                             userPetService.provisionDefaultPet(newUser);
                         }
+                        isNewUser[0] = true;
                         return newUser;
                     });
 
@@ -104,7 +106,7 @@ public class AuthServiceImpl implements AuthService {
 
         refreshTokenService.create(user.getId(), refreshToken, deviceId);
 
-        return new OAuthLoginResult(accessToken, refreshToken);
+        return new OAuthLoginResult(accessToken, refreshToken, isNewUser[0]);
     }
 
 

@@ -2,7 +2,8 @@ import { useFocusStore } from "../stores/focusStore";
 import { SetupView } from "./SetupView";
 import { ActiveView } from "./Activeview";
 import { SessionSummaryPopup } from "../components/SessionSummaryPopup";
-import type { Page } from "../../../shared/components/Sidebar";
+import type { Page } from "@/shared/components/Sidebar";
+
 
 type DashboardProps = {
   onNavigate?: (page: Page) => void;

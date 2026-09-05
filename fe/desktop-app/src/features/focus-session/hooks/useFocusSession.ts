@@ -9,11 +9,9 @@ import { useCameraViolationWatch } from "./useCameraViolationWatch";
 import { useAppViolationWatch } from "./useAppViolationWatch";
 import { useBotAction } from "./useBotAction";
 import { useSessionCloseGuard } from "./useSessionCloseGuard";
-import { useTranslation } from "react-i18next";
 
 // ── Hằng số cấu hình (gom lại 1 chỗ, không rải rác trong hàm) ──
 const PROMPT_DURATION_SECONDS = 60;
-const HEARTBEAT_INTERVAL_SECONDS = 60;
 const CYCLE_DURATION_SECONDS = 25 * 60;
 const MAIN_INTERVAL_MS = 1000;
 const FINAL_STRETCH_WARNING_SECONDS = 3 * 60;

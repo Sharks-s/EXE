@@ -1,25 +1,26 @@
-import { useEffect, useState } from "react";
-import { useAuthStore } from "../../features/auth/stores/authStore";
-import { authSession } from "../../features/auth/services/auth.session";
-import { useFocusStore } from "../../features/focus-session/stores/focusStore";
-import { toast } from "../../shared/store/toastStore";
-import Sidebar, { type Page } from "../../shared/components/Sidebar";
-import Auth from "../../features/auth/pages/Auth";
-import { focusApi } from "../../features/focus-session/api/focus.api";
-import Dashboard from "../../features/focus-session/pages/Dashboard";
-import AnalyticsPage from "../../features/analytics/pages/AnalyticsPage";
-import SettingsPage from "../../features/settings/pages/SettingsPage";
-import ProfilePage from "../../features/profile/pages/ProfilePage";
-import UpgradePage from "../../features/upgrade/pages/UpgradePage";
-import Pet from "../../features/pet/pages/PetsPage";
-import SongLibraryView from "../../features/song/pages/SongLibraryView";
-import { SongPlayerProvider } from "../../features/song/pages/SongPlayerContext";
+import { useEffect, useState, useRef } from "react";
+import { Auth, authSession, useAuthStore } from "@/features/auth";
+import { Dashboard, focusApi, useFocusStore } from "@/features/focus-session";
+import { AnalyticsPage } from "@/features/analytics";
+import { SettingsPage } from "@/features/settings";
+import { ProfilePage } from "@/features/profile";
+import { UpgradePage } from "@/features/upgrade";
+import { PetsPage as Pet } from "@/features/pet";
+import {
+  seedSystemSongsService,
+  SongLibraryView,
+  SongPlayerProvider,
+} from "@/features/song";
+import Sidebar, { type Page } from "@/shared/components/Sidebar";
+import { toast } from "@/shared/store/toastStore";
+
 
 export default function MainWindow() {
   const { bootstrap, isInitializing, isAuthenticated } = useAuthStore();
   const { session } = useFocusStore();
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
   const [isCheckingActiveSession, setIsCheckingActiveSession] = useState(true);
+  const hasSeedRunRef = useRef(false);
 
   const isSessionActive = !!session;
 
@@ -32,9 +33,6 @@ export default function MainWindow() {
     }
     setCurrentPage(page);
   };
-  // Lấy user object trực tiếp để dùng làm dependency (isAuthenticated là function, không reactive)
-  const user = useAuthStore((s) => s.user);
-  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Xử lý kết quả redirect từ OAuth (nếu có) RỒI MỚI bootstrap.
   // Backend không gọi được tauriStore.set() ở phía JS, nên frontend phải tự
@@ -47,6 +45,14 @@ export default function MainWindow() {
     async function run() {
       if (oauthSuccess === "true") {
         await authSession.markLoggedIn();
+
+        const isNewUser = params.get("isNewUser") === "true";
+        if (isNewUser && !hasSeedRunRef.current) {
+          hasSeedRunRef.current = true;
+          seedSystemSongsService().catch((err) => {
+            console.error("[MainWindow] Lỗi seed nhạc hệ thống (OAuth):", err);
+          });
+        }
       }
 
       if (oauthError) {

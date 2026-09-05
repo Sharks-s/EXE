@@ -1,4 +1,4 @@
-import api from "../../../lib/axios";
+import api from "@/lib/axios";
 import type { SongResponse, ScanFolderRequest } from "../types/song.types";
 
 export const songApi = {
@@ -28,5 +28,11 @@ export const songApi = {
     // DELETE /songs/{id}
     deleteSong: async (songId: number): Promise<void> => {
         await api.delete(`/songs/${songId}`);
+    },
+
+    // POST /songs/seed-system
+    seedSystemSongs: async (data: ScanFolderRequest): Promise<SongResponse[]> => {
+        const res = await api.post("/songs/seed-system", data);
+        return res.data.data;
     },
 };

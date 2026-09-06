@@ -46,6 +46,7 @@
 .btn-back-dashboard:hover {
   background-color: #f5f2ff;
 }
+
 .progress-ring-wrapper {
   position: relative;
 }
@@ -309,6 +310,7 @@
 
 
 
+/* ── Abort / End Session Confirm Modal ── */
 .abort-confirm-overlay {
   position: fixed;
   inset: 0;
@@ -316,16 +318,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: clamp(12px, 3vw, 20px);
   background: rgba(15, 23, 42, 0.48);
   backdrop-filter: blur(8px);
+  overflow-y: auto;
 }
 
 .abort-confirm-modal {
   width: min(100%, 420px);
-  padding: 24px;
+  max-height: calc(100dvh - clamp(24px, 6vw, 40px));
+  overflow-y: auto;
+  padding: clamp(16px, 3vw, 24px);
   border: 1px solid rgba(254, 202, 202, 0.8);
-  border-radius: 22px;
+  border-radius: clamp(14px, 3vw, 22px);
   background: #ffffff;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
   animation: abort-confirm-in 0.18s ease-out;
@@ -335,12 +340,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 16px;
+  width: clamp(36px, 6vw, 48px);
+  height: clamp(36px, 6vw, 48px);
+  margin-bottom: clamp(10px, 2vw, 16px);
   color: #ef4444;
   background: #fff1f2;
-  border-radius: 16px;
+  border-radius: clamp(10px, 2vw, 16px);
 }
 
 .abort-confirm-icon .material-symbols-outlined {
@@ -350,7 +355,7 @@
 .abort-confirm-copy h2 {
   margin: 0 0 8px;
   color: #0f172a;
-  font-size: 20px;
+  font-size: clamp(16px, 3vw, 20px);
   font-weight: 800;
   line-height: 1.25;
 }
@@ -358,15 +363,15 @@
 .abort-confirm-copy p {
   margin: 0;
   color: #64748b;
-  font-size: 13px;
+  font-size: clamp(12px, 2vw, 13px);
   line-height: 1.55;
 }
 
 .abort-confirm-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 22px;
+  gap: clamp(8px, 2vw, 12px);
+  margin-top: clamp(14px, 3vw, 22px);
 }
 
 .abort-confirm-actions button {
@@ -418,5 +423,13 @@
 @media (max-width: 560px) {
   .actions-footer {
     grid-template-columns: 1fr;
+  }
+
+  .abort-confirm-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .abort-confirm-modal {
+    border-radius: 16px;
   }
 }

@@ -240,137 +240,141 @@ export default function ProfilePage() {
       >
         <div className={`modal-card ${isProfileModalOpen ? "modal-card-open" : ""}`}>
           <div className="modal-header">
-            <h3>Cập nhật hồ sơ</h3>
-            <button className="icon-button" type="button" onClick={closeProfileModal}>
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          </div>
-
-          <form className="password-form profile-form" onSubmit={handleProfileSubmit}>
-            <label>
-              Tên hiển thị
-              <input
-                type="text"
-                value={profileForm.fullName}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    fullName: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-            <label>
-              Số điện thoại
-              <input
-                type="tel"
-                value={profileForm.phoneNumber}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    phoneNumber: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              Giới tính
-              <select
-                value={profileForm.gender}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    gender: event.target.value as Gender,
-                  }))
-                }
-              >
-                <option value="MALE">Nam</option>
-                <option value="FEMALE">Nữ</option>
-                <option value="OTHER">Khác</option>
-              </select>
-            </label>
-            <label>
-              Ngày sinh
-              <input
-                type="date"
-                value={profileForm.dateOfBirth}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    dateOfBirth: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              Địa chỉ
-              <input
-                type="text"
-                value={profileForm.addressLine}
-                maxLength={255}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    addressLine: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-            <label>
-              Tỉnh/thành
-              <select
-                value={profileForm.provinceCode}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    provinceCode: event.target.value,
-                    wardCode: "",
-                  }))
-                }
-                required
-              >
-                <option value="">Chọn tỉnh/thành</option>
-                {provinces.map((province) => (
-                  <option key={province.code} value={province.code}>
-                    {province.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Phường/xã
-              <select
-                value={profileForm.wardCode}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    wardCode: event.target.value,
-                  }))
-                }
-                disabled={!profileForm.provinceCode || isLoadingWards}
-                required
-              >
-                <option value="">
-                  {isLoadingWards ? "Đang tải..." : "Chọn phường/xã"}
-                </option>
-                {wards.map((ward) => (
-                  <option key={ward.code} value={ward.code}>
-                    {ward.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="modal-actions">
-              <button className="ghost-button" type="button" onClick={closeProfileModal}>
-                Hủy
-              </button>
-              <button className="primary-button" type="submit" disabled={isSavingProfile}>
-                {isSavingProfile ? "Đang lưu..." : "Lưu thay đổi"}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
+              <h3>Cập nhật hồ sơ</h3>
+              <button className="icon-button" type="button" onClick={closeProfileModal}>
+                <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-          </form>
+          </div>
+
+          <div className="modal-body">
+            <form className="password-form profile-form" onSubmit={handleProfileSubmit}>
+              <label>
+                Tên hiển thị
+                <input
+                  type="text"
+                  value={profileForm.fullName}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      fullName: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </label>
+              <label>
+                Số điện thoại
+                <input
+                  type="tel"
+                  value={profileForm.phoneNumber}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      phoneNumber: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                Giới tính
+                <select
+                  value={profileForm.gender}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      gender: event.target.value as Gender,
+                    }))
+                  }
+                >
+                  <option value="MALE">Nam</option>
+                  <option value="FEMALE">Nữ</option>
+                  <option value="OTHER">Khác</option>
+                </select>
+              </label>
+              <label>
+                Ngày sinh
+                <input
+                  type="date"
+                  value={profileForm.dateOfBirth}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      dateOfBirth: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                Địa chỉ
+                <input
+                  type="text"
+                  value={profileForm.addressLine}
+                  maxLength={255}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      addressLine: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </label>
+              <label>
+                Tỉnh/thành
+                <select
+                  value={profileForm.provinceCode}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      provinceCode: event.target.value,
+                      wardCode: "",
+                    }))
+                  }
+                  required
+                >
+                  <option value="">Chọn tỉnh/thành</option>
+                  {provinces.map((province) => (
+                    <option key={province.code} value={province.code}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Phường/xã
+                <select
+                  value={profileForm.wardCode}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      wardCode: event.target.value,
+                    }))
+                  }
+                  disabled={!profileForm.provinceCode || isLoadingWards}
+                  required
+                >
+                  <option value="">
+                    {isLoadingWards ? "Đang tải..." : "Chọn phường/xã"}
+                  </option>
+                  {wards.map((ward) => (
+                    <option key={ward.code} value={ward.code}>
+                      {ward.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="modal-actions">
+                <button className="ghost-button" type="button" onClick={closeProfileModal}>
+                  Hủy
+                </button>
+                <button className="primary-button" type="submit" disabled={isSavingProfile}>
+                  {isSavingProfile ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

@@ -49,11 +49,12 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 32px 56px;
+  margin-top: 32px;
 }
 
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   max-width: 720px;
   margin: 0 auto;
@@ -338,6 +339,7 @@
   display: flex;
   gap: 24px;
 }
+
 .yearly-payment p {
   display: block;
 }
@@ -351,4 +353,239 @@
 .new-price {
   font-weight: 700;
   color: #16a34a;
+}
+
+@media (min-width: 1080px) {
+
+  .upgrade-header,
+  .upgrade-body {
+    max-width: 1180px;
+  }
+
+  .upgrade-body {
+    padding-top: 8px;
+  }
+
+  .pricing-grid {
+    max-width: 920px;
+    gap: 24px;
+  }
+
+  .plan-content {
+    padding: 32px 28px 28px;
+  }
+
+  .plan-header {
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .plan-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    font-size: 18px;
+  }
+
+  .plan-header h3 {
+    font-size: 18px;
+  }
+
+  .plan-header p {
+    font-size: 12px;
+  }
+
+  .plan-price span {
+    font-size: 36px;
+  }
+
+  .feature-list {
+    gap: 12px;
+  }
+
+  .feature-item p {
+    font-size: 14px;
+  }
+
+  .plan-button {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 860px) {
+  .upgrade-header {
+    align-items: flex-start;
+    padding: 20px 24px 0;
+  }
+
+  .upgrade-body {
+    padding: 0 24px 40px;
+  }
+
+  .pricing-grid {
+    max-width: 620px;
+    gap: 16px;
+  }
+
+  .plan-content {
+    padding: 24px 20px 20px;
+  }
+
+  .plan-price span {
+    font-size: 28px;
+  }
+
+  .popular-badge {
+    right: 12px;
+    top: 16px;
+    max-width: calc(100% - 24px);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .upgrade-header {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .current-plan-badge {
+    align-self: flex-start;
+    padding: 7px 14px;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+  }
+
+  .plan-card {
+    border-radius: 18px;
+  }
+
+  .plan-content {
+    padding: 22px 18px 18px;
+  }
+
+  .plan-button {
+    margin-top: 18px;
+  }
+
+  .faq-section {
+    margin-top: 32px;
+  }
+}
+
+@media (max-width: 520px) {
+  .upgrade-header {
+    padding: 16px 16px 0;
+  }
+
+  .upgrade-body {
+    padding: 0 16px 28px;
+  }
+
+  .upgrade-header .app-page-title-row {
+    align-items: flex-start;
+  }
+
+  .upgrade-header .app-page-title h1 {
+    font-size: 20px;
+    line-height: 26px;
+  }
+
+  .upgrade-header .app-page-title p {
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .current-plan-badge span {
+    font-size: 12px;
+  }
+
+  .plan-header {
+    align-items: flex-start;
+    padding-right: 74px;
+  }
+
+  .plan-price {
+    margin-bottom: 16px;
+  }
+
+  .plan-price span {
+    font-size: 26px;
+  }
+
+  .feature-list {
+    gap: 8px;
+  }
+
+  .feature-item p {
+    font-size: 12px;
+  }
+
+  .pricing-note {
+    margin-top: 18px;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+}
+
+@media (max-height: 720px) and (min-width: 721px) {
+  .upgrade-header {
+    padding-top: 16px;
+    margin-bottom: 14px;
+  }
+
+  .upgrade-body {
+    padding-bottom: 28px;
+  }
+
+  .plan-content {
+    padding: 20px 18px 18px;
+  }
+
+  .plan-header {
+    margin-bottom: 12px;
+  }
+
+  .plan-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .plan-price {
+    margin-bottom: 14px;
+  }
+
+  .plan-price span {
+    font-size: 26px;
+  }
+
+  .plan-divider {
+    margin-bottom: 14px;
+  }
+
+  .feature-list {
+    gap: 8px;
+  }
+
+  .feature-item p {
+    font-size: 12px;
+    line-height: 1.32;
+  }
+
+  .plan-button {
+    margin-top: 16px;
+    padding: 10px;
+  }
+
+  .pricing-note {
+    margin-top: 16px;
+  }
+
+  .faq-section {
+    margin-top: 28px;
+  }
 }

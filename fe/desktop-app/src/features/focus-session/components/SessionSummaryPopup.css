@@ -1,0 +1,143 @@
+.session-summary-overlay {
+  padding: clamp(8px, 2.4vmin, 16px);
+}
+
+.session-summary-modal {
+  width: min(768px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  border-radius: clamp(18px, 2.6vmin, 28px);
+}
+
+@media (max-width: 860px), (max-height: 780px) {
+  .session-summary-modal {
+    width: min(760px, calc(100vw - 20px));
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+  }
+
+  .session-summary-main,
+  .session-summary-side {
+    padding: 20px !important;
+  }
+
+  .session-summary-side {
+    gap: 16px !important;
+  }
+
+  .session-summary-badge {
+    margin-bottom: 14px !important;
+  }
+
+  .session-summary-title {
+    font-size: 24px !important;
+  }
+
+  .session-summary-note {
+    padding: 10px 14px !important;
+  }
+
+  .session-summary-goal {
+    margin-top: 16px !important;
+    padding: 12px !important;
+  }
+
+  .session-summary-stats {
+    gap: 10px !important;
+  }
+
+  .session-summary-stat {
+    padding: 12px !important;
+  }
+
+  .session-summary-stat strong {
+    font-size: 18px !important;
+  }
+
+  .session-summary-pet {
+    width: 104px !important;
+    height: 104px !important;
+    border-radius: 20px !important;
+  }
+
+  .session-summary-pet-img {
+    width: 78px !important;
+    height: 78px !important;
+  }
+
+  .session-summary-xp p:nth-of-type(2) {
+    font-size: 34px !important;
+  }
+
+  .session-summary-progress,
+  .session-summary-violations {
+    padding: 12px !important;
+  }
+
+  .session-summary-back {
+    padding-block: 12px !important;
+  }
+}
+
+@media (max-height: 680px) and (min-width: 768px) {
+  .session-summary-modal {
+    width: min(700px, calc(100vw - 16px));
+  }
+
+  .session-summary-layout {
+    grid-template-columns: 1fr 0.72fr !important;
+  }
+
+  .session-summary-main,
+  .session-summary-side {
+    padding: 16px !important;
+  }
+
+  .session-summary-title {
+    font-size: 22px !important;
+  }
+
+  .session-summary-goal {
+    margin-top: 12px !important;
+  }
+
+  .session-summary-stats {
+    margin-top: 12px !important;
+  }
+
+  .session-summary-stat .mb-3 {
+    margin-bottom: 8px !important;
+  }
+
+  .session-summary-pet {
+    width: 88px !important;
+    height: 88px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .session-summary-pet-img {
+    width: 66px !important;
+    height: 66px !important;
+  }
+
+  .session-summary-xp p:nth-of-type(2) {
+    margin-top: 0 !important;
+    font-size: 30px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .session-summary-modal {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 18px;
+  }
+
+  .session-summary-main,
+  .session-summary-side {
+    padding: 16px !important;
+  }
+
+  .session-summary-stats {
+    grid-template-columns: 1fr !important;
+  }
+}

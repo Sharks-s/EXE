@@ -4,6 +4,7 @@ import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
 import com.exe101.exe.dto.request.UpdateAiAddressRequest;
+import com.exe101.exe.dto.request.UpdateUserPersonalityRequest;
 import com.exe101.exe.dto.response.CloudinaryUploadResponse;
 import com.exe101.exe.dto.response.DailyUsageResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
@@ -322,6 +323,20 @@ public class UserServiceImpl implements UserService {
         );
 
         userRepository.save(user);
+        return findByIdWithRoles(userId);
+    }
+
+    @Override
+    @Transactional
+    public User updateUserPersonality(Long userId, UpdateUserPersonalityRequest request) {
+        User user = findById(userId);
+
+        Personality personality = personalityRepository.findById(request.personalityId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
+
+        user.setPersonality(personality);
+        userRepository.save(user);
+
         return findByIdWithRoles(userId);
     }
 

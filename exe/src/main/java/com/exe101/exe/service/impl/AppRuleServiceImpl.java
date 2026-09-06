@@ -1,11 +1,17 @@
 package com.exe101.exe.service.impl;
 
 import com.exe101.exe.config.AppSeedProperties;
+import com.exe101.exe.dto.request.CreateAppRuleRequest;
+import com.exe101.exe.dto.response.AppRuleResponse;
 import com.exe101.exe.dto.response.AppRulesResponse;
+import com.exe101.exe.exception.BusinessException;
+import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.AppRule;
+import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.enums.RuleType;
 import com.exe101.exe.repository.AppRuleRepository;
 import com.exe101.exe.service.AppRuleService;
+import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +28,7 @@ public class AppRuleServiceImpl implements AppRuleService {
 
     private final AppSeedProperties appSeedProperties;
     private final AppRuleRepository appRuleRepository;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -29,9 +36,12 @@ public class AppRuleServiceImpl implements AppRuleService {
         if (appSeedProperties.getAppRules() == null) return;
 
         for (AppSeedProperties.AppRuleSeed seed : appSeedProperties.getAppRules()) {
+            String appName = seed.getAppName() != null ? seed.getAppName().trim() : null;
+            String windowTitleKeyword = seed.getWindowTitleKeyword() != null ? seed.getWindowTitleKeyword().trim() : null;
+
             if (appRuleRepository.existsByUserIsNullAndAppNameAndWindowTitleKeywordAndRuleType(
-                    seed.getAppName(),
-                    seed.getWindowTitleKeyword(),
+                    appName,
+                    windowTitleKeyword,
                     seed.getRuleType()
             )) {
                 continue;
@@ -39,13 +49,63 @@ public class AppRuleServiceImpl implements AppRuleService {
 
             AppRule appRule = AppRule.builder()
                     .user(null)
-                    .appName(seed.getAppName())
-                    .windowTitleKeyword(seed.getWindowTitleKeyword())
+                    .appName(appName)
+                    .windowTitleKeyword(windowTitleKeyword)
                     .ruleType(seed.getRuleType())
                     .build();
 
             appRuleRepository.save(appRule);
         }
+    }
+
+    @Override
+    public List<AppRuleResponse> getMyRules(Long userId) {
+        return appRuleRepository.findByUserId(userId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public AppRuleResponse createRule(Long userId, CreateAppRuleRequest request) {
+        User user = userService.findById(userId);
+
+        String keyword = request.keyword().toLowerCase().trim();
+
+        if (appRuleRepository.existsByUserIdAndWindowTitleKeywordAndRuleType(userId, keyword, request.ruleType())) {
+            throw new BusinessException(ErrorCode.APP_RULE_ALREADY_EXISTS);
+        }
+
+        AppRule rule = AppRule.builder()
+                .user(user)
+                .appName(null)
+                .windowTitleKeyword(keyword)
+                .ruleType(request.ruleType())
+                .build();
+
+        return toResponse(appRuleRepository.save(rule));
+    }
+
+    @Override
+    @Transactional
+    public void deleteRule(Long userId, Long ruleId) {
+        AppRule rule = appRuleRepository.findByIdAndUserId(ruleId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.APP_RULE_NOT_FOUND));
+
+        appRuleRepository.delete(rule);
+    }
+
+    private AppRuleResponse toResponse(AppRule rule) {
+        String keyword = rule.getWindowTitleKeyword() != null
+                ? rule.getWindowTitleKeyword()
+                : rule.getAppName();
+
+        return AppRuleResponse.builder()
+                .id(rule.getId())
+                .keyword(keyword)
+                .ruleType(rule.getRuleType())
+                .build();
     }
 
     @Override

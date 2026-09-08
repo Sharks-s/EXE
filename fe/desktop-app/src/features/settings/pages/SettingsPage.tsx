@@ -13,6 +13,7 @@ import { queryClient } from "@/lib/queryClient";
 import { toast } from "@/shared/store/toastStore";
 import "./SettingsPage.css";
 import type { AppRuleResponse } from "../types/settings.types";
+import { useTranslation } from "react-i18next";
 
 type Language = "vi" | "en";
 type AppListTab = "whitelist" | "blacklist";
@@ -40,6 +41,7 @@ export default function SettingsPage() {
   const [selfAddress, setSelfAddress] = useState("");
   const [userAddress, setUserAddress] = useState("");
   const [isSavingAiAddress, setIsSavingAiAddress] = useState(false);
+  const { i18n } = useTranslation();
 
   // ── Ngôn ngữ ── (TODO: nối i18n thật)
   const [language, setLanguage] = useState<Language>("vi");
@@ -211,6 +213,15 @@ export default function SettingsPage() {
     }
   };
 
+  const handleChangeLanguage = async (lang: "vi" | "en") => {
+    i18n.changeLanguage(lang); // đổi UI ngay lập tức
+    try {
+      await settingsApi.changeLanguage({ language: lang });
+    } catch {
+      toast.error("Không thể lưu ngôn ngữ lên tài khoản (vẫn áp dụng trên máy này).");
+    }
+  };
+
   return (
     <div>
       <main className="main-content">
@@ -310,28 +321,24 @@ export default function SettingsPage() {
             <div className="language-options">
               <button
                 type="button"
-                className={`language-option ${language === "vi" ? "language-option-active" : ""}`}
-                onClick={() => setLanguage("vi")}
+                className={`language-option ${i18n.language === "vi" ? "language-option-active" : ""}`}
+                onClick={() => handleChangeLanguage("vi")}
               >
                 <span className="language-flag">🇻🇳</span>
                 <span>Tiếng Việt</span>
-                {language === "vi" && (
-                  <span className="material-symbols-outlined check-icon">
-                    check_circle
-                  </span>
+                {i18n.language === "vi" && (
+                  <span className="material-symbols-outlined check-icon">check_circle</span>
                 )}
               </button>
               <button
                 type="button"
-                className={`language-option ${language === "en" ? "language-option-active" : ""}`}
-                onClick={() => setLanguage("en")}
+                className={`language-option ${i18n.language === "en" ? "language-option-active" : ""}`}
+                onClick={() => handleChangeLanguage("en")}
               >
                 <span className="language-flag">🇬🇧</span>
                 <span>English</span>
-                {language === "en" && (
-                  <span className="material-symbols-outlined check-icon">
-                    check_circle
-                  </span>
+                {i18n.language === "en" && (
+                  <span className="material-symbols-outlined check-icon">check_circle</span>
                 )}
               </button>
             </div>

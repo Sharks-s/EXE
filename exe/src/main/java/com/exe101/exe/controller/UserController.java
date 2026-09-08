@@ -4,6 +4,7 @@ import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.UpdateAiAddressRequest;
 import com.exe101.exe.dto.request.UpdateUserPersonalityRequest;
+import com.exe101.exe.dto.request.ChangeLanguageRequest;
 import com.exe101.exe.dto.response.ApiResponse;
 import com.exe101.exe.dto.response.DailyUsageResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
@@ -112,6 +113,15 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         User user = userService.updateUserPersonality(userDetails.getId(), request);
+        return ApiResponse.success(userMapper.toSummary(user));
+    }
+
+    @PutMapping("/language")
+    public ApiResponse<UserSummary> changeLanguage(
+            @Valid @RequestBody ChangeLanguageRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        User user = userService.changeLanguage(userDetails.getId(), request);
         return ApiResponse.success(userMapper.toSummary(user));
     }
 }

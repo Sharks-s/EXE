@@ -6,7 +6,8 @@ import type {
     UpdateUserPersonalityRequest,
     PersonalityResponse,
     AppRuleResponse,
-    CreateAppRuleRequest
+    CreateAppRuleRequest,
+    ChangeLanguageRequest
 } from "../types/settings.types";
 
 export const settingsApi = {
@@ -43,4 +44,10 @@ export const settingsApi = {
     // DELETE /app-rules/me/{ruleId}
     deleteAppRule: (ruleId: number) =>
         api.delete<ApiResponse<null>>(`/app-rules/me/${ruleId}`).then((r) => r.data),
+
+    // PUT /users/me/language
+    changeLanguage: (data: ChangeLanguageRequest) =>
+        api
+            .put<ApiResponse<UserSummary>>("/users/me/language", data)
+            .then((r) => r.data.data),
 };

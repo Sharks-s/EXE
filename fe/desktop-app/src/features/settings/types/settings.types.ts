@@ -22,6 +22,7 @@ export interface UserSummary {
     roles?: string[];
     aiSelfAddress?: string | null;
     aiUserAddress?: string | null;
+    preferredLanguage?: string | null;
 }
 
 export interface UpdateAiAddressRequest {
@@ -52,4 +53,8 @@ export interface AppRuleResponse {
 export interface CreateAppRuleRequest {
     keyword: string;
     ruleType: RuleType;
+}
+
+export interface ChangeLanguageRequest {
+    language: string;
 }

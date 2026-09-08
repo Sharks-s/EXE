@@ -33,4 +33,5 @@ public class UserSummary {
     private Long personalityId;
     private String personalityCode;
     private List<String> roles;
+    private String preferredLanguage;
 }

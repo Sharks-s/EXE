@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { analyticsApi } from "../api/analytics.api";
+import { toast } from "@/shared/store/toastStore";
 import type {
     AnalyticsRange,
     AnalyticsSummary,
@@ -11,6 +13,8 @@ import type {
 } from "../types/analytics.types";
 
 export function useAnalytics() {
+    const { t } = useTranslation("common");
+
     const [range, setRange] = useState<AnalyticsRange>("WEEK");
     const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
     const [focusTime, setFocusTime] = useState<FocusTimeAnalytics | null>(null);
@@ -20,7 +24,6 @@ export function useAnalytics() {
     const [calendar, setCalendar] = useState<CalendarHeatmap | null>(null);
     const [calendarDate, setCalendarDate] = useState(() => new Date());
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState("");
 
     const calendarYear = calendarDate.getFullYear();
     const calendarMonth = calendarDate.getMonth() + 1;
@@ -47,7 +50,6 @@ export function useAnalytics() {
         const loadAnalytics = async () => {
             try {
                 setIsLoading(true);
-                setError("");
 
                 const [
                     summaryResult,
@@ -71,16 +73,29 @@ export function useAnalytics() {
                 if (goalsResult.status === "fulfilled") setGoals(goalsResult.value);
                 if (violationsResult.status === "fulfilled") setViolations(violationsResult.value);
 
-                const hasFailure = [
+                const failedResults = [
                     summaryResult,
                     focusTimeResult,
                     hourlyResult,
                     goalsResult,
                     violationsResult,
-                ].some((result) => result.status === "rejected");
+                ].filter((result) => result.status === "rejected");
 
-                if (hasFailure) {
-                    setError("Một vài thống kê chưa tải được, đang hiển thị phần còn lại.");
+                // Log chi tiết lỗi hệ thống ra console để debug — không cần dịch, chỉ dev xem
+                failedResults.forEach((result) => {
+                    if (result.status === "rejected") {
+                        console.error("[useAnalytics] Lỗi tải dữ liệu:", result.reason);
+                    }
+                });
+
+                // Báo cho user biết bằng toast, nội dung qua t() để đổi theo ngôn ngữ
+                if (failedResults.length > 0) {
+                    toast.error(
+                        t("analytics.partial_load_error", {
+                            defaultValue:
+                                "Một vài thống kê chưa tải được, đang hiển thị phần còn lại.",
+                        }),
+                    );
                 }
             } finally {
                 if (!cancelled) setIsLoading(false);
@@ -91,7 +106,7 @@ export function useAnalytics() {
         return () => {
             cancelled = true;
         };
-    }, [range]);
+    }, [range, t]);
 
     useEffect(() => {
         let cancelled = false;
@@ -101,10 +116,14 @@ export function useAnalytics() {
                 const calendarResult = await analyticsApi.getCalendar(calendarYear, calendarMonth);
                 if (!cancelled) setCalendar(calendarResult);
             } catch (err) {
-                console.error(err);
+                console.error("[useAnalytics] Lỗi tải lịch heatmap:", err);
                 if (!cancelled) {
                     setCalendar(null);
-                    setError("Chưa tải được tần suất tập trung của tháng này.");
+                    toast.error(
+                        t("analytics.calendar_load_error", {
+                            defaultValue: "Chưa tải được tần suất tập trung của tháng này.",
+                        }),
+                    );
                 }
             }
         };
@@ -113,7 +132,7 @@ export function useAnalytics() {
         return () => {
             cancelled = true;
         };
-    }, [calendarMonth, calendarYear]);
+    }, [calendarMonth, calendarYear, t]);
 
     return {
         range,
@@ -126,7 +145,6 @@ export function useAnalytics() {
         calendar,
         calendarDate,
         isLoading,
-        error,
         canGoNextCalendarMonth,
         changeCalendarMonth,
     };

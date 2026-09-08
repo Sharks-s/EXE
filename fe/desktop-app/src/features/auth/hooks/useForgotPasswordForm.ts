@@ -19,7 +19,7 @@ interface UseForgotPasswordFormProps {
 }
 
 export function useForgotPasswordForm({ onSuccess }: UseForgotPasswordFormProps) {
-    const { t } = useTranslation(["validationErrors", "common", "businessErrors"]);
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
 
     const {
@@ -48,7 +48,7 @@ export function useForgotPasswordForm({ onSuccess }: UseForgotPasswordFormProps)
                 Object.entries(fieldErrors).forEach(([field, message]) => {
                     setError(field as FieldPath<ForgotPasswordRequest>, {
                         type: "server",
-                        message: message ?? "Invalid",
+                        message: message ?? t("errorCodes.VAL_001", { defaultValue: "Dữ liệu không hợp lệ" }),
                     });
                 });
 
@@ -56,7 +56,10 @@ export function useForgotPasswordForm({ onSuccess }: UseForgotPasswordFormProps)
                     toast.error(globalMessage);
                 }
             } else {
-                toast.error(t("businessErrors:SYS_001"));
+                const fallbackMessage = t("errorCodes.SYS_001", {
+                    defaultValue: "Lỗi hệ thống, vui lòng thử lại sau",
+                });
+                toast.error(fallbackMessage);
             }
         } finally {
             setLoading(false);

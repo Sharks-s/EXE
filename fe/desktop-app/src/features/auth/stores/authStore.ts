@@ -16,6 +16,7 @@ import type {
   RegisterResponse,
   VerifyRegisterResponse,
 } from "../types/auth.types";
+import i18n from "@/i18n";
 
 interface AuthState {
   user: User | null;
@@ -42,6 +43,14 @@ interface AuthState {
   isAuthenticated: () => boolean;
 }
 
+// ── Sync ngôn ngữ bất đồng bộ & an toàn 
+async function syncLanguageFromUser(user: User | null) {
+  const preferredLanguage = user?.preferredLanguage;
+  if (preferredLanguage && preferredLanguage !== i18n.language) {
+    await i18n.changeLanguage(preferredLanguage);
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isInitializing: true,
@@ -58,6 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     try {
       const user = await exchangeService();
+      await syncLanguageFromUser(user);
       set({ user, isInitializing: false });
     } catch {
       set({ user: null, isInitializing: false });
@@ -68,10 +78,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const user = await loginService(data);
+      await syncLanguageFromUser(user);
       set({ user });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
-      set({ error: message });
+      set({ error: err instanceof Error ? err.message : "LOGIN_FAILED" });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -84,8 +94,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       return await registerInitService(data);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Đăng ký thất bại";
-      set({ error: message });
+      set({ error: err instanceof Error ? err.message : "REGISTER_FAILED" });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -98,8 +107,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       return await verifyOtpService(data);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Mã OTP không đúng";
-      set({ error: message });
+      set({ error: err instanceof Error ? err.message : "OTP_INVALID" });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -111,10 +119,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const user = await completeRegisterService(data);
-      set({ user }); // auto login → drive UI sang SetupProfile hoặc Dashboard
+      await syncLanguageFromUser(user);
+      set({ user });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Có lỗi xảy ra";
-      set({ error: message });
+      set({ error: err instanceof Error ? err.message : "COMPLETE_FAILED" });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -126,7 +134,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await logoutService();
     } finally {
-      set({ user: null, isLoading: false });
+      set({ user: null, error: null, isLoading: false });
     }
   },
 

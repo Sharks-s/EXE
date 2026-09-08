@@ -8,7 +8,7 @@ import type {
   GoalAnalytics,
   HourlyAnalytics,
   ViolationAnalytics,
-} from "../types/analytics.types";
+} from "../index";
 
 const ANALYTICS_ENDPOINT = "/users/me/analytics";
 

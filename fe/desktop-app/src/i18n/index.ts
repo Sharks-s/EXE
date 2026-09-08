@@ -8,8 +8,11 @@ import enBusiness from "./locales/en/businessErrors.json";
 import viCommon from "./locales/vi/common.json";
 import enCommon from "./locales/en/common.json";
 
+const STORAGE_KEY = "focusbuddy_language";
+const savedLanguage = localStorage.getItem(STORAGE_KEY) ?? "vi";
+
 i18n.use(initReactI18next).init({
-  lng: "vi",
+  lng: savedLanguage,
   fallbackLng: "en",
 
   resources: {
@@ -30,6 +33,10 @@ i18n.use(initReactI18next).init({
   },
 
   missingKeyHandler: false,
+});
+
+i18n.on("languageChanged", (lng) => {
+  localStorage.setItem(STORAGE_KEY, lng);
 });
 
 export default i18n;

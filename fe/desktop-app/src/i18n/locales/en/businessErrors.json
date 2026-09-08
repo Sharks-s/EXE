@@ -1,21 +1,16 @@
 {
   "VAL_001": "Validation failed",
-
   "BUS_001": "Resource not found",
   "BUS_002": "Resource already exists",
   "BUS_003": "Business operation failed",
-
   "SEC_001": "Unauthorized",
   "SEC_002": "Access denied",
   "SEC_003": "Account is locked",
-
   "SYS_001": "Internal server error, please try again later",
   "SYS_002": "External service error",
-
   "USER_001": "User not found",
   "USER_002": "User is already active",
   "USER_003": "User ID not found",
-
   "AUTH_001": "Email already exists",
   "AUTH_002": "Please verify your email",
   "AUTH_003": "Account is not active",
@@ -46,18 +41,34 @@
   "AUTH_028": "Identity not found",
   "AUTH_029": "Refresh token has been reused",
   "AUTH_030": "Session has expired",
-
   "PERSONALITY_001": "Personality not found",
-
+  "PERSONALITY_002": "Personality code already exists",
+  "PERSONALITY_003": "Personality description not found",
+  "LOCATION_001": "Province not found",
+  "LOCATION_002": "Ward not found",
+  "LOCATION_003": "Invalid address",
   "SESSION_001": "Focus session not found",
   "SESSION_002": "Session has already ended",
   "SESSION_003": "A session is already running",
   "SESSION_004": "Unauthorized access to this session",
   "SESSION_005": "Session is not in progress",
   "SESSION_006": "Session cycle has not been completed yet",
-
+  "SESSION_007": "Session has already been paused",
+  "SESSION_008": "Session is not paused",
+  "SESSION_009": "No break time available",
   "PREMIUM_001": "Daily usage limit exceeded",
-
   "PET_001": "Default pet not found",
-  "PET_002": "User personality is not set"
+  "PET_002": "User personality is not set",
+  "PET_003": "Default pet is not configured",
+  "PET_004": "Failed to provision default pet for user",
+  "PET_005": "User pet not found",
+  "PET_006": "Pet not found",
+  "PET_007": "You already own this pet",
+  "AI_001": "Failed to parse AI response",
+  "AI_002": "Prompt template not found",
+  "SONG_001": "Song not found",
+  "SONG_002": "Unauthorized access to song",
+  "SONG_003": "Cannot delete system song",
+  "APPRULE_001": "App rule not found",
+  "APPRULE_002": "App rule already exists"
 }

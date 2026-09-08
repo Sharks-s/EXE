@@ -5,6 +5,7 @@ import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
 import com.exe101.exe.dto.request.UpdateAiAddressRequest;
 import com.exe101.exe.dto.request.UpdateUserPersonalityRequest;
+import com.exe101.exe.dto.request.ChangeLanguageRequest;
 import com.exe101.exe.dto.response.CloudinaryUploadResponse;
 import com.exe101.exe.dto.response.DailyUsageResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
@@ -337,6 +338,20 @@ public class UserServiceImpl implements UserService {
         user.setPersonality(personality);
         userRepository.save(user);
 
+        return findByIdWithRoles(userId);
+    }
+
+    @Override
+    @Transactional
+    public User changeLanguage(Long userId, ChangeLanguageRequest request) {
+        User user = findById(userId);
+
+        user.setPreferredLanguage(
+                (request.language() != null && !request.language().isBlank())
+                        ? request.language().trim() : null
+        );
+
+        userRepository.save(user);
         return findByIdWithRoles(userId);
     }
 

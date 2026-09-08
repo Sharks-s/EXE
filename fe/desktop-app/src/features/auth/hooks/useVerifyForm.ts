@@ -34,6 +34,11 @@ export function useVerifyForm({
 
     const otp = digits.join("");
 
+    // ── Sync prop expiresInSeconds vào state khi prop đổi ──
+    useEffect(() => {
+        setRemaining(expiresInSeconds);
+    }, [expiresInSeconds]);
+
     // ── Countdown Timer ────────────────────────────────
     useEffect(() => {
         if (remaining <= 0) return;
@@ -131,12 +136,11 @@ export function useVerifyForm({
             if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
                 const { globalMessage } = parseApiError(err.response.data);
                 const msg = globalMessage || t("businessErrors:SYS_001");
-                setError(msg);
-                toast.error(msg);
+                setError(msg); // Hiển thị inline dưới ô OTP
             } else {
                 const msg = t("businessErrors:SYS_001");
                 setError(msg);
-                toast.error(msg);
+                toast.error(msg); // Lỗi mạng / server crash thì bắn Toast
             }
         } finally {
             setLoading(false);

@@ -27,14 +27,19 @@ type Mode =
 
 export default function Auth() {
   const [mode, setMode] = useState<Mode>("auth");
-  const [registerResult, setRegisterResult] = useState<RegisterResponse | null>(
-    null,
-  );
-  const [resetResult, setResetResult] = useState<ForgotPasswordResponse | null>(
-    null,
-  );
+  const [registerResult, setRegisterResult] = useState<RegisterResponse | null>(null);
+  const [resetResult, setResetResult] = useState<ForgotPasswordResponse | null>(null);
   const [resetEmail, setResetEmail] = useState("");
   const [sessionToken, setSessionToken] = useState<string>("");
+
+  // Helper reset sạch toàn bộ state auth dở dang
+  const resetAllState = () => {
+    setRegisterResult(null);
+    setResetResult(null);
+    setResetEmail("");
+    setSessionToken("");
+    setMode("auth");
+  };
 
   return (
     <AuthLayout mode={mode}>
@@ -49,7 +54,7 @@ export default function Auth() {
         }}
       />
 
-      {/* Slot 2 — VerifyForm hoặc PasswordForm */}
+      {/* Slot 2 — VerifyForm (Đăng ký) */}
       {mode === "verify" && registerResult && (
         <VerifyForm
           email={registerResult.email}
@@ -67,18 +72,22 @@ export default function Auth() {
             setSessionToken(token);
             setMode("password");
           }}
-          onBack={() => setMode("auth")}
+          onBack={resetAllState}
         />
       )}
+
+      {/* Slot 3 — PasswordForm (Đặt mật khẩu sau khi verify Đăng ký) */}
       {mode === "password" && (
         <PasswordForm
           sessionToken={sessionToken}
           onSuccess={() => {
-            setRegisterResult(null);
+            resetAllState(); // Clear sạch state & đưa về màn login
           }}
-          onBack={() => setMode("verify")}
+          onBack={resetAllState} // Khuyên dùng resetAllState thay vì quay lại verify
         />
       )}
+
+      {/* Slot 4 — ForgotPasswordForm */}
       {mode === "forgot" && (
         <ForgotPasswordForm
           onSuccess={(res, email) => {
@@ -89,6 +98,8 @@ export default function Auth() {
           onBack={() => setMode("auth")}
         />
       )}
+
+      {/* Slot 5 — VerifyForm (Quên mật khẩu) */}
       {mode === "reset-otp" && resetResult && (
         <VerifyForm
           email={resetResult.email}
@@ -109,15 +120,12 @@ export default function Auth() {
           onBack={() => setMode("forgot")}
         />
       )}
+
+      {/* Slot 6 — ResetPasswordForm */}
       {mode === "reset-password" && (
         <ResetPasswordForm
           sessionToken={sessionToken}
-          onSuccess={() => {
-            setSessionToken("");
-            setResetResult(null);
-            setResetEmail("");
-            setMode("auth");
-          }}
+          onSuccess={resetAllState}
           onBack={() => setMode("reset-otp")}
         />
       )}

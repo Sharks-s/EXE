@@ -4,6 +4,8 @@ package com.exe101.exe.service;
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.UpdateAiAddressRequest;
+import com.exe101.exe.dto.request.UpdateUserPersonalityRequest;
+import com.exe101.exe.dto.request.ChangeLanguageRequest;
 import com.exe101.exe.dto.response.DailyUsageResponse;
 import com.exe101.exe.dto.response.ProfileCompletionResponse;
 import com.exe101.exe.model.entity.User;
@@ -46,4 +48,8 @@ public interface UserService {
     //User createByAdmin(CreateUserByAdminRequest request);
 
     User updateAiAddress(Long userId, UpdateAiAddressRequest request);
+
+    User updateUserPersonality(Long userId, UpdateUserPersonalityRequest request);
+
+    User changeLanguage(Long userId, ChangeLanguageRequest request);
 }

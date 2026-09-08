@@ -5,7 +5,6 @@ import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.OtpRedis;
 import com.exe101.exe.model.enums.OtpStatus;
-import com.exe101.exe.model.enums.OtpType;
 import com.exe101.exe.repository.OtpStore;
 import com.exe101.exe.service.OtpService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -53,13 +51,11 @@ public class OtpServiceImpl implements OtpService {
                 ttl
         );
 
-        // Lưu mapping userId → verifyId để lần sau tìm được
         otpStore.saveUserMapping(userId, verifyId, ttl);
 
         mockMailService.sendRegisterOtp(email, otp);
         return verifyId;
     }
-
 
     @Override
     public OtpRedis verifyRegisterOtp(String verifyId, String otpInput) {
@@ -80,22 +76,28 @@ public class OtpServiceImpl implements OtpService {
             throw new BusinessException(ErrorCode.OTP_ALREADY_USED);
         }
 
-        if (!otpInput.equals(otp.getCode())) {
-            long attempts = otpStore.increaseAttempts(verifyId);
+        if (!otpStore.matchesCode(otp, otpInput)) {
+            // recordFailedAttempt tự kiểm tra BLOCKED + tăng attempts + tự set BLOCKED nếu vượt ngưỡng,
+            // tất cả trong 1 lệnh Lua atomic
+            long attempts = otpStore.recordFailedAttempt(verifyId, otpProperties.getMaxAttempts());
 
             if (attempts >= otpProperties.getMaxAttempts()) {
-                otpStore.markBlocked(verifyId);
                 throw new BusinessException(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED);
             }
 
             throw new BusinessException(ErrorCode.INVALID_OTP);
         }
 
+        // Atomic consume: chỉ 1 trong nhiều request đồng thời được phép thắng.
+        // Nếu request này thua (request khác đã consume trước), trả lỗi thay vì tiếp tục xử lý
+        // (tránh tạo 2 session/activate account 2 lần khi user double-submit).
+        boolean consumed = otpStore.consumeRegisterOtp(verifyId);
+        if (!consumed) {
+            throw new BusinessException(ErrorCode.OTP_ALREADY_USED);
+        }
 
-        otpStore.markUsed(verifyId);
         otpStore.delete(verifyId);
 
         return otp;
     }
-
 }

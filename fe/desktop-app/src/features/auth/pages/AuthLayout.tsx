@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./AuthLayout.css";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
 
 type AuthMode =
   | "auth"
@@ -18,28 +19,33 @@ export default function AuthLayout({
   children: React.ReactNode;
   mode: AuthMode;
 }) {
-  const childrenArray = React.Children.toArray(children);
+  // Bóc tách trực tiếp cực kỳ tường minh
+  const [loginForm, registerForm, ...dynamicForms] =
+    React.Children.toArray(children);
+  const dynamicForm = dynamicForms[0];
+
   const [active, setActive] = useState(false);
   const { t } = useTranslation("common");
 
   return (
-    <div className="auth-container relative min-h-screen bg-black flex items-center justify-center ">
-      {/* <AuthBackground /> */}
+    <div className="auth-container relative min-h-screen bg-black flex items-center justify-center">
+      <div className="fixed top-6 right-6 z-50">
+        <LanguageSwitcher />
+      </div>
 
       <div className="auth-wrapper">
         {mode === "auth" && (
           <div className={`auth-card ${active ? "active" : ""}`}>
             <div className="auth-form auth-form-signin">
-              <div className="left-child">{childrenArray[0]}</div>
+              <div className="left-child">{loginForm}</div>
             </div>
 
             <div className="auth-form auth-form-signup">
-              <div className="right-child">{childrenArray[1]}</div>
+              <div className="right-child">{registerForm}</div>
             </div>
 
             <div className="auth-toggle">
               <div className="auth-toggle-slider">
-                {/* LEFT — hiện khi đang ở tab Register, mời Sign In */}
                 <div className="auth-toggle-panel auth-toggle-left text-center">
                   <h1 className="text-3xl font-bold tracking-wide text-black">
                     {t("auth.toggle_signin_title", {
@@ -60,7 +66,6 @@ export default function AuthLayout({
                   </button>
                 </div>
 
-                {/* RIGHT — hiện khi đang ở tab Login, mời Sign Up */}
                 <div className="auth-toggle-panel auth-toggle-right text-center">
                   <h1 className="text-3xl font-bold tracking-wide text-black">
                     {t("auth.toggle_signup_title", {
@@ -88,7 +93,7 @@ export default function AuthLayout({
         {mode !== "auth" && (
           <div className="verify-wrapper">
             <div className="verify-card auth-card flex items-center justify-center">
-              {childrenArray[2]}
+              {dynamicForm}
             </div>
           </div>
         )}

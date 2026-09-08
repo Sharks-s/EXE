@@ -96,3 +96,4 @@ export type CalendarHeatmap = {
   month: number;
   items: CalendarHeatmapItem[];
 };
+

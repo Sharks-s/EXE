@@ -107,6 +107,10 @@ public class User {
     @Column(name = "ai_user_address", length = 30)
     private String aiUserAddress; // AI gọi user là gì, null = mặc định "bạn"
 
+    @Size(max = 10)
+    @Column(name = "preferred_language", length = 10)
+    private String preferredLanguage; // Preferred language for the user (e.g., "en", "vi", "fr")
+
     @Column(name = "onboarding_completed", nullable = false)
     @Builder.Default
     private boolean onboardingCompleted = false;

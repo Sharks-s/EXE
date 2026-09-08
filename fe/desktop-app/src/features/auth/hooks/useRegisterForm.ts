@@ -23,7 +23,7 @@ interface UseRegisterFormProps {
 }
 
 export function useRegisterForm({ onRegisterSuccess }: UseRegisterFormProps) {
-  const { t } = useTranslation(["validationErrors", "common"]);
+  const { t } = useTranslation(["validationErrors", "common", "businessErrors"]);
   const [loading, setLoading] = useState(false);
 
   const {
@@ -60,8 +60,10 @@ export function useRegisterForm({ onRegisterSuccess }: UseRegisterFormProps) {
         }
       } else {
         toast.error(
-          t("common:errors.unexpected", {
-            defaultValue: "An unexpected error occurred.",
+          t("businessErrors:SYS_001", {
+            defaultValue: t("common:errors.unexpected", {
+              defaultValue: "An unexpected error occurred.",
+            }),
           })
         );
       }

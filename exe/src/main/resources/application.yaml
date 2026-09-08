@@ -10,13 +10,14 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${DDL_AUTO:update}
     show-sql: false
     properties:
       hibernate:
         format_sql: true
+
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   security:
     oauth2:
@@ -29,7 +30,7 @@ spring:
               - openid
               - email
               - profile
-            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
+            redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}
             authorization-grant-type: authorization_code
         provider:
           google:
@@ -37,19 +38,31 @@ spring:
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
             user-name-attribute: sub
+
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:true}
+      timeout: 3s
+      connect-timeout: 3s
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 1s
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 app:
   cors:
     allowed-origins:
-      - http://localhost:5173
-      - http://localhost:1420
+      - ${FRONTEND_URL:http://localhost:5173}
+      - ${DESKTOP_APP_URL:http://localhost:1420}
     allowed-methods:
       - GET
       - POST
@@ -66,11 +79,11 @@ app:
 
   security:
     oauth2:
-      frontend-redirect-url: "http://localhost:1420/"
+      frontend-redirect-url: ${FRONTEND_REDIRECT_URL:http://localhost:1420/}
     jwt:
       access-secret: ${JWT_ACCESS_SECRET}
       refresh-secret: ${JWT_REFRESH_SECRET}
-      refresh-hash-secret: ${JWT_HASH_REFRESH_SECRET}
+      refresh-hash-secret: ${JWT_HASH_REFRESH_SECRET:kP8mX3vQzR5tW1bB9nF7jK4sC0dE2gH6YuUoLI1A=}
       access-expiration-ms: 900000
       refresh-expiration-ms: 2592000000
 
@@ -89,9 +102,10 @@ app:
     max-attempts: 5
 
   cookie:
-    secure: false
+    secure: ${COOKIE_SECURE:false}
     refresh-max-age: 2592000
     same-site: Lax
+
   seed:
     default-pet-code: "MONKI"
     default-personality-code: "SWEET"
@@ -111,23 +125,23 @@ app:
         description: "Challenging, provocative, and roasts your ego mercilessly."
         premium: true
     pets:
-      - code : "MONKI"
-        name : "Monkey"
-        description : "A playful and mischievous companion that loves to swing from trees and eat bananas."
-        premium : false
+      - code: "MONKI"
+        name: "Monkey"
+        description: "A playful and mischievous companion that loves to swing from trees and eat bananas."
+        premium: false
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/MONKI_vtf7p6.png"
-      - code : "PANDO"
+      - code: "PANDO"
         name: "Panda"
         description: "A gentle and cuddly companion that loves to eat bamboo and nap in the sun."
         premium: false
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/PANDO_gs0n1c.png"
-      - code : "PIGGY"
-        name : "Pig"
+      - code: "PIGGY"
+        name: "Pig"
         description: "A cute and friendly companion that loves to roll in the mud and eat snacks."
         premium: true
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/PIGGY_kky3tf.png"
-      - code : "FROGI"
-        name : "Frog"
+      - code: "FROGI"
+        name: "Frog"
         description: "A lively and energetic companion that loves to hop around and catch flies."
         premium: true
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/FROGI_dxvowf.png"
@@ -172,4 +186,3 @@ app:
     model: "google/gemini-2.5-flash"
     timeout-seconds: 10
     max-tokens: 300
-

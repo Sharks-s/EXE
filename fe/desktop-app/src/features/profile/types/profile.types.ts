@@ -37,6 +37,9 @@ export interface UserSummary {
   personalityId?: number | string;
   personalityCode?: string | null;
   roles?: string[];
+  aiSelfAddress?: string | null;
+  aiUserAddress?: string | null;
+  preferredLanguage?: string | null;
 }
 
 export interface ProfileCompletionResponse {

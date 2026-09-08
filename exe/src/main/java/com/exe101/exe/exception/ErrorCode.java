@@ -105,6 +105,10 @@ public enum ErrorCode {
     SONG_NOT_FOUND("SONG_001", HttpStatus.NOT_FOUND, "Song not found"),
     SONG_UNAUTHORIZED_ACCESS("SONG_002", HttpStatus.FORBIDDEN, "Unauthorized access to song"),
     SONG_CANNOT_DELETE_SYSTEM("SONG_003", HttpStatus.BAD_REQUEST, "Cannot delete system song"),
+
+    // ===== APPRULE =====
+    APP_RULE_NOT_FOUND("APPRULE_001", HttpStatus.NOT_FOUND, "App rule not found"),
+    APP_RULE_ALREADY_EXISTS("APPRULE_002", HttpStatus.CONFLICT, "App rule already exists")
     ;
     private final String code;
     private final HttpStatus httpStatus;

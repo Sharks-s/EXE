@@ -1,29 +1,15 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAnalytics } from "../hooks/useAnalytics";
-import type { AnalyticsRange } from "../types/analytics.types";
+import type { AnalyticsRange, AnalyticsViolationType } from "../types/analytics.types";
+import type { RangeOption, SVGChartPath, StatCardData, StatTone, Trend } from "../index";
 import "./AnalyticsPage.css";
 
-type StatTone = "primary" | "success" | "danger" | "warning";
-type Trend = "up" | "down" | "neutral";
-
-const rangeLabels: { range: AnalyticsRange; label: string }[] = [
-  { range: "DAY", label: "Ngày" },
-  { range: "WEEK", label: "Tuần" },
-  { range: "MONTH", label: "Tháng" },
-  { range: "YEAR", label: "Năm" },
-];
-
-const violationLabels: Record<string, string> = {
-  AWAY: "Rời khỏi màn hình",
-  LOOK_AWAY: "Nhìn sang nơi khác",
-  BAD_POSTURE: "Tư thế chưa tốt",
-  POOR_LIGHTING: "Ánh sáng kém",
-  TOO_CLOSE: "Ngồi quá gần",
-  PHONE: "Dùng điện thoại",
-  ENTERTAINMENT: "Ứng dụng giải trí",
-};
-
-const formatMinutes = (minutes?: number) => `${Math.max(Math.round(minutes ?? 0), 0)} phút`;
+const formatMinutes = (minutes: number | undefined, t: (key: string, opts?: any) => string) =>
+  t("analytics.minutes_format", {
+    defaultValue: "{{value}} phút",
+    value: Math.max(Math.round(minutes ?? 0), 0),
+  });
 
 const formatChange = (value?: number, suffix = "") => {
   if (value === undefined || value === null) return "0";
@@ -36,23 +22,8 @@ const trendFromNumber = (value?: number): Trend => {
   return value > 0 ? "up" : "down";
 };
 
-const formatHourRange = (hour: number | null) => {
-  if (hour === null) return "Chưa có dữ liệu";
-  const endHour = (hour + 1) % 24;
-  return `${String(hour).padStart(2, "0")}:00 - ${String(endHour).padStart(2, "0")}:00`;
-};
-
-const formatChartLabel = (dateValue: string) => {
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return dateValue;
-  return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit" }).format(date);
-};
-
-const formatCalendarMonth = (date: Date) =>
-  new Intl.DateTimeFormat("vi-VN", { month: "long", year: "numeric" }).format(date);
-
-const buildChartPath = (items: { focusMinutes: number }[]) => {
-  if (!items.length) return "";
+const buildChartPath = (items: { focusMinutes: number }[]): SVGChartPath | null => {
+  if (!items.length) return null;
   const maxMinutes = Math.max(...items.map((item) => item.focusMinutes), 1);
   const lastIndex = Math.max(items.length - 1, 1);
   const points = items.map((item, index) => ({
@@ -66,6 +37,8 @@ const buildChartPath = (items: { focusMinutes: number }[]) => {
 };
 
 export default function StatisticsPage() {
+  const { t, i18n } = useTranslation("common");
+
   const {
     range,
     setRange,
@@ -77,19 +50,56 @@ export default function StatisticsPage() {
     calendar,
     calendarDate,
     isLoading,
-    error,
     canGoNextCalendarMonth,
     changeCalendarMonth,
   } = useAnalytics();
 
-  const calendarMonthLabel = useMemo(() => formatCalendarMonth(calendarDate), [calendarDate]);
+  // Locale cho Intl.DateTimeFormat đổi theo ngôn ngữ đang chọn
+  const dateLocale = i18n.language === "en" ? "en-US" : "vi-VN";
 
-  const stats = useMemo(
+  const rangeLabels: RangeOption[] = [
+    { range: "DAY", label: t("analytics.range_day", { defaultValue: "Ngày" }) },
+    { range: "WEEK", label: t("analytics.range_week", { defaultValue: "Tuần" }) },
+    { range: "MONTH", label: t("analytics.range_month", { defaultValue: "Tháng" }) },
+    { range: "YEAR", label: t("analytics.range_year", { defaultValue: "Năm" }) },
+  ];
+
+  const violationLabels: Record<AnalyticsViolationType, string> = {
+    AWAY: t("analytics.violation_away", { defaultValue: "Rời khỏi màn hình" }),
+    LOOK_AWAY: t("analytics.violation_look_away", { defaultValue: "Nhìn sang nơi khác" }),
+    BAD_POSTURE: t("analytics.violation_bad_posture", { defaultValue: "Tư thế chưa tốt" }),
+    POOR_LIGHTING: t("analytics.violation_poor_lighting", { defaultValue: "Ánh sáng kém" }),
+    TOO_CLOSE: t("analytics.violation_too_close", { defaultValue: "Ngồi quá gần" }),
+    PHONE: t("analytics.violation_phone", { defaultValue: "Dùng điện thoại" }),
+    ENTERTAINMENT: t("analytics.violation_entertainment", { defaultValue: "Ứng dụng giải trí" }),
+  };
+
+  const formatHourRange = (hour: number | null) => {
+    if (hour === null) return t("analytics.no_data", { defaultValue: "Chưa có dữ liệu" });
+    const endHour = (hour + 1) % 24;
+    return `${String(hour).padStart(2, "0")}:00 - ${String(endHour).padStart(2, "0")}:00`;
+  };
+
+  const formatChartLabel = (dateValue: string) => {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return dateValue;
+    return new Intl.DateTimeFormat(dateLocale, { day: "2-digit", month: "2-digit" }).format(date);
+  };
+
+  const formatCalendarMonth = (date: Date) =>
+    new Intl.DateTimeFormat(dateLocale, { month: "long", year: "numeric" }).format(date);
+
+  const calendarMonthLabel = useMemo(
+    () => formatCalendarMonth(calendarDate),
+    [calendarDate, dateLocale],
+  );
+
+  const stats = useMemo<StatCardData[]>(
     () => [
       {
         icon: "timer",
-        title: "Tổng thời gian",
-        value: formatMinutes(summary?.totalFocusMinutes),
+        title: t("analytics.stat_total_time", { defaultValue: "Tổng thời gian" }),
+        value: formatMinutes(summary?.totalFocusMinutes, t),
         change: formatChange(summary?.compareWithPreviousRange.focusMinutesPercent, "%"),
         trendIcon:
           trendFromNumber(summary?.compareWithPreviousRange.focusMinutesDiff) === "down"
@@ -100,7 +110,7 @@ export default function StatisticsPage() {
       },
       {
         icon: "task_alt",
-        title: "Tổng số phiên",
+        title: t("analytics.stat_total_sessions", { defaultValue: "Tổng số phiên" }),
         value: String(summary?.totalSessions ?? 0),
         change: formatChange(summary?.compareWithPreviousRange.sessionsDiff),
         trendIcon:
@@ -112,7 +122,7 @@ export default function StatisticsPage() {
       },
       {
         icon: "warning",
-        title: "Số lần bạn mất tập trung",
+        title: t("analytics.stat_violations", { defaultValue: "Số lần bạn mất tập trung" }),
         value: String(violations?.totalViolations ?? summary?.totalViolations ?? 0),
         change: formatChange(summary?.compareWithPreviousRange.violationsDiff),
         trendIcon:
@@ -124,14 +134,17 @@ export default function StatisticsPage() {
       },
       {
         icon: "local_fire_department",
-        title: "Chuỗi ngày",
-        value: `${summary?.currentStreakDays ?? 0} Ngày`,
+        title: t("analytics.stat_streak", { defaultValue: "Chuỗi ngày" }),
+        value: t("analytics.stat_streak_value", {
+          defaultValue: "{{days}} Ngày",
+          days: summary?.currentStreakDays ?? 0,
+        }),
         change: "Streak",
         trend: "neutral" as Trend,
         tone: "warning" as StatTone,
       },
     ],
-    [summary, violations],
+    [summary, violations, t],
   );
 
   const chartItems = focusTime?.items ?? [];
@@ -151,6 +164,10 @@ export default function StatisticsPage() {
     .slice(0, 4);
   const topApps = (violations?.topApps ?? []).slice(0, 4);
 
+  const weekdayLabels = t("analytics.weekdays", {
+    defaultValue: "T2,T3,T4,T5,T6,T7,CN",
+  }).split(",");
+
   return (
     <div className="statistics-page">
       <main className="statistics-main">
@@ -160,20 +177,27 @@ export default function StatisticsPage() {
               <span className="app-page-title-icon">
                 <span className="material-symbols-outlined">query_stats</span>
               </span>
-              <h1>Phân tích hiệu suất</h1>
+              <h1>{t("analytics.page_title", { defaultValue: "Phân tích hiệu suất" })}</h1>
             </div>
-            <p>Theo dõi tiến độ và tối ưu hóa thời gian tập trung</p>
-            {error && <p className="analytics-error">{error}</p>}
+            <p>
+              {t("analytics.page_subtitle", {
+                defaultValue: "Theo dõi tiến độ và tối ưu hóa thời gian tập trung",
+              })}
+            </p>
           </div>
 
           {/* BỘ LỌC THỜI GIAN */}
-          <div className="time-tabs app-page-actions" role="tablist" aria-label="Bộ lọc thời gian">
+          <div
+            className="time-tabs app-page-actions"
+            role="tablist"
+            aria-label={t("analytics.time_filter_label", { defaultValue: "Bộ lọc thời gian" })}
+          >
             {rangeLabels.map((item) => (
               <button
                 key={item.range}
                 type="button"
                 className={`time-tab-btn ${range === item.range ? "active" : ""}`}
-                onClick={() => setRange(item.range)}
+                onClick={() => setRange(item.range as AnalyticsRange)}
               >
                 {item.label}
               </button>
@@ -181,7 +205,10 @@ export default function StatisticsPage() {
           </div>
         </header>
 
-        <section className="bento-grid" aria-label="Thống kê tổng quan">
+        <section
+          className="bento-grid"
+          aria-label={t("analytics.overview_label", { defaultValue: "Thống kê tổng quan" })}
+        >
           {stats.map((stat) => (
             <article className="stat-card" key={stat.title}>
               <div className="stat-top">
@@ -204,14 +231,14 @@ export default function StatisticsPage() {
 
           <article className="focus-chart-card">
             <div className="card-header">
-              <h2>Thời gian tập trung</h2>
+              <h2>{t("analytics.focus_time_title", { defaultValue: "Thời gian tập trung" })}</h2>
               <div className="best-day-badge">
                 <span className="material-symbols-outlined">star</span>
                 <span>
-                  Cao nhất:{" "}
+                  {t("analytics.best_day_prefix", { defaultValue: "Cao nhất:" })}{" "}
                   {bestFocusItem
-                    ? `${formatChartLabel(bestFocusItem.date)} (${formatMinutes(bestFocusItem.focusMinutes)})`
-                    : "Chưa có dữ liệu"}
+                    ? `${formatChartLabel(bestFocusItem.date)} (${formatMinutes(bestFocusItem.focusMinutes, t)})`
+                    : t("analytics.no_data", { defaultValue: "Chưa có dữ liệu" })}
                 </span>
               </div>
             </div>
@@ -223,7 +250,9 @@ export default function StatisticsPage() {
                   <path d={chartPath.line} fill="none" stroke="#483bfc" strokeWidth="4" />
                 </svg>
               ) : (
-                <div className="chart-empty">Chưa có dữ liệu tập trung.</div>
+                <div className="chart-empty">
+                  {t("analytics.no_focus_data", { defaultValue: "Chưa có dữ liệu tập trung." })}
+                </div>
               )}
 
               <div className="chart-labels">
@@ -236,15 +265,24 @@ export default function StatisticsPage() {
 
           <article className="heatmap-card">
             <div className="heatmap-header">
-              <h2>Tần suất tập trung</h2>
-              <div className="calendar-controls" aria-label="Chọn tháng tần suất tập trung">
-                <button type="button" aria-label="Tháng trước" onClick={() => changeCalendarMonth(-1)}>
+              <h2>{t("analytics.heatmap_title", { defaultValue: "Tần suất tập trung" })}</h2>
+              <div
+                className="calendar-controls"
+                aria-label={t("analytics.heatmap_month_select", {
+                  defaultValue: "Chọn tháng tần suất tập trung",
+                })}
+              >
+                <button
+                  type="button"
+                  aria-label={t("analytics.prev_month", { defaultValue: "Tháng trước" })}
+                  onClick={() => changeCalendarMonth(-1)}
+                >
                   <span className="material-symbols-outlined">chevron_left</span>
                 </button>
                 <span>{calendarMonthLabel}</span>
                 <button
                   type="button"
-                  aria-label="Tháng sau"
+                  aria-label={t("analytics.next_month", { defaultValue: "Tháng sau" })}
                   disabled={!canGoNextCalendarMonth}
                   onClick={() => changeCalendarMonth(1)}
                 >
@@ -255,11 +293,16 @@ export default function StatisticsPage() {
 
             <div className="heatmap-panel">
               <div className="heatmap-weekdays" aria-hidden="true">
-                {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((day) => (
+                {weekdayLabels.map((day) => (
                   <span key={day}>{day}</span>
                 ))}
               </div>
-              <div className="heatmap-grid" aria-label="Tan suat tap trung">
+              <div
+                className="heatmap-grid"
+                aria-label={t("analytics.heatmap_grid_label", {
+                  defaultValue: "Tần suất tập trung",
+                })}
+              >
                 {heatmapLevels.map((level, index) => (
                   <span key={index} className={`heatmap-cell level-${level}`} />
                 ))}
@@ -267,21 +310,30 @@ export default function StatisticsPage() {
             </div>
 
             <div className="heatmap-legend">
-              <span>Ít</span>
+              <span>{t("analytics.legend_low", { defaultValue: "Ít" })}</span>
               <div className="legend-cells">
                 {[0, 1, 2, 3, 4].map((level) => (
                   <span key={level} className={`heatmap-cell level-${level}`} />
                 ))}
               </div>
-              <span>Nhiều</span>
+              <span>{t("analytics.legend_high", { defaultValue: "Nhiều" })}</span>
             </div>
-            <p>Dựa trên lịch tập trung của {calendarMonthLabel}. Màu càng đậm nghĩa là thời gian tập trung càng cao.</p>
+            <p>
+              {t("analytics.heatmap_footer", {
+                defaultValue:
+                  "Dựa trên lịch tập trung của {{month}}. Màu càng đậm nghĩa là thời gian tập trung càng cao.",
+                month: calendarMonthLabel,
+              })}
+            </p>
           </article>
         </section>
 
-        <section className="bottom-grid" aria-label="Thông tin bổ sung">
+        <section
+          className="bottom-grid"
+          aria-label={t("analytics.additional_info_label", { defaultValue: "Thông tin bổ sung" })}
+        >
           <article className="info-card">
-            <h2>Giờ hiệu quả nhất</h2>
+            <h2>{t("analytics.best_hours_title", { defaultValue: "Giờ hiệu quả nhất" })}</h2>
             {(topHourlyItems.length
               ? topHourlyItems
               : [{ hour: hourly?.bestHour ?? null, focusMinutes: 0, sessions: 0 }]
@@ -289,7 +341,11 @@ export default function StatisticsPage() {
               <div className="progress-group" key={`${item.hour}-${index}`}>
                 <div className="progress-row">
                   <span>{formatHourRange(item.hour)}</span>
-                  <strong>{index === 0 ? "Tối ưu" : "Khá"}</strong>
+                  <strong>
+                    {index === 0
+                      ? t("analytics.rank_optimal", { defaultValue: "Tối ưu" })
+                      : t("analytics.rank_good", { defaultValue: "Khá" })}
+                  </strong>
                 </div>
                 <div className="progress-track">
                   <div
@@ -304,14 +360,20 @@ export default function StatisticsPage() {
           </article>
 
           <article className="info-card">
-            <h2>Mục tiêu hiện tại</h2>
+            <h2>{t("analytics.current_goals_title", { defaultValue: "Mục tiêu hiện tại" })}</h2>
             <div className="goal-list">
               {goalItems.length ? (
                 goalItems.map((goal, index) => (
                   <div className="goal-item" key={goal.goal}>
                     <div>
                       <h3>{goal.goal}</h3>
-                      <p>{formatMinutes(goal.focusMinutes)} • {goal.sessions} phiên</p>
+                      <p>
+                        {formatMinutes(goal.focusMinutes, t)} •{" "}
+                        {t("analytics.sessions_count", {
+                          defaultValue: "{{count}} phiên",
+                          count: goal.sessions,
+                        })}
+                      </p>
                     </div>
                     <div className={`goal-ring ${index === 0 ? "primary" : "secondary"}`}>
                       {Math.round(goal.completionRate)}%
@@ -319,34 +381,48 @@ export default function StatisticsPage() {
                   </div>
                 ))
               ) : (
-                <p className="empty-copy">Chưa có dữ liệu mục tiêu.</p>
+                <p className="empty-copy">
+                  {t("analytics.no_goal_data", { defaultValue: "Chưa có dữ liệu mục tiêu." })}
+                </p>
               )}
             </div>
           </article>
 
           <article className="info-card violations-card">
             <div className="violation-header">
-              <h2>Chi tiết số lần mất tập trung</h2>
-              <span>{formatMinutes(violations?.penaltyMinutes)} bị phạt</span>
+              <h2>{t("analytics.violation_detail_title", { defaultValue: "Chi tiết số lần mất tập trung" })}</h2>
+              <span>
+                {t("analytics.penalty_minutes", {
+                  defaultValue: "{{minutes}} bị phạt",
+                  minutes: formatMinutes(violations?.penaltyMinutes, t),
+                })}
+              </span>
             </div>
             <div className="violation-list">
               {violationItems.length ? (
                 violationItems.map((item) => (
                   <div className="violation-item" key={item.type}>
                     <div>
-                      <h3>{violationLabels[item.type] ?? item.type}</h3>
-                      <p>{item.minutesDeducted} phút bị trừ</p>
+                      <h3>{violationLabels[item.type as AnalyticsViolationType] ?? item.type}</h3>
+                      <p>
+                        {t("analytics.minutes_deducted", {
+                          defaultValue: "{{minutes}} phút bị trừ",
+                          minutes: item.minutesDeducted,
+                        })}
+                      </p>
                     </div>
                     <strong>{item.count}</strong>
                   </div>
                 ))
               ) : (
-                <p className="empty-copy">Chưa có vi phạm nào.</p>
+                <p className="empty-copy">
+                  {t("analytics.no_violation_data", { defaultValue: "Chưa có vi phạm nào." })}
+                </p>
               )}
             </div>
 
             <div className="top-apps">
-              <h3>Ứng dụng gây xao nhãng</h3>
+              <h3>{t("analytics.top_apps_title", { defaultValue: "Ứng dụng gây xao nhãng" })}</h3>
               {topApps.length ? (
                 topApps.map((app) => (
                   <div className="top-app-row" key={app.appName}>
@@ -355,7 +431,9 @@ export default function StatisticsPage() {
                   </div>
                 ))
               ) : (
-                <p className="empty-copy">Chưa có dữ liệu ứng dụng.</p>
+                <p className="empty-copy">
+                  {t("analytics.no_app_data", { defaultValue: "Chưa có dữ liệu ứng dụng." })}
+                </p>
               )}
             </div>
           </article>

@@ -1,69 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
+import {
+  authSession,
+  logoutService,
+  authStorage,
+  useAuthStore,
+} from "@/features/auth";
+import { settingsApi } from "../api/settings.api";
+import type { PersonalityResponse } from "../types/settings.types";
+import { profileApi } from "@/features/profile";
+import { queryClient } from "@/lib/queryClient";
+import { toast } from "@/shared/store/toastStore";
 import "./SettingsPage.css";
+import type { AppRuleResponse } from "../types/settings.types";
+import { useTranslation } from "react-i18next";
 
-type PersonalityCode = "INSPIRING" | "STRICT" | "CALM" | "FRIEND";
 type Language = "vi" | "en";
 type AppListTab = "whitelist" | "blacklist";
 
-const aiOptions: {
-  code: PersonalityCode;
-  icon: string;
-  className: string;
-  title: string;
-  description: string;
-}[] = [
-    {
-      code: "INSPIRING",
-      icon: "psychology",
-      className: "ai-primary",
-      title: "Người truyền cảm hứng",
-      description: "Khích lệ nhẹ nhàng, tập trung vào tư duy tích cực.",
-    },
-    {
-      code: "STRICT",
-      icon: "sports",
-      className: "ai-red",
-      title: "Huấn luyện viên nghiêm khắc",
-      description: "Đẩy bạn đến giới hạn, không khoan nhượng với sự xao nhãng.",
-    },
-    {
-      code: "CALM",
-      icon: "nature_people",
-      className: "ai-green",
-      title: "Bình yên & Thư thái",
-      description: "Hướng dẫn thiền định, tập trung vào sự tĩnh lặng nội tâm.",
-    },
-    {
-      code: "FRIEND",
-      icon: "emoji_people",
-      className: "ai-purple",
-      title: "Người bạn đồng hành",
-      description: "Trò chuyện vui vẻ, thoải mái như một người bạn thân.",
-    },
-  ];
+interface DeviceInfo {
+  id: string;
+  name: string;
+  lastActive: string;
+}
 
-const mockDevices = [
-  { id: "1", name: "Windows PC - Chrome", lastActive: "Đang hoạt động" },
-  { id: "2", name: "MacBook - Safari", lastActive: "3 ngày trước" },
-];
+const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> = {
+  INSPIRING: { icon: "psychology", className: "ai-primary" },
+  STRICT: { icon: "sports", className: "ai-red" },
+  CALM: { icon: "nature_people", className: "ai-green" },
+  FRIEND: { icon: "emoji_people", className: "ai-purple" },
+};
+
+const DEFAULT_PERSONALITY_ICON = { icon: "psychology", className: "ai-primary" };
 
 export default function SettingsPage() {
   // ── Cấu hình AI ──
-  const [activePersonality, setActivePersonality] =
-    useState<PersonalityCode>("INSPIRING");
+  const [personalities, setPersonalities] = useState<PersonalityResponse[]>([]);
+  const [activePersonalityId, setActivePersonalityId] = useState<number | null>(null);
+  const [isSavingPersonality, setIsSavingPersonality] = useState(false);
   const [selfAddress, setSelfAddress] = useState("");
   const [userAddress, setUserAddress] = useState("");
+  const [isSavingAiAddress, setIsSavingAiAddress] = useState(false);
+  const { i18n } = useTranslation();
 
-  // ── Ngôn ngữ ──
+  // ── Ngôn ngữ ── (TODO: nối i18n thật)
   const [language, setLanguage] = useState<Language>("vi");
 
-  // ── Danh sách ứng dụng ──
+  // ── Danh sách ứng dụng ── (TODO: nối API app-rules ở Việc 4)
   const [appListTab, setAppListTab] = useState<AppListTab>("whitelist");
-  const [whitelist, setWhitelist] = useState<string[]>(["youtube", "notion"]);
-  const [blacklist, setBlacklist] = useState<string[]>(["facebook", "tiktok"]);
+  const [appRules, setAppRules] = useState<AppRuleResponse[]>([]);
   const [newKeyword, setNewKeyword] = useState("");
+  const [isAddingRule, setIsAddingRule] = useState(false);
 
-  // ── Thông báo ──
+  // ── Thông báo ── (TODO: nối API cấu hình thông báo ở Việc 6)
   const [warningWindowEnabled, setWarningWindowEnabled] = useState(true);
   const [soundReminderEnabled, setSoundReminderEnabled] = useState(false);
 
@@ -71,27 +60,166 @@ export default function SettingsPage() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  const currentList = appListTab === "whitelist" ? whitelist : blacklist;
-  const setCurrentList =
-    appListTab === "whitelist" ? setWhitelist : setBlacklist;
+  // Danh sách thiết bị — TODO: nối API liệt kê thiết bị thật ở Việc 3, hiện để rỗng
+  const [devices] = useState<DeviceInfo[]>([]);
 
-  const handleAddKeyword = () => {
+  useEffect(() => {
+    Promise.all([
+      profileApi.getMyProfile(),
+      settingsApi.getPersonalities(),
+      settingsApi.getMyAppRules(),
+    ])
+      .then(([profile, personalityList, ruleList]) => {
+        setSelfAddress(profile.aiSelfAddress ?? "");
+        setUserAddress(profile.aiUserAddress ?? "");
+        setActivePersonalityId(
+          profile.personalityId != null ? Number(profile.personalityId) : null
+        );
+        setPersonalities(personalityList);
+        setAppRules(ruleList);
+      })
+      .catch(() => {
+        toast.error("Không thể tải cấu hình.");
+      });
+  }, []);
+
+  const currentRuleType = appListTab === "whitelist" ? "WHITELIST" : "BLACKLIST";
+  const currentList = appRules.filter((r) => r.ruleType === currentRuleType);
+
+  const handleAddKeyword = async () => {
     const trimmed = newKeyword.trim().toLowerCase();
-    if (!trimmed || currentList.includes(trimmed)) return;
-    setCurrentList((prev) => [...prev, trimmed]);
-    setNewKeyword("");
-    // TODO: nối API lưu app-rules
+    if (!trimmed || isAddingRule) return;
+
+    if (currentList.some((r) => r.keyword === trimmed)) {
+      toast.error("Từ khóa này đã tồn tại.");
+      return;
+    }
+
+    try {
+      setIsAddingRule(true);
+      const created = await settingsApi.createAppRule({
+        keyword: trimmed,
+        ruleType: currentRuleType,
+      });
+      setAppRules((prev) => [...prev, created]);
+      setNewKeyword("");
+    } catch {
+      toast.error("Không thể thêm từ khóa.");
+    } finally {
+      setIsAddingRule(false);
+    }
   };
 
-  const handleRemoveKeyword = (keyword: string) => {
-    setCurrentList((prev) => prev.filter((k) => k !== keyword));
-    // TODO: nối API lưu app-rules
+  const handleRemoveKeyword = async (ruleId: number) => {
+    const previousRules = appRules;
+    setAppRules((prev) => prev.filter((r) => r.id !== ruleId)); // optimistic update
+
+    try {
+      await settingsApi.deleteAppRule(ruleId);
+    } catch {
+      setAppRules(previousRules); // rollback nếu lỗi
+      toast.error("Không thể xóa từ khóa.");
+    }
+  };
+
+  const handlePasswordSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      await profileApi.changePassword({
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setIsPasswordModalOpen(false);
+      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      toast.success("Đã đổi mật khẩu.");
+    } catch {
+      toast.error("Không thể đổi mật khẩu.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutService();
+      useAuthStore.setState({ user: null });
+    } catch {
+      toast.error("Không thể đăng xuất.");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeletingAccount(true);
+      await profileApi.deleteMyAccount();
+      authStorage.clear();
+      await authSession.markLoggedOut();
+      queryClient.clear();
+      useAuthStore.setState({ user: null });
+      toast.success("Tài khoản đã được xóa.");
+    } catch {
+      toast.error("Không thể xóa tài khoản.");
+    } finally {
+      setIsDeletingAccount(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleSaveAiAddress = async () => {
+    try {
+      setIsSavingAiAddress(true);
+      await settingsApi.updateAiAddress({
+        aiSelfAddress: selfAddress.trim(),
+        aiUserAddress: userAddress.trim(),
+      });
+      toast.success("Đã lưu xưng hô AI.");
+    } catch {
+      toast.error("Không thể lưu xưng hô AI.");
+    } finally {
+      setIsSavingAiAddress(false);
+    }
+  };
+
+  const handleSelectPersonality = async (personalityId: number) => {
+    if (personalityId === activePersonalityId || isSavingPersonality) return;
+
+    const previousId = activePersonalityId;
+    setActivePersonalityId(personalityId); // optimistic update
+
+    try {
+      setIsSavingPersonality(true);
+      await settingsApi.updateUserPersonality({ personalityId });
+      toast.success("Đã đổi cá tính AI.");
+    } catch {
+      setActivePersonalityId(previousId); // rollback nếu lỗi
+      toast.error("Không thể đổi cá tính AI.");
+    } finally {
+      setIsSavingPersonality(false);
+    }
+  };
+
+  const handleChangeLanguage = async (lang: "vi" | "en") => {
+    i18n.changeLanguage(lang); // đổi UI ngay lập tức
+    try {
+      await settingsApi.changeLanguage({ language: lang });
+    } catch {
+      toast.error("Không thể lưu ngôn ngữ lên tài khoản (vẫn áp dụng trên máy này).");
+    }
   };
 
   return (
@@ -124,24 +252,27 @@ export default function SettingsPage() {
             </div>
 
             <div className="ai-grid">
-              {aiOptions.map((option) => {
-                const isActive = option.code === activePersonality;
+              {personalities.map((option) => {
+                const isActive = option.id === activePersonalityId;
+                const iconInfo =
+                  PERSONALITY_ICON_MAP[option.code] ?? DEFAULT_PERSONALITY_ICON;
+
                 return (
                   <article
-                    key={option.code}
+                    key={option.id}
                     className={`ai-option ${isActive ? "ai-option-active" : ""}`}
-                    onClick={() => {
-                      setActivePersonality(option.code);
-                      // TODO: nối API đổi personality
-                    }}
+                    onClick={() => handleSelectPersonality(option.id)}
                   >
                     {isActive && <span className="active-tag">ĐANG CHỌN</span>}
+                    {option.isPremium && !isActive && (
+                      <span className="premium-tag">PREMIUM</span>
+                    )}
                     <span
-                      className={`material-symbols-outlined icon-fill ai-icon ${option.className}`}
+                      className={`material-symbols-outlined icon-fill ai-icon ${iconInfo.className}`}
                     >
-                      {option.icon}
+                      {iconInfo.icon}
                     </span>
-                    <h4>{option.title}</h4>
+                    <h4>{option.name}</h4>
                     <p>{option.description}</p>
                   </article>
                 );
@@ -154,6 +285,7 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   placeholder="tôi"
+                  maxLength={30}
                   value={selfAddress}
                   onChange={(e) => setSelfAddress(e.target.value)}
                 />
@@ -163,6 +295,7 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   placeholder="bạn"
+                  maxLength={30}
                   value={userAddress}
                   onChange={(e) => setUserAddress(e.target.value)}
                 />
@@ -170,11 +303,10 @@ export default function SettingsPage() {
               <button
                 className="primary-button ai-address-save"
                 type="button"
-                onClick={() => {
-                  // TODO: nối API PUT /users/me/ai-address
-                }}
+                onClick={handleSaveAiAddress}
+                disabled={isSavingAiAddress}
               >
-                Lưu thay đổi
+                {isSavingAiAddress ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
             </div>
           </section>
@@ -189,28 +321,24 @@ export default function SettingsPage() {
             <div className="language-options">
               <button
                 type="button"
-                className={`language-option ${language === "vi" ? "language-option-active" : ""}`}
-                onClick={() => setLanguage("vi")}
+                className={`language-option ${i18n.language === "vi" ? "language-option-active" : ""}`}
+                onClick={() => handleChangeLanguage("vi")}
               >
                 <span className="language-flag">🇻🇳</span>
                 <span>Tiếng Việt</span>
-                {language === "vi" && (
-                  <span className="material-symbols-outlined check-icon">
-                    check_circle
-                  </span>
+                {i18n.language === "vi" && (
+                  <span className="material-symbols-outlined check-icon">check_circle</span>
                 )}
               </button>
               <button
                 type="button"
-                className={`language-option ${language === "en" ? "language-option-active" : ""}`}
-                onClick={() => setLanguage("en")}
+                className={`language-option ${i18n.language === "en" ? "language-option-active" : ""}`}
+                onClick={() => handleChangeLanguage("en")}
               >
                 <span className="language-flag">🇬🇧</span>
                 <span>English</span>
-                {language === "en" && (
-                  <span className="material-symbols-outlined check-icon">
-                    check_circle
-                  </span>
+                {i18n.language === "en" && (
+                  <span className="material-symbols-outlined check-icon">check_circle</span>
                 )}
               </button>
             </div>
@@ -267,14 +395,14 @@ export default function SettingsPage() {
                 className={`app-list-tab ${appListTab === "whitelist" ? "app-list-tab-active" : ""}`}
                 onClick={() => setAppListTab("whitelist")}
               >
-                Whitelist ({whitelist.length})
+                Whitelist ({appRules.filter((r) => r.ruleType === "WHITELIST").length})
               </button>
               <button
                 type="button"
                 className={`app-list-tab ${appListTab === "blacklist" ? "app-list-tab-active" : ""}`}
                 onClick={() => setAppListTab("blacklist")}
               >
-                Blacklist ({blacklist.length})
+                Blacklist ({appRules.filter((r) => r.ruleType === "BLACKLIST").length})
               </button>
             </div>
 
@@ -288,14 +416,18 @@ export default function SettingsPage() {
                 }
                 value={newKeyword}
                 onChange={(e) => setNewKeyword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddKeyword()}
+                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) =>
+                  e.key === "Enter" && handleAddKeyword()
+                }
+                disabled={isAddingRule}
               />
               <button
                 type="button"
                 className="primary-button"
                 onClick={handleAddKeyword}
+                disabled={isAddingRule}
               >
-                + Thêm
+                {isAddingRule ? "Đang thêm..." : "+ Thêm"}
               </button>
             </div>
 
@@ -303,16 +435,13 @@ export default function SettingsPage() {
               {currentList.length === 0 ? (
                 <p className="tag-list-empty">Chưa có từ khóa nào.</p>
               ) : (
-                currentList.map((keyword) => (
+                currentList.map((rule) => (
                   <span
-                    key={keyword}
+                    key={rule.id}
                     className={`tag-chip ${appListTab === "blacklist" ? "tag-chip-danger" : ""}`}
                   >
-                    {keyword}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveKeyword(keyword)}
-                    >
+                    {rule.keyword}
+                    <button type="button" onClick={() => handleRemoveKeyword(rule.id)}>
                       <span className="material-symbols-outlined">close</span>
                     </button>
                   </span>
@@ -333,7 +462,7 @@ export default function SettingsPage() {
                   </span>
                   <div>
                     <p>Mật khẩu</p>
-                    <small>Cập nhật lần cuối: 3 tháng trước</small>
+                    <small>Cập nhật lần cuối: chưa rõ</small>
                   </div>
                 </div>
                 <button
@@ -345,27 +474,14 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              <div className="security-row">
-                <div className="security-info">
-                  <span className="security-icon google-icon">G</span>
-                  <div>
-                    <p>Tài khoản Google</p>
-                    <small>Đã liên kết</small>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined check-icon">
-                  check_circle
-                </span>
-              </div>
-
-              <div className="security-row">
+              {/* <div className="security-row">
                 <div className="security-info">
                   <span className="material-symbols-outlined security-icon">
                     devices
                   </span>
                   <div>
                     <p>Thiết bị đăng nhập</p>
-                    <small>{mockDevices.length} thiết bị đang hoạt động</small>
+                    <small>{devices.length} thiết bị đang hoạt động</small>
                   </div>
                 </div>
                 <button
@@ -375,16 +491,10 @@ export default function SettingsPage() {
                 >
                   Quản lý
                 </button>
-              </div>
+              </div> */}
             </div>
 
-            <button
-              className="logout-button"
-              type="button"
-              onClick={() => {
-                // TODO: nối logic đăng xuất
-              }}
-            >
+            <button className="logout-button" type="button" onClick={handleLogout}>
               <span className="material-symbols-outlined">logout</span>
               Đăng xuất
             </button>
@@ -419,14 +529,7 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          <form
-            className="password-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              // TODO: nối API đổi mật khẩu
-              setIsPasswordModalOpen(false);
-            }}
-          >
+          <form className="password-form" onSubmit={handlePasswordSubmit}>
             <label>
               Mật khẩu hiện tại
               <input
@@ -477,8 +580,12 @@ export default function SettingsPage() {
               >
                 Hủy
               </button>
-              <button className="primary-button" type="submit">
-                Lưu thay đổi
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={isChangingPassword}
+              >
+                {isChangingPassword ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
             </div>
           </form>
@@ -505,28 +612,34 @@ export default function SettingsPage() {
           </div>
 
           <div className="device-list">
-            {mockDevices.map((device) => (
-              <div key={device.id} className="device-row">
-                <div className="security-info">
-                  <span className="material-symbols-outlined security-icon">
-                    devices
-                  </span>
-                  <div>
-                    <p>{device.name}</p>
-                    <small>{device.lastActive}</small>
+            {devices.length === 0 ? (
+              <p className="tag-list-empty">
+                Chưa có dữ liệu thiết bị (tính năng đang hoàn thiện).
+              </p>
+            ) : (
+              devices.map((device) => (
+                <div key={device.id} className="device-row">
+                  <div className="security-info">
+                    <span className="material-symbols-outlined security-icon">
+                      devices
+                    </span>
+                    <div>
+                      <p>{device.name}</p>
+                      <small>{device.lastActive}</small>
+                    </div>
                   </div>
+                  <button
+                    className="text-button device-revoke"
+                    type="button"
+                    onClick={() => {
+                      // TODO: nối API thu hồi device
+                    }}
+                  >
+                    Thu hồi
+                  </button>
                 </div>
-                <button
-                  className="text-button device-revoke"
-                  type="button"
-                  onClick={() => {
-                    // TODO: nối API thu hồi device
-                  }}
-                >
-                  Thu hồi
-                </button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -535,7 +648,8 @@ export default function SettingsPage() {
       <div
         className={`modal-overlay ${isDeleteModalOpen ? "" : "hidden"}`}
         onClick={(e) => {
-          if (e.target === e.currentTarget) setIsDeleteModalOpen(false);
+          if (e.target === e.currentTarget && !isDeletingAccount)
+            setIsDeleteModalOpen(false);
         }}
       >
         <div className={`modal-card ${isDeleteModalOpen ? "modal-card-open" : ""}`}>
@@ -545,6 +659,7 @@ export default function SettingsPage() {
               className="icon-button"
               type="button"
               onClick={() => setIsDeleteModalOpen(false)}
+              disabled={isDeletingAccount}
             >
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -560,18 +675,17 @@ export default function SettingsPage() {
                 className="ghost-button"
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeletingAccount}
               >
                 Hủy
               </button>
               <button
                 className="danger-button"
                 type="button"
-                onClick={() => {
-                  // TODO: nối API xóa tài khoản
-                  setIsDeleteModalOpen(false);
-                }}
+                onClick={handleDeleteAccount}
+                disabled={isDeletingAccount}
               >
-                Xóa tài khoản
+                {isDeletingAccount ? "Đang xóa..." : "Xóa tài khoản"}
               </button>
             </div>
           </div>

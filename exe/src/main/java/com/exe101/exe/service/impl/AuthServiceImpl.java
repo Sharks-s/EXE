@@ -153,9 +153,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Chưa set password ở đây
-        String verifyId = otpService.generateRegisterOtp(
+        String verifyId = otpService.generateOtp(
                 user.getId(),
-                user.getEmail()
+                user.getEmail(),
+                OtpType.REGISTER
         );
 
         return RegisterResponse.builder()
@@ -173,6 +174,10 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_EXPIRED));
 
         // Xóa session sau khi dùng
+        if (session.getType() != OtpType.REGISTER) {
+            throw new BusinessException(ErrorCode.SESSION_EXPIRED);
+        }
+
         registerSessionStore.delete(request.sessionToken());
 
         User user = userService.findById(session.getUserId());
@@ -251,9 +256,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.LOCAL_IDENTITY_NOT_FOUND);
         }
 
-        String verifyId = otpService.generateRegisterOtp(
+        String verifyId = otpService.generateOtp(
                 user.getId(),
-                user.getEmail()
+                user.getEmail(),
+                OtpType.RESET_PASSWORD
         );
 
         return RegisterResponse.builder()
@@ -286,9 +292,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public VerifyRegisterResponse verifyOtp(VerifyRegisterRequest request) {
-        OtpRedis otp = otpService.verifyRegisterOtp(
+        OtpRedis otp = otpService.verifyOtp(
                 request.verifyId(),
-                request.otp()
+                request.otp(),
+                request.type()
         );
 
         String sessionToken = UUID.randomUUID().toString();

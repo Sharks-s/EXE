@@ -4,6 +4,7 @@ import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.OtpRedis;
 import com.exe101.exe.model.enums.OtpStatus;
+import com.exe101.exe.model.enums.OtpType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -25,8 +26,8 @@ public class RedisOtpStore implements OtpStore {
     private final StringRedisTemplate redis;
     private final PasswordEncoder passwordEncoder;
 
-    private static final String OTP_PREFIX = "exe101:auth:otp:register:";
-    private static final String OTP_USER_PREFIX = "exe101:auth:otp:register:user:";
+    private static final String OTP_PREFIX = "exe101:auth:otp:";
+    private static final String OTP_USER_PREFIX = "exe101:auth:otp:user:";
 
     // Atomic: DEL + HSET (nhiều field) + EXPIRE trong 1 round-trip
     private static final RedisScript<Long> SAVE_OTP_SCRIPT = new DefaultRedisScript<>(
@@ -73,12 +74,12 @@ public class RedisOtpStore implements OtpStore {
         return OTP_PREFIX + verifyId;
     }
 
-    private String userMappingKey(Long userId) {
-        return OTP_USER_PREFIX + userId;
+    private String userMappingKey(Long userId, OtpType type) {
+        return OTP_USER_PREFIX + type.name().toLowerCase() + ":" + userId;
     }
 
     @Override
-    public void saveRegisterOtp(String verifyId, OtpRedis data, Duration ttl) {
+    public void saveOtp(String verifyId, OtpRedis data, Duration ttl) {
         String key = key(verifyId);
         String codeHash = passwordEncoder.encode(data.getCode());
 
@@ -92,6 +93,10 @@ public class RedisOtpStore implements OtpStore {
         if (data.getEmail() != null) {
             args.add("email");
             args.add(data.getEmail());
+        }
+        if (data.getType() != null) {
+            args.add("type");
+            args.add(data.getType().name());
         }
         args.add("codeHash");
         args.add(codeHash);
@@ -108,7 +113,7 @@ public class RedisOtpStore implements OtpStore {
     }
 
     @Override
-    public Optional<OtpRedis> getRegisterOtp(String verifyId) {
+    public Optional<OtpRedis> getOtp(String verifyId) {
         String key = key(verifyId);
         Map<Object, Object> map = redis.opsForHash().entries(key);
 
@@ -129,6 +134,9 @@ public class RedisOtpStore implements OtpStore {
 
             Object emailObj = map.get("email");
             if (emailObj != null) builder.email(emailObj.toString());
+
+            Object typeObj = map.get("type");
+            if (typeObj != null) builder.type(OtpType.valueOf(typeObj.toString()));
 
             return Optional.of(builder.build());
         } catch (Exception ex) {
@@ -160,7 +168,7 @@ public class RedisOtpStore implements OtpStore {
     }
 
     @Override
-    public boolean consumeRegisterOtp(String verifyId) {
+    public boolean consumeOtp(String verifyId) {
         Long result = redis.execute(CONSUME_OTP_SCRIPT, List.of(key(verifyId)));
         return result != null && result == 1L;
     }
@@ -184,12 +192,12 @@ public class RedisOtpStore implements OtpStore {
 
     @Override
     public void delete(String verifyId) {
-        getRegisterOtp(verifyId).ifPresent(otp -> {
-            if (otp.getUserId() != null) {
+        getOtp(verifyId).ifPresent(otp -> {
+            if (otp.getUserId() != null && otp.getType() != null) {
                 // Chỉ xóa mapping nếu nó đang thực sự trỏ tới verifyId này
-                getVerifyIdByUserId(otp.getUserId())
+                getVerifyIdByUserId(otp.getUserId(), otp.getType())
                         .filter(mapped -> mapped.equals(verifyId))
-                        .ifPresent(mapped -> deleteUserMapping(otp.getUserId()));
+                        .ifPresent(mapped -> deleteUserMapping(otp.getUserId(), otp.getType()));
             }
         });
         redis.delete(key(verifyId));
@@ -201,18 +209,18 @@ public class RedisOtpStore implements OtpStore {
     }
 
     @Override
-    public void saveUserMapping(Long userId, String verifyId, Duration ttl) {
-        redis.opsForValue().set(userMappingKey(userId), verifyId, ttl);
+    public void saveUserMapping(Long userId, OtpType type, String verifyId, Duration ttl) {
+        redis.opsForValue().set(userMappingKey(userId, type), verifyId, ttl);
     }
 
     @Override
-    public Optional<String> getVerifyIdByUserId(Long userId) {
-        String val = redis.opsForValue().get(userMappingKey(userId));
+    public Optional<String> getVerifyIdByUserId(Long userId, OtpType type) {
+        String val = redis.opsForValue().get(userMappingKey(userId, type));
         return Optional.ofNullable(val);
     }
 
     @Override
-    public void deleteUserMapping(Long userId) {
-        redis.delete(userMappingKey(userId));
+    public void deleteUserMapping(Long userId, OtpType type) {
+        redis.delete(userMappingKey(userId, type));
     }
 }

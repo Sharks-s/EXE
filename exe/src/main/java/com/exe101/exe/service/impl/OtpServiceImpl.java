@@ -5,7 +5,9 @@ import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.OtpRedis;
 import com.exe101.exe.model.enums.OtpStatus;
+import com.exe101.exe.model.enums.OtpType;
 import com.exe101.exe.repository.OtpStore;
+import com.exe101.exe.service.MailService;
 import com.exe101.exe.service.OtpService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,26 +24,27 @@ public class OtpServiceImpl implements OtpService {
 
     private final OtpStore otpStore;
     private final OtpProperties otpProperties;
-    private final MockMailService mockMailService;
+    private final MailService mailService;
 
-    public String generateRegisterOtp(Long userId, String email) {
+    @Override
+    public String generateOtp(Long userId, String email, OtpType type) {
         // Xóa OTP cũ nếu có
-        otpStore.getVerifyIdByUserId(userId).ifPresent(oldVerifyId -> {
+        otpStore.getVerifyIdByUserId(userId, type).ifPresent(oldVerifyId -> {
             otpStore.delete(oldVerifyId);
-            otpStore.deleteUserMapping(userId);
+            otpStore.deleteUserMapping(userId, type);
         });
 
-        String otp = String.format("%06d",
-                ThreadLocalRandom.current().nextInt(100_000, 1_000_000));
+        String otp = generateNumericOtp();
         String verifyId = UUID.randomUUID().toString();
         Instant now = Instant.now();
         Instant expiredAt = now.plus(otpProperties.getExpireMinutes(), ChronoUnit.MINUTES);
         Duration ttl = Duration.ofMinutes(otpProperties.getExpireMinutes());
 
-        otpStore.saveRegisterOtp(verifyId,
+        otpStore.saveOtp(verifyId,
                 OtpRedis.builder()
                         .userId(userId)
                         .email(email)
+                        .type(type)
                         .code(otp)
                         .attempts(0)
                         .status(OtpStatus.UNUSED)
@@ -51,16 +54,16 @@ public class OtpServiceImpl implements OtpService {
                 ttl
         );
 
-        otpStore.saveUserMapping(userId, verifyId, ttl);
+        otpStore.saveUserMapping(userId, type, verifyId, ttl);
 
-        mockMailService.sendRegisterOtp(email, otp);
+        sendOtpEmail(email, otp, type);
         return verifyId;
     }
 
     @Override
-    public OtpRedis verifyRegisterOtp(String verifyId, String otpInput) {
+    public OtpRedis verifyOtp(String verifyId, String otpInput, OtpType type) {
 
-        OtpRedis otp = otpStore.getRegisterOtp(verifyId)
+        OtpRedis otp = otpStore.getOtp(verifyId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.OTP_NOT_FOUND));
 
         if (otp.getExpiredAt().isBefore(Instant.now())) {
@@ -74,6 +77,10 @@ public class OtpServiceImpl implements OtpService {
 
         if (otp.getStatus() == OtpStatus.USED) {
             throw new BusinessException(ErrorCode.OTP_ALREADY_USED);
+        }
+
+        if (otp.getType() != type) {
+            throw new BusinessException(ErrorCode.INVALID_OTP);
         }
 
         if (!otpStore.matchesCode(otp, otpInput)) {
@@ -91,7 +98,7 @@ public class OtpServiceImpl implements OtpService {
         // Atomic consume: chỉ 1 trong nhiều request đồng thời được phép thắng.
         // Nếu request này thua (request khác đã consume trước), trả lỗi thay vì tiếp tục xử lý
         // (tránh tạo 2 session/activate account 2 lần khi user double-submit).
-        boolean consumed = otpStore.consumeRegisterOtp(verifyId);
+        boolean consumed = otpStore.consumeOtp(verifyId);
         if (!consumed) {
             throw new BusinessException(ErrorCode.OTP_ALREADY_USED);
         }
@@ -99,5 +106,25 @@ public class OtpServiceImpl implements OtpService {
         otpStore.delete(verifyId);
 
         return otp;
+    }
+
+    private String generateNumericOtp() {
+        int length = otpProperties.getLength();
+        if (length < 1 || length > 9) {
+            throw new IllegalStateException("OTP length must be between 1 and 9");
+        }
+
+        int min = (int) Math.pow(10, length - 1);
+        int max = (int) Math.pow(10, length);
+        return String.format("%0" + length + "d", ThreadLocalRandom.current().nextInt(min, max));
+    }
+
+    private void sendOtpEmail(String email, String otp, OtpType type) {
+        if (type == OtpType.RESET_PASSWORD) {
+            mailService.sendResetPasswordOtp(email, otp);
+            return;
+        }
+
+        mailService.sendRegisterOtp(email, otp);
     }
 }

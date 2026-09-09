@@ -7,13 +7,21 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-@Profile("dev")
+@Profile("mock-mail")
 public class MockMailService implements MailService {
     @Override
     public void sendRegisterOtp(String toEmail, String otp) {
         log.info("========== MOCK MAIL ==========");
         log.info("To: {}", toEmail);
         log.info("Register OTP: {}", otp);
+        log.info("================================");
+    }
+
+    @Override
+    public void sendResetPasswordOtp(String toEmail, String otp) {
+        log.info("========== MOCK MAIL ==========");
+        log.info("To: {}", toEmail);
+        log.info("Reset password OTP: {}", otp);
         log.info("================================");
     }
 }

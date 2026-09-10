@@ -1,15 +1,16 @@
 package com.exe101.exe.repository;
 
 import com.exe101.exe.model.entity.OtpRedis;
+import com.exe101.exe.model.enums.OtpType;
 
 import java.time.Duration;
 import java.util.Optional;
 
 public interface OtpStore {
 
-    void saveRegisterOtp(String verifyId, OtpRedis otp, Duration ttl);
+    void saveOtp(String verifyId, OtpRedis otp, Duration ttl);
 
-    Optional<OtpRedis> getRegisterOtp(String verifyId);
+    Optional<OtpRedis> getOtp(String verifyId);
 
     /**
      * Tăng attempts atomic. Nếu đạt maxAttempts, tự động chuyển status sang BLOCKED
@@ -25,7 +26,7 @@ public interface OtpStore {
      *
      * @return true nếu request này là request thắng cuộc (được phép tiếp tục xử lý)
      */
-    boolean consumeRegisterOtp(String verifyId);
+    boolean consumeOtp(String verifyId);
 
     void markBlocked(String verifyId);
 
@@ -33,11 +34,11 @@ public interface OtpStore {
 
     boolean exists(String verifyId);
 
-    void saveUserMapping(Long userId, String verifyId, Duration ttl);
+    void saveUserMapping(Long userId, OtpType type, String verifyId, Duration ttl);
 
-    Optional<String> getVerifyIdByUserId(Long userId);
+    Optional<String> getVerifyIdByUserId(Long userId, OtpType type);
 
-    void deleteUserMapping(Long userId);
+    void deleteUserMapping(Long userId, OtpType type);
 
     boolean matchesCode(OtpRedis otp, String rawCode);
 }

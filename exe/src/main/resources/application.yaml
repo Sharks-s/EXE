@@ -144,6 +144,10 @@ app:
         name: "Mean Assistant"
         description: "Challenging, provocative, and roasts your ego mercilessly."
         premium: true
+      - code: "GRUMPY"
+        name: "Grumpy Assistant"
+        description: "Blunt, impatient, and brutally direct, but still genuinely helpful."
+        premium: true
     pets:
       - code: "MONKI"
         name: "Monkey"

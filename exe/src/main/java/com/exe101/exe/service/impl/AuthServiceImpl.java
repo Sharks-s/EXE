@@ -35,6 +35,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
+    private static final String DEFAULT_AVATAR_URL =
+            "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1782566522/png-transparent-default-avatar_armtvw.png";
 
     private final AuthenticationService authenticationService;
     private final UserRoleService userRoleService;
@@ -188,7 +190,7 @@ public class AuthServiceImpl implements AuthService {
         } else {
             userIdentityService.updateLocalPassword(user, request.password());
         }
-        user.setAvatarUrl("https://res.cloudinary.com/dlkcf2b8w/image/upload/v1782566522/png-transparent-default-avatar_armtvw.png");
+        user.setAvatarUrl(DEFAULT_AVATAR_URL);
         // Activate user
         userService.activateUser(user.getId());
 

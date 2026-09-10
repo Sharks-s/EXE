@@ -36,7 +36,7 @@ const buildChartPath = (items: { focusMinutes: number }[]): SVGChartPath | null 
   return { line, area };
 };
 
-export default function StatisticsPage() {
+export default function AnalyticsPage() {
   const { t, i18n } = useTranslation("common");
 
   const {

@@ -18,6 +18,9 @@ export interface User {
   onboardingCompleted: boolean;
   personalityId?: number;
   personalityCode?: string;
+  dailyUsedMinute?: number;
+  dailyUsedMinutes?: number;
+  daily_used_minutes?: number;
   roles: string[];
   preferredLanguage?: string;
 }

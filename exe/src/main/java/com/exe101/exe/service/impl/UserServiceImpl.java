@@ -42,6 +42,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final String DEFAULT_AVATAR_URL =
+            "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1782566522/png-transparent-default-avatar_armtvw.png";
 
     private final UserRepository userRepository;
     private final PersonalityRepository personalityRepository;
@@ -113,7 +115,7 @@ public class UserServiceImpl implements UserService {
                 User.builder()
                         .email(email)
                         .fullName(name)
-                        .avatarUrl(avatarUrl)
+                        .avatarUrl(DEFAULT_AVATAR_URL)
                         .status(UserStatus.ACTIVE)
                         .profileCompleted(true)
                         .lastLoginAt(Instant.now())
@@ -130,9 +132,8 @@ public class UserServiceImpl implements UserService {
             user.setFullName(name);
         }
 
-        if ((user.getAvatarUrl() == null || user.getAvatarUrl().isBlank())
-                && avatarUrl != null && !avatarUrl.isBlank()) {
-            user.setAvatarUrl(avatarUrl);
+        if (user.getAvatarUrl() == null || user.getAvatarUrl().isBlank()) {
+            user.setAvatarUrl(DEFAULT_AVATAR_URL);
         }
 
         user.setLastLoginAt(Instant.now());

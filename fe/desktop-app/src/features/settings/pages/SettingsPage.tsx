@@ -15,7 +15,6 @@ import "./SettingsPage.css";
 import type { AppRuleResponse } from "../types/settings.types";
 import { useTranslation } from "react-i18next";
 
-type Language = "vi" | "en";
 type AppListTab = "whitelist" | "blacklist";
 
 interface DeviceInfo {
@@ -44,8 +43,6 @@ export default function SettingsPage() {
   const { i18n } = useTranslation();
 
   // ── Ngôn ngữ ── (TODO: nối i18n thật)
-  const [language, setLanguage] = useState<Language>("vi");
-
   // ── Danh sách ứng dụng ── (TODO: nối API app-rules ở Việc 4)
   const [appListTab, setAppListTab] = useState<AppListTab>("whitelist");
   const [appRules, setAppRules] = useState<AppRuleResponse[]>([]);

@@ -43,8 +43,14 @@ export const CompleteRegisterSchema = CompleteRegisterBaseSchema.refine(
   },
 );
 
+export const ForgotPasswordSchema = z.object({
+  email: z.string().min(1).max(150).email(),
+});
+
+
 // ── Inferred Types ─────────────────────────────────────
 export type LoginFormData = z.infer<typeof LoginSchema>;
 export type RegisterFormData = z.infer<typeof RegisterSchema>;
 export type VerifyOtpFormData = z.infer<typeof VerifyOtpSchema>;
+export type ForgotPasswordFormData = z.infer<typeof ForgotPasswordSchema>;
 export const CompleteRegisterBaseShape = CompleteRegisterBaseSchema;

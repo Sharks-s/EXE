@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-import type { ApiErrorResponse } from "@/types";
-import { parseApiError } from "@/utils/error-mapper";
+import { handleApiError } from "@/utils/handleApiError";
 import { toast } from "@/shared/store/toastStore";
+
+const LOG_CONTEXT = "[useVerifyForm]";
 
 interface UseVerifyFormProps {
     verifyId: string;
@@ -120,7 +120,7 @@ export function useVerifyForm({
         e.preventDefault();
         if (otp.length !== 6) {
             const msg = t("validationErrors:otp.invalid_length", {
-                defaultValue: "Please enter 6-digit OTP",
+                defaultValue: "Vui lòng nhập đủ 6 số OTP",
             });
             setError(msg);
             return;
@@ -133,15 +133,17 @@ export function useVerifyForm({
             const res = await onVerify({ verifyId, otp });
             onVerifySuccess(res.sessionToken);
         } catch (err: unknown) {
-            if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
-                const { globalMessage } = parseApiError(err.response.data);
-                const msg = globalMessage || t("businessErrors:SYS_001");
-                setError(msg); // Hiển thị inline dưới ô OTP
-            } else {
-                const msg = t("businessErrors:SYS_001");
-                setError(msg);
-                toast.error(msg); // Lỗi mạng / server crash thì bắn Toast
-            }
+            // Dùng handleApiError lấy message chuẩn, nhưng set silent: true 
+            // để tự render message ở dạng chữ đỏ dưới ô OTP thay vì bắn Toast.
+            const parsedMessage = handleApiError(err, {
+                context: LOG_CONTEXT,
+                action: "Lỗi xác thực OTP",
+                silent: true,
+                fallbackMessage: t("businessErrors:SYS_001", {
+                    defaultValue: "Lỗi hệ thống, vui lòng thử lại sau",
+                }),
+            });
+            setError(parsedMessage);
         } finally {
             setLoading(false);
         }
@@ -159,15 +161,16 @@ export function useVerifyForm({
             setDigits(["", "", "", "", "", ""]);
             inputsRef.current[0]?.focus();
             toast.success(
-                t("common:auth.resend_success", { defaultValue: "OTP resent successfully" })
+                t("common:auth.resend_success", { defaultValue: "Đã gửi lại mã OTP thành công" })
             );
         } catch (err: unknown) {
-            if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
-                const { globalMessage } = parseApiError(err.response.data);
-                if (globalMessage) toast.error(globalMessage);
-            } else {
-                toast.error(t("businessErrors:SYS_001"));
-            }
+            handleApiError(err, {
+                context: LOG_CONTEXT,
+                action: "Lỗi gửi lại OTP",
+                fallbackMessage: t("businessErrors:SYS_001", {
+                    defaultValue: "Lỗi hệ thống, vui lòng thử lại sau",
+                }),
+            });
         } finally {
             setLoading(false);
         }

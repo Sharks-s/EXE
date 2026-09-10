@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { petApi } from "../api/petApi";
+import { handleApiError } from "@/utils/handleApiError";
 import type { UserPet } from "../types/pet.type";
 
+const LOG_CONTEXT = "[useUserPets]";
+
 export function useUserPets() {
+  const { t } = useTranslation(["businessErrors", "common"]);
   const [pets, setPets] = useState<UserPet[]>([]);
   const [selectedPet, setSelectedPet] = useState<UserPet | null>(null);
   const [loading, setLoading] = useState(true);
@@ -13,15 +18,19 @@ export function useUserPets() {
     try {
       setLoading(true);
       setError("");
-
       const data = await petApi.getMyPets();
       setPets(data);
 
       const equippedPet = data.find((pet) => pet.equipped);
       setSelectedPet(equippedPet ?? data[0] ?? null);
     } catch (err) {
-      console.error(err);
-      setError("Không thể tải danh sách bạn đồng hành.");
+      const msg = handleApiError(err, {
+        context: LOG_CONTEXT,
+        action: "Tải thú cưng của user",
+        silent: true,
+        fallbackMessage: t("businessErrors:SYS_001", { defaultValue: "Lỗi hệ thống, vui lòng thử lại sau" }),
+      });
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -29,49 +38,37 @@ export function useUserPets() {
 
   useEffect(() => {
     fetchPets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const equippedPet = useMemo(() => {
-    return pets.find((pet) => pet.equipped) ?? null;
-  }, [pets]);
-
-  const premiumCount = useMemo(() => {
-    return pets.filter((pet) => pet.premium).length;
-  }, [pets]);
+  const equippedPet = useMemo(() => pets.find((pet) => pet.equipped) ?? null, [pets]);
+  const premiumCount = useMemo(() => pets.filter((pet) => pet.premium).length, [pets]);
 
   const addPetToCollection = (addedPet: UserPet) => {
     setPets((prev) => {
-      if (prev.some((pet) => pet.userPetId === addedPet.userPetId)) {
-        return prev;
-      }
-
+      if (prev.some((pet) => pet.userPetId === addedPet.userPetId)) return prev;
       return [addedPet, ...prev];
     });
-
     setSelectedPet((prev) => prev ?? addedPet);
   };
 
   const handleEquip = async (userPetId: number) => {
     try {
       setActionLoadingId(userPetId);
-      setError("");
-
       const updatedPet = await petApi.equipPet(userPetId);
 
       setPets((prev) =>
         prev.map((pet) => ({
           ...pet,
           equipped: pet.userPetId === updatedPet.userPetId,
-        })),
+        }))
       );
-
-      setSelectedPet({
-        ...updatedPet,
-        equipped: true,
-      });
+      setSelectedPet({ ...updatedPet, equipped: true });
     } catch (err) {
-      console.error(err);
-      setError("Không thể trang bị bạn đồng hành.");
+      handleApiError(err, {
+        context: LOG_CONTEXT,
+        action: "Trang bị thú cưng",
+      });
     } finally {
       setActionLoadingId(null);
     }
@@ -83,23 +80,16 @@ export function useUserPets() {
 
     try {
       setActionLoadingId(userPetId);
-      setError("");
-
       const updatedPet = await petApi.renamePet(userPetId, nextName);
 
-      setPets((prev) =>
-        prev.map((pet) =>
-          pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet,
-        ),
-      );
-
-      setSelectedPet((prev) =>
-        prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev,
-      );
+      setPets((prev) => prev.map((pet) => (pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet)));
+      setSelectedPet((prev) => (prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev));
       return true;
     } catch (err) {
-      console.error(err);
-      setError("Không thể đổi tên bạn đồng hành.");
+      handleApiError(err, {
+        context: LOG_CONTEXT,
+        action: "Đổi tên thú cưng",
+      });
       return false;
     } finally {
       setActionLoadingId(null);
@@ -109,22 +99,15 @@ export function useUserPets() {
   const handleUpgrade = async (userPetId: number) => {
     try {
       setActionLoadingId(userPetId);
-      setError("");
-
       const updatedPet = await petApi.upgradePet(userPetId);
 
-      setPets((prev) =>
-        prev.map((pet) =>
-          pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet,
-        ),
-      );
-
-      setSelectedPet((prev) =>
-        prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev,
-      );
+      setPets((prev) => prev.map((pet) => (pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet)));
+      setSelectedPet((prev) => (prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev));
     } catch (err) {
-      console.error(err);
-      setError("Không thể nâng cấp bạn đồng hành.");
+      handleApiError(err, {
+        context: LOG_CONTEXT,
+        action: "Nâng cấp thú cưng",
+      });
     } finally {
       setActionLoadingId(null);
     }

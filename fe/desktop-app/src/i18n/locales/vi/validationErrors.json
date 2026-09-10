@@ -13,5 +13,12 @@
   "confirmPassword": {
     "message": "Mật khẩu không khớp",
     "notMatch": "Mật khẩu không khớp"
+  },
+  "otp": {
+    "invalid_length": "Vui lòng nhập đủ 6 số OTP"
+  },
+  "petName": {
+    "notBlank": "Tên bạn đồng hành không được để trống",
+    "max": "Tên không được vượt quá {{max}} ký tự"
   }
 }

@@ -21,9 +21,29 @@ export default function PasswordForm({ sessionToken, onBack, onSuccess }: Props)
   const passwordReg = register("password");
   const confirmPasswordReg = register("confirmPassword");
 
+  // Tách biệt lỗi Server và Zod
+  const passwordErrorMessage = errors.password?.message
+    ? errors.password.type === "server"
+      ? errors.password.message
+      : t(`validationErrors:password.${errors.password.message}`, {
+        min: passwordLimits.min,
+        max: passwordLimits.max,
+        defaultValue: errors.password.message,
+      })
+    : null;
+
+  const confirmPasswordErrorMessage = errors.confirmPassword?.message
+    ? errors.confirmPassword.type === "server"
+      ? errors.confirmPassword.message
+      : t(`validationErrors:confirmPassword.${errors.confirmPassword.message}`, {
+        defaultValue: "Mật khẩu không khớp",
+      })
+    : null;
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
+      noValidate
       className="flex flex-col items-center justify-center text-center px-4"
     >
       <h1 className="text-2xl font-bold text-slate-800 mb-2">
@@ -51,12 +71,9 @@ export default function PasswordForm({ sessionToken, onBack, onSuccess }: Props)
               : "border-slate-300 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
             }`}
         />
-        {errors.password?.message && (
-          <p className="mt-1 text-xs text-red-500">
-            {t(`validationErrors:password.${errors.password.message}`, {
-              min: passwordLimits.min,
-              max: passwordLimits.max,
-            })}
+        {passwordErrorMessage && (
+          <p className="mt-1 text-xs text-left text-red-500">
+            {passwordErrorMessage}
           </p>
         )}
       </div>
@@ -79,12 +96,9 @@ export default function PasswordForm({ sessionToken, onBack, onSuccess }: Props)
               : "border-slate-300 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
             }`}
         />
-        {errors.confirmPassword?.message && (
-          <p className="mt-1 text-xs text-red-500">
-            {t(
-              `validationErrors:confirmPassword.${errors.confirmPassword.message}`,
-              { defaultValue: "Passwords do not match" }
-            )}
+        {confirmPasswordErrorMessage && (
+          <p className="mt-1 text-xs text-left text-red-500">
+            {confirmPasswordErrorMessage}
           </p>
         )}
       </div>

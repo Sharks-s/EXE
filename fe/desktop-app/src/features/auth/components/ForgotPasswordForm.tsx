@@ -15,17 +15,28 @@ export default function ForgotPasswordForm({ onSuccess, onBack }: Props) {
     createChangeHandler,
     loading,
     t,
+    emailLimits,
   } = useForgotPasswordForm({ onSuccess });
 
   const emailReg = register("email");
 
+  const emailErrorMessage = errors.email?.message
+    ? errors.email.type === "server"
+      ? errors.email.message
+      : t(`validationErrors:email.${errors.email.message}`, {
+        max: emailLimits.max,
+        defaultValue: errors.email.message,
+      })
+    : null;
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
+      noValidate
       className="flex flex-col items-center justify-center text-center px-4"
     >
       <h1 className="text-2xl font-bold text-slate-800 mb-2">
-        {t("common:auth.forgot_title", { defaultValue: "Reset Password" })}
+        {t("common:auth.forgot_title", { defaultValue: "Đặt lại mật khẩu" })}
       </h1>
 
       <p className="text-sm text-slate-500 mb-6">
@@ -39,7 +50,7 @@ export default function ForgotPasswordForm({ onSuccess, onBack }: Props) {
         <input
           {...emailReg}
           onChange={createChangeHandler("email", emailReg.onChange)}
-          type="text"
+          type="email"
           autoComplete="email"
           placeholder={t("common:auth.email_placeholder", {
             defaultValue: "Email",
@@ -49,11 +60,9 @@ export default function ForgotPasswordForm({ onSuccess, onBack }: Props) {
               : "border-slate-300 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
             }`}
         />
-        {errors.email?.message && (
-          <p className="mt-1 text-xs text-red-500">
-            {t(`validationErrors:email.${errors.email.message}`, {
-              defaultValue: errors.email.message,
-            })}
+        {emailErrorMessage && (
+          <p className="mt-1 text-xs text-left text-red-500">
+            {emailErrorMessage}
           </p>
         )}
       </div>
@@ -68,7 +77,7 @@ export default function ForgotPasswordForm({ onSuccess, onBack }: Props) {
           }`}
       >
         {loading
-          ? t("common:auth.sending", { defaultValue: "Sending..." })
+          ? t("common:auth.signing_in", { defaultValue: "Đang gửi..." })
           : t("common:auth.btn_send_otp", { defaultValue: "Gửi OTP" })}
       </button>
 
@@ -77,7 +86,7 @@ export default function ForgotPasswordForm({ onSuccess, onBack }: Props) {
         onClick={onBack}
         className="mt-4 text-sm text-slate-500 hover:underline cursor-pointer"
       >
-        {t("common:auth.btn_back", { defaultValue: "Back" })}
+        {t("common:auth.btn_back", { defaultValue: "Quay lại" })}
       </button>
     </form>
   );

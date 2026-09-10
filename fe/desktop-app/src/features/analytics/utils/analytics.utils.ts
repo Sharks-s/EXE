@@ -1,6 +1,4 @@
-import type { Trend } from "../types/analytics.types";
-
-export ariaLabels = { ... };
+import type { Trend } from "../types/analyticsPage.types";
 
 export const rangeLabels = [
     { range: "DAY", label: "Ngày" },

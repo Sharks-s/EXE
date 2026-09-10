@@ -4,9 +4,11 @@ import { useForm, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 
-import { RegisterInitSchema } from "../schemas/auth.schemas";
+import { ForgotPasswordSchema } from "../schemas/auth.schemas";
 import { forgotPasswordService } from "../services/auth.service";
 import { parseApiError } from "@/utils/error-mapper";
+import { handleApiError } from "@/utils/handleApiError";
+import { getStringLimits } from "@/utils/zod-utils";
 import { toast } from "@/shared/store/toastStore";
 import type { ApiErrorResponse } from "@/types";
 import type {
@@ -18,8 +20,11 @@ interface UseForgotPasswordFormProps {
     onSuccess: (res: ForgotPasswordResponse, email: string) => void;
 }
 
+const emailLimits = getStringLimits(ForgotPasswordSchema.shape.email);
+const LOG_CONTEXT = "[useForgotPasswordForm]";
+
 export function useForgotPasswordForm({ onSuccess }: UseForgotPasswordFormProps) {
-    const { t } = useTranslation();
+    const { t } = useTranslation(["validationErrors", "businessErrors", "common"]);
     const [loading, setLoading] = useState(false);
 
     const {
@@ -29,7 +34,7 @@ export function useForgotPasswordForm({ onSuccess }: UseForgotPasswordFormProps)
         clearErrors,
         formState: { errors },
     } = useForm<ForgotPasswordRequest>({
-        resolver: zodResolver(RegisterInitSchema),
+        resolver: zodResolver(ForgotPasswordSchema),
         mode: "onChange",
         reValidateMode: "onChange",
     });
@@ -45,22 +50,29 @@ export function useForgotPasswordForm({ onSuccess }: UseForgotPasswordFormProps)
             if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
                 const { globalMessage, fieldErrors } = parseApiError(err.response.data);
 
-                Object.entries(fieldErrors).forEach(([field, message]) => {
-                    setError(field as FieldPath<ForgotPasswordRequest>, {
-                        type: "server",
-                        message: message ?? t("errorCodes.VAL_001", { defaultValue: "Dữ liệu không hợp lệ" }),
+                if (Object.keys(fieldErrors).length > 0) {
+                    Object.entries(fieldErrors).forEach(([field, message]) => {
+                        setError(field as FieldPath<ForgotPasswordRequest>, {
+                            type: "server",
+                            message:
+                                message ??
+                                t("businessErrors:VAL_001", { defaultValue: "Dữ liệu không hợp lệ" }),
+                        });
                     });
-                });
+                    console.error(`${LOG_CONTEXT} Lỗi validate từ server:`, err);
 
-                if (globalMessage) {
-                    toast.error(globalMessage);
+                    if (globalMessage) toast.error(globalMessage);
+                    return;
                 }
-            } else {
-                const fallbackMessage = t("errorCodes.SYS_001", {
-                    defaultValue: "Lỗi hệ thống, vui lòng thử lại sau",
-                });
-                toast.error(fallbackMessage);
             }
+
+            handleApiError(err, {
+                context: LOG_CONTEXT,
+                action: "Lỗi yêu cầu đặt lại mật khẩu",
+                fallbackMessage: t("businessErrors:SYS_001", {
+                    defaultValue: "Lỗi hệ thống, vui lòng thử lại sau",
+                }),
+            });
         } finally {
             setLoading(false);
         }
@@ -85,5 +97,6 @@ export function useForgotPasswordForm({ onSuccess }: UseForgotPasswordFormProps)
         createChangeHandler,
         loading,
         t,
+        emailLimits,
     };
 }

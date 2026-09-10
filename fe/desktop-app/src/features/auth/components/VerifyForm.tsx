@@ -47,15 +47,16 @@ export default function VerifyForm({
   return (
     <form
       onSubmit={handleVerify}
+      noValidate
       className="flex flex-col items-center justify-center text-center px-4"
     >
       <h1 className="text-2xl font-bold text-slate-800 mb-2">
-        {t("common:auth.verify_title", { defaultValue: "Verify OTP" })}
+        {t("common:auth.verify_title", { defaultValue: "Xác thực OTP" })}
       </h1>
 
       <p className="text-sm text-slate-500 mb-6">
         {t("common:auth.verify_subtitle", {
-          defaultValue: "We sent a 6-digit code to",
+          defaultValue: "Chúng tôi đã gửi mã 6 số đến",
         })}{" "}
         <span className="font-medium text-slate-700">{email}</span>
       </p>
@@ -98,13 +99,13 @@ export default function VerifyForm({
           }`}
       >
         {loading
-          ? t("common:auth.verifying", { defaultValue: "Verifying..." })
-          : t("common:auth.btn_verify", { defaultValue: "Verify" })}
+          ? t("common:auth.verifying", { defaultValue: "Đang xác thực..." })
+          : t("common:auth.btn_verify", { defaultValue: "Xác thực" })}
       </button>
 
       {/* EXPIRES COUNTDOWN */}
       <p className="mt-4 text-sm text-slate-600">
-        {t("common:auth.expires_in", { defaultValue: "Expires in" })}{" "}
+        {t("common:auth.expires_in", { defaultValue: "Hết hạn sau" })}{" "}
         <b className="text-slate-800">{remaining}s</b>
       </p>
 
@@ -116,7 +117,7 @@ export default function VerifyForm({
           disabled={remaining > 0 || loading}
           className="text-[#0f8fd8] font-medium disabled:opacity-40 hover:underline cursor-pointer"
         >
-          {t("common:auth.btn_resend", { defaultValue: "Resend OTP" })}
+          {t("common:auth.btn_resend", { defaultValue: "Gửi lại OTP" })}
         </button>
 
         <button
@@ -124,7 +125,7 @@ export default function VerifyForm({
           onClick={onBack}
           className="text-slate-500 hover:underline cursor-pointer"
         >
-          {t("common:auth.btn_back", { defaultValue: "Back" })}
+          {t("common:auth.btn_back", { defaultValue: "Quay lại" })}
         </button>
       </div>
     </form>

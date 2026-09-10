@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { analyticsApi } from "../api/analytics.api";
-import { toast } from "@/shared/store/toastStore";
+import { handleApiError, handleBatchApiErrors } from "@/utils/handleApiError";
 import type {
     AnalyticsRange,
     AnalyticsSummary,
@@ -11,6 +11,8 @@ import type {
     HourlyAnalytics,
     ViolationAnalytics,
 } from "../types/analytics.types";
+
+const LOG_CONTEXT = "[useAnalytics]";
 
 export function useAnalytics() {
     const { t } = useTranslation("common");
@@ -44,6 +46,12 @@ export function useAnalytics() {
         });
     };
 
+    // Lưu ý: KHÔNG đưa `t` vào dependency. Reference của `t` đổi mỗi lần
+    // đổi ngôn ngữ (i18n.changeLanguage) nhưng dữ liệu analytics (số liệu)
+    // không phụ thuộc ngôn ngữ — nếu để `t` trong deps sẽ khiến effect chạy
+    // lại và gọi lại toàn bộ 5 API mỗi khi user chỉ đổi vi/en, hoàn toàn lãng phí.
+    // Bản thân `t` vẫn luôn trả về đúng ngôn ngữ hiện tại tại thời điểm gọi
+    // (đọc trực tiếp từ i18n instance), nên bỏ khỏi deps không gây sai lệch dịch thuật.
     useEffect(() => {
         let cancelled = false;
 
@@ -73,30 +81,27 @@ export function useAnalytics() {
                 if (goalsResult.status === "fulfilled") setGoals(goalsResult.value);
                 if (violationsResult.status === "fulfilled") setViolations(violationsResult.value);
 
-                const failedResults = [
+                const failedErrors = [
                     summaryResult,
                     focusTimeResult,
                     hourlyResult,
                     goalsResult,
                     violationsResult,
-                ].filter((result) => result.status === "rejected");
+                ]
+                    .filter((result) => result.status === "rejected")
+                    .map((result) => (result as PromiseRejectedResult).reason);
 
-                // Log chi tiết lỗi hệ thống ra console để debug — không cần dịch, chỉ dev xem
-                failedResults.forEach((result) => {
-                    if (result.status === "rejected") {
-                        console.error("[useAnalytics] Lỗi tải dữ liệu:", result.reason);
-                    }
+                // Gộp lỗi: 1 lỗi -> hiện đúng message cụ thể (SESSION_xxx, PREMIUM_xxx...);
+                // nhiều lỗi cùng lúc -> 1 toast chung, tránh spam 5 toast cho user.
+                handleBatchApiErrors(failedErrors, {
+                    context: LOG_CONTEXT,
+                    action: "Lỗi tải dữ liệu analytics",
+                    groupedMessage: t("analytics.partial_load_error", {
+                        defaultValue:
+                            "Một vài thống kê chưa tải được, đang hiển thị phần còn lại.",
+                    }),
+                    dedupeKey: `analytics-summary-${range}`,
                 });
-
-                // Báo cho user biết bằng toast, nội dung qua t() để đổi theo ngôn ngữ
-                if (failedResults.length > 0) {
-                    toast.error(
-                        t("analytics.partial_load_error", {
-                            defaultValue:
-                                "Một vài thống kê chưa tải được, đang hiển thị phần còn lại.",
-                        }),
-                    );
-                }
             } finally {
                 if (!cancelled) setIsLoading(false);
             }
@@ -106,7 +111,8 @@ export function useAnalytics() {
         return () => {
             cancelled = true;
         };
-    }, [range, t]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [range]);
 
     useEffect(() => {
         let cancelled = false;
@@ -116,15 +122,19 @@ export function useAnalytics() {
                 const calendarResult = await analyticsApi.getCalendar(calendarYear, calendarMonth);
                 if (!cancelled) setCalendar(calendarResult);
             } catch (err) {
-                console.error("[useAnalytics] Lỗi tải lịch heatmap:", err);
-                if (!cancelled) {
-                    setCalendar(null);
-                    toast.error(
-                        t("analytics.calendar_load_error", {
-                            defaultValue: "Chưa tải được tần suất tập trung của tháng này.",
-                        }),
-                    );
-                }
+                if (cancelled) return;
+
+                setCalendar(null);
+                handleApiError(err, {
+                    context: LOG_CONTEXT,
+                    action: "Lỗi tải lịch heatmap",
+                    fallbackMessage: t("analytics.calendar_load_error", {
+                        defaultValue: "Chưa tải được tần suất tập trung của tháng này.",
+                    }),
+                    // Dedupe theo tháng: user bấm next/prev liên tục khi BE lỗi
+                    // sẽ không bị spam toast, nhưng console vẫn log đầy đủ để debug.
+                    dedupeKey: "analytics-calendar",
+                });
             }
         };
 
@@ -132,7 +142,8 @@ export function useAnalytics() {
         return () => {
             cancelled = true;
         };
-    }, [calendarMonth, calendarYear, t]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [calendarMonth, calendarYear]);
 
     return {
         range,

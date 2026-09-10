@@ -24,9 +24,23 @@ export default function LoginForm({ onForgotPassword }: Props) {
   const isEmailError = !!errors.email;
   const isPasswordError = !!errors.password;
 
+  // Xử lý message linh hoạt: Server trả về nguyên câu thì in luôn, Zod trả về key thì dịch qua i18n
+  const emailErrorMessage = errors.email?.message
+    ? errors.email.type === "server"
+      ? errors.email.message
+      : t(`validationErrors:email.${errors.email.message}`, { max: emailLimits.max })
+    : null;
+
+  const passwordErrorMessage = errors.password?.message
+    ? errors.password.type === "server"
+      ? errors.password.message
+      : t(`validationErrors:password.${errors.password.message}`, { max: passwordLimits.max })
+    : null;
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
+      noValidate
       className="h-full w-full flex flex-col items-center justify-center bg-[#f1f5f9] px-10 rounded-tr-[100px]"
     >
       <h1 className="text-2xl font-bold text-slate-800 mb-2">
@@ -44,7 +58,7 @@ export default function LoginForm({ onForgotPassword }: Props) {
         <input
           {...emailReg}
           onChange={createChangeHandler("email", emailReg.onChange)}
-          type="text"
+          type="email"
           autoComplete="email"
           placeholder={t("common:auth.email_placeholder", {
             defaultValue: "Email",
@@ -54,11 +68,9 @@ export default function LoginForm({ onForgotPassword }: Props) {
             : "border-slate-300 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
             }`}
         />
-        {errors.email?.message && (
-          <p className="mt-1 text-xs text-red-500">
-            {t(`validationErrors:email.${errors.email.message}`, {
-              max: emailLimits.max,
-            })}
+        {emailErrorMessage && (
+          <p className="mt-1 text-xs text-red-500 text-left">
+            {emailErrorMessage}
           </p>
         )}
       </div>
@@ -78,11 +90,9 @@ export default function LoginForm({ onForgotPassword }: Props) {
             : "border-slate-300 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
             }`}
         />
-        {errors.password?.message && (
-          <p className="mt-1 text-xs text-red-500">
-            {t(`validationErrors:password.${errors.password.message}`, {
-              max: passwordLimits.max,
-            })}
+        {passwordErrorMessage && (
+          <p className="mt-1 text-xs text-red-500 text-left">
+            {passwordErrorMessage}
           </p>
         )}
       </div>
@@ -114,15 +124,10 @@ export default function LoginForm({ onForgotPassword }: Props) {
       </button>
 
       <div className="flex items-center my-4 w-full max-w-sm">
-        {/* Đường gạch trái */}
         <div className="flex-grow border-t border-slate-200"></div>
-
-        {/* Chữ ở giữa */}
         <span className="shrink-0 px-3 text-xs font-medium text-slate-400 uppercase">
           {t("common:auth.login_divider", { defaultValue: "Or sign up with" })}
         </span>
-
-        {/* Đường gạch phải */}
         <div className="flex-grow border-t border-slate-200"></div>
       </div>
 

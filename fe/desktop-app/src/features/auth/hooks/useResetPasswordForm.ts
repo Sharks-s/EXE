@@ -12,6 +12,7 @@ import {
 import { resetPasswordService } from "../services/auth.service";
 import { getStringLimits } from "@/utils/zod-utils";
 import { parseApiError } from "@/utils/error-mapper";
+import { handleApiError } from "@/utils/handleApiError";
 import { toast } from "@/shared/store/toastStore";
 import type { ApiErrorResponse } from "@/types";
 
@@ -20,6 +21,8 @@ type FormData = z.infer<typeof CompleteRegisterSchema>;
 const passwordLimits = getStringLimits(
     CompleteRegisterBaseShape.shape.password
 );
+
+const LOG_CONTEXT = "[useResetPasswordForm]";
 
 interface UseResetPasswordFormProps {
     sessionToken: string;
@@ -55,19 +58,32 @@ export function useResetPasswordForm({
             if (axios.isAxiosError<ApiErrorResponse>(err) && err.response?.data) {
                 const { globalMessage, fieldErrors } = parseApiError(err.response.data);
 
-                Object.entries(fieldErrors).forEach(([field, message]) => {
-                    setError(field as FieldPath<FormData>, {
-                        type: "server",
-                        message: message ?? "Invalid value",
+                if (Object.keys(fieldErrors).length > 0) {
+                    Object.entries(fieldErrors).forEach(([field, message]) => {
+                        setError(field as FieldPath<FormData>, {
+                            type: "server",
+                            message:
+                                message ??
+                                t("businessErrors:VAL_001", { defaultValue: "Dữ liệu không hợp lệ" }),
+                        });
                     });
-                });
 
-                if (globalMessage) {
-                    toast.error(globalMessage);
+                    console.error(`${LOG_CONTEXT} Lỗi validate từ server:`, err);
+
+                    if (globalMessage) {
+                        toast.error(globalMessage);
+                    }
+                    return;
                 }
-            } else {
-                toast.error(t("businessErrors:SYS_001"));
             }
+
+            handleApiError(err, {
+                context: LOG_CONTEXT,
+                action: "Lỗi đặt lại mật khẩu",
+                fallbackMessage: t("businessErrors:SYS_001", {
+                    defaultValue: "Lỗi hệ thống, vui lòng thử lại sau",
+                }),
+            });
         } finally {
             setLoading(false);
         }

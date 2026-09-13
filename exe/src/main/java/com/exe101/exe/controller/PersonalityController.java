@@ -9,6 +9,7 @@ import com.exe101.exe.service.PersonalityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,6 +36,7 @@ public class PersonalityController {
         return ResponseEntity.ok(ApiResponse.success(personalityService.getById(personalityId)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<PersonalityResponse>> create(
             @Valid @RequestBody CreatePersonalityRequest request
@@ -43,6 +45,7 @@ public class PersonalityController {
                 .ok(ApiResponse.success(personalityService.create(request)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<PersonalityResponse>> update(
             @PathVariable Long id,
@@ -51,6 +54,7 @@ public class PersonalityController {
         return ResponseEntity.ok(ApiResponse.success(personalityService.update(id, request)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         personalityService.delete(id);

@@ -108,7 +108,10 @@ public enum ErrorCode {
 
     // ===== APPRULE =====
     APP_RULE_NOT_FOUND("APPRULE_001", HttpStatus.NOT_FOUND, "App rule not found"),
-    APP_RULE_ALREADY_EXISTS("APPRULE_002", HttpStatus.CONFLICT, "App rule already exists")
+    APP_RULE_ALREADY_EXISTS("APPRULE_002", HttpStatus.CONFLICT, "App rule already exists"),
+
+    // ===== ADMIN =====
+    INVALID_ADMIN_USER_STATUS("ADMIN_001", HttpStatus.BAD_REQUEST, "Invalid admin user status")
     ;
     private final String code;
     private final HttpStatus httpStatus;

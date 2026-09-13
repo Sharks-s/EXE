@@ -1,27 +1,6 @@
-import { useState, useEffect } from "react";
-import type { FormEvent, KeyboardEvent } from "react";
-import {
-  authSession,
-  logoutService,
-  authStorage,
-  useAuthStore,
-} from "@/features/auth";
-import { settingsApi } from "../api/settings.api";
-import type { PersonalityResponse } from "../types/settings.types";
-import { profileApi } from "@/features/profile";
-import { queryClient } from "@/lib/queryClient";
-import { toast } from "@/shared/store/toastStore";
+import type { KeyboardEvent } from "react";
 import "./SettingsPage.css";
-import type { AppRuleResponse } from "../types/settings.types";
-import { useTranslation } from "react-i18next";
-
-type AppListTab = "whitelist" | "blacklist";
-
-interface DeviceInfo {
-  id: string;
-  name: string;
-  lastActive: string;
-}
+import { useSettings } from "../hooks/useSettings";
 
 const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> = {
   INSPIRING: { icon: "psychology", className: "ai-primary" },
@@ -33,191 +12,46 @@ const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> 
 const DEFAULT_PERSONALITY_ICON = { icon: "psychology", className: "ai-primary" };
 
 export default function SettingsPage() {
-  // ── Cấu hình AI ──
-  const [personalities, setPersonalities] = useState<PersonalityResponse[]>([]);
-  const [activePersonalityId, setActivePersonalityId] = useState<number | null>(null);
-  const [isSavingPersonality, setIsSavingPersonality] = useState(false);
-  const [selfAddress, setSelfAddress] = useState("");
-  const [userAddress, setUserAddress] = useState("");
-  const [isSavingAiAddress, setIsSavingAiAddress] = useState(false);
-  const { i18n } = useTranslation();
-
-  // ── Ngôn ngữ ── (TODO: nối i18n thật)
-  // ── Danh sách ứng dụng ── (TODO: nối API app-rules ở Việc 4)
-  const [appListTab, setAppListTab] = useState<AppListTab>("whitelist");
-  const [appRules, setAppRules] = useState<AppRuleResponse[]>([]);
-  const [newKeyword, setNewKeyword] = useState("");
-  const [isAddingRule, setIsAddingRule] = useState(false);
-
-  // ── Thông báo ── (TODO: nối API cấu hình thông báo ở Việc 6)
-  const [warningWindowEnabled, setWarningWindowEnabled] = useState(true);
-  const [soundReminderEnabled, setSoundReminderEnabled] = useState(false);
-
-  // ── Bảo mật & Tài khoản ──
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    oldPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
-  // Danh sách thiết bị — TODO: nối API liệt kê thiết bị thật ở Việc 3, hiện để rỗng
-  const [devices] = useState<DeviceInfo[]>([]);
-
-  useEffect(() => {
-    Promise.all([
-      profileApi.getMyProfile(),
-      settingsApi.getPersonalities(),
-      settingsApi.getMyAppRules(),
-    ])
-      .then(([profile, personalityList, ruleList]) => {
-        setSelfAddress(profile.aiSelfAddress ?? "");
-        setUserAddress(profile.aiUserAddress ?? "");
-        setActivePersonalityId(
-          profile.personalityId != null ? Number(profile.personalityId) : null
-        );
-        setPersonalities(personalityList);
-        setAppRules(ruleList);
-      })
-      .catch(() => {
-        toast.error("Không thể tải cấu hình.");
-      });
-  }, []);
-
-  const currentRuleType = appListTab === "whitelist" ? "WHITELIST" : "BLACKLIST";
-  const currentList = appRules.filter((r) => r.ruleType === currentRuleType);
-
-  const handleAddKeyword = async () => {
-    const trimmed = newKeyword.trim().toLowerCase();
-    if (!trimmed || isAddingRule) return;
-
-    if (currentList.some((r) => r.keyword === trimmed)) {
-      toast.error("Từ khóa này đã tồn tại.");
-      return;
-    }
-
-    try {
-      setIsAddingRule(true);
-      const created = await settingsApi.createAppRule({
-        keyword: trimmed,
-        ruleType: currentRuleType,
-      });
-      setAppRules((prev) => [...prev, created]);
-      setNewKeyword("");
-    } catch {
-      toast.error("Không thể thêm từ khóa.");
-    } finally {
-      setIsAddingRule(false);
-    }
-  };
-
-  const handleRemoveKeyword = async (ruleId: number) => {
-    const previousRules = appRules;
-    setAppRules((prev) => prev.filter((r) => r.id !== ruleId)); // optimistic update
-
-    try {
-      await settingsApi.deleteAppRule(ruleId);
-    } catch {
-      setAppRules(previousRules); // rollback nếu lỗi
-      toast.error("Không thể xóa từ khóa.");
-    }
-  };
-
-  const handlePasswordSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("Mật khẩu xác nhận không khớp.");
-      return;
-    }
-
-    try {
-      setIsChangingPassword(true);
-      await profileApi.changePassword({
-        oldPassword: passwordForm.oldPassword,
-        newPassword: passwordForm.newPassword,
-      });
-      setIsPasswordModalOpen(false);
-      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
-      toast.success("Đã đổi mật khẩu.");
-    } catch {
-      toast.error("Không thể đổi mật khẩu.");
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logoutService();
-      useAuthStore.setState({ user: null });
-    } catch {
-      toast.error("Không thể đăng xuất.");
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      setIsDeletingAccount(true);
-      await profileApi.deleteMyAccount();
-      authStorage.clear();
-      await authSession.markLoggedOut();
-      queryClient.clear();
-      useAuthStore.setState({ user: null });
-      toast.success("Tài khoản đã được xóa.");
-    } catch {
-      toast.error("Không thể xóa tài khoản.");
-    } finally {
-      setIsDeletingAccount(false);
-      setIsDeleteModalOpen(false);
-    }
-  };
-
-  const handleSaveAiAddress = async () => {
-    try {
-      setIsSavingAiAddress(true);
-      await settingsApi.updateAiAddress({
-        aiSelfAddress: selfAddress.trim(),
-        aiUserAddress: userAddress.trim(),
-      });
-      toast.success("Đã lưu xưng hô AI.");
-    } catch {
-      toast.error("Không thể lưu xưng hô AI.");
-    } finally {
-      setIsSavingAiAddress(false);
-    }
-  };
-
-  const handleSelectPersonality = async (personalityId: number) => {
-    if (personalityId === activePersonalityId || isSavingPersonality) return;
-
-    const previousId = activePersonalityId;
-    setActivePersonalityId(personalityId); // optimistic update
-
-    try {
-      setIsSavingPersonality(true);
-      await settingsApi.updateUserPersonality({ personalityId });
-      toast.success("Đã đổi cá tính AI.");
-    } catch {
-      setActivePersonalityId(previousId); // rollback nếu lỗi
-      toast.error("Không thể đổi cá tính AI.");
-    } finally {
-      setIsSavingPersonality(false);
-    }
-  };
-
-  const handleChangeLanguage = async (lang: "vi" | "en") => {
-    i18n.changeLanguage(lang); // đổi UI ngay lập tức
-    try {
-      await settingsApi.changeLanguage({ language: lang });
-    } catch {
-      toast.error("Không thể lưu ngôn ngữ lên tài khoản (vẫn áp dụng trên máy này).");
-    }
-  };
+  const {
+    i18n,
+    personalities,
+    activePersonalityId,
+    selfAddress,
+    setSelfAddress,
+    userAddress,
+    setUserAddress,
+    isSavingAiAddress,
+    handleSaveAiAddress,
+    handleSelectPersonality,
+    handleChangeLanguage,
+    appListTab,
+    setAppListTab,
+    appRules,
+    newKeyword,
+    setNewKeyword,
+    isAddingRule,
+    currentList,
+    handleAddKeyword,
+    handleRemoveKeyword,
+    warningWindowEnabled,
+    setWarningWindowEnabled,
+    soundReminderEnabled,
+    setSoundReminderEnabled,
+    isPasswordModalOpen,
+    setIsPasswordModalOpen,
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    isDeviceModalOpen,
+    setIsDeviceModalOpen,
+    isChangingPassword,
+    isDeletingAccount,
+    passwordForm,
+    setPasswordForm,
+    devices,
+    handlePasswordSubmit,
+    handleLogout,
+    handleDeleteAccount,
+  } = useSettings();
 
   return (
     <div>
@@ -470,25 +304,6 @@ export default function SettingsPage() {
                   Thay đổi
                 </button>
               </div>
-
-              {/* <div className="security-row">
-                <div className="security-info">
-                  <span className="material-symbols-outlined security-icon">
-                    devices
-                  </span>
-                  <div>
-                    <p>Thiết bị đăng nhập</p>
-                    <small>{devices.length} thiết bị đang hoạt động</small>
-                  </div>
-                </div>
-                <button
-                  className="text-button"
-                  type="button"
-                  onClick={() => setIsDeviceModalOpen(true)}
-                >
-                  Quản lý
-                </button>
-              </div> */}
             </div>
 
             <button className="logout-button" type="button" onClick={handleLogout}>

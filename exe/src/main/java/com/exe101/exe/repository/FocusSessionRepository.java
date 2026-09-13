@@ -28,4 +28,6 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM FocusSession s WHERE s.id = :id")
     Optional<FocusSession> findByIdForUpdate(@Param("id") Long id);
+
+    long countByUserId(Long userId);
 }

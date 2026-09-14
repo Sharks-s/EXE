@@ -1,8 +1,12 @@
 package com.exe101.exe.repository;
 
 import com.exe101.exe.model.entity.User;
+import com.exe101.exe.model.enums.UserStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -39,4 +43,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
     where u.id = :userId
 """)
     Optional<User> findByIdWithRoles(Long userId);
+
+    // ===== ADMIN =====
+    @Query("""
+        select u from User u
+        where (:status is null or u.status = :status)
+        and (:keyword is null or :keyword = ''
+             or lower(u.email) like lower(concat('%', :keyword, '%'))
+             or lower(u.fullName) like lower(concat('%', :keyword, '%')))
+        """)
+    Page<User> searchUsers(
+            @Param("keyword") String keyword,
+            @Param("status") UserStatus status,
+            Pageable pageable
+    );
 }

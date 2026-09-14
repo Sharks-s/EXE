@@ -1,7 +1,11 @@
 package com.exe101.exe.service.impl;
 
 import com.exe101.exe.config.AppSeedProperties;
+import com.exe101.exe.dto.request.UpdatePetRequest;
+import com.exe101.exe.dto.response.AdminPetResponse;
 import com.exe101.exe.dto.response.PetResponse;
+import com.exe101.exe.exception.BusinessException;
+import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.Pet;
 import com.exe101.exe.repository.PetRepository;
 import com.exe101.exe.service.PetService;
@@ -60,5 +64,40 @@ public class PetServiceImpl implements PetService {
                         .premium(pet.isPremium())
                         .build())
                 .toList();
+    }
+
+    @Override
+    public List<AdminPetResponse> adminGetAll() {
+        return petRepository.findAll().stream()
+                .map(this::toAdminResponse)
+                .toList();
+    }
+
+    @Override
+    public AdminPetResponse adminGetById(Long id) {
+        Pet pet = petRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PET_NOT_FOUND));
+        return toAdminResponse(pet);
+    }
+
+    @Override
+    @Transactional
+    public AdminPetResponse adminUpdate(Long id, UpdatePetRequest request) {
+        Pet pet = petRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PET_NOT_FOUND));
+
+        pet.setName(request.name());
+        pet.setDescription(request.description());
+        pet.setImageUrl(request.imageUrl());
+        pet.setPremium(request.premium());
+
+        return toAdminResponse(petRepository.save(pet));
+    }
+
+    private AdminPetResponse toAdminResponse(Pet pet) {
+        return new AdminPetResponse(
+                pet.getId(), pet.getCode(), pet.getName(),
+                pet.getDescription(), pet.getImageUrl(), pet.isPremium()
+        );
     }
 }

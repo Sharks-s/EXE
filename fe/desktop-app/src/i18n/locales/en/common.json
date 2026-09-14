@@ -254,7 +254,7 @@
     },
     "playlist": {
       "title": "Playlist",
-      "subtitle": "Selected songs — will play during Focus Sessions",
+      "subtitle": "Selected songs — will play during learning",
       "count_badge": "{{count}} tracks",
       "no_enabled_songs": "No songs selected. Check songs from the left column to add them to the playlist.",
       "currently_playing": "Playing"

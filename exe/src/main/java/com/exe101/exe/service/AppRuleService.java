@@ -14,4 +14,8 @@ public interface AppRuleService {
     List<AppRuleResponse> getMyRules(Long userId);
     AppRuleResponse createRule(Long userId, CreateAppRuleRequest request);
     void deleteRule(Long userId, Long ruleId);
+
+    List<AppRuleResponse> adminGetGlobalRules();
+    AppRuleResponse adminCreateGlobalRule(CreateAppRuleRequest request);
+    void adminDeleteGlobalRule(Long ruleId);
 }

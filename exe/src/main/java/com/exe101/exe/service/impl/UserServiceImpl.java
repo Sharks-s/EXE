@@ -356,6 +356,14 @@ public class UserServiceImpl implements UserService {
         return findByIdWithRoles(userId);
     }
 
+    @Override
+    @Transactional
+    public void recordLogin(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_ID_NOT_FOUND));
+        user.setLastLoginAt(Instant.now());
+        userRepository.save(user);
+    }
 
     // HELPER
     private List<String> getMissingRequiredFields(User user) {

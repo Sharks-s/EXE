@@ -30,4 +30,14 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
     Optional<FocusSession> findByIdForUpdate(@Param("id") Long id);
 
     long countByUserId(Long userId);
+
+    @Query("""
+    select s from FocusSession s
+    join fetch s.user u
+    left join fetch s.personality p
+    left join fetch s.userPet up
+    where s.status = :status
+    order by s.startedAt desc
+    """)
+    List<FocusSession> findAllByStatusWithDetails(@Param("status") SessionStatus status);
 }

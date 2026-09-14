@@ -108,6 +108,8 @@ public class AuthServiceImpl implements AuthService {
 
         refreshTokenService.create(user.getId(), refreshToken, deviceId);
 
+        userService.recordLogin(user.getId());
+
         return new OAuthLoginResult(accessToken, refreshToken, isNewUser[0]);
     }
 
@@ -135,6 +137,8 @@ public class AuthServiceImpl implements AuthService {
                 jwtTokenProvider.generateRefreshToken(userId, deviceId);
 
         refreshTokenService.create(userId, refreshToken, deviceId);
+
+        userService.recordLogin(userId);
 
         return LoginResult.builder()
                 .refreshToken(refreshToken)
@@ -203,6 +207,8 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), deviceId);
         refreshTokenService.create(user.getId(), refreshToken, deviceId);
+
+        userService.recordLogin(user.getId());
 
         user = userService.findByIdWithRoles(user.getId());
 

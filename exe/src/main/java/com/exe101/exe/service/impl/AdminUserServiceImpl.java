@@ -5,12 +5,15 @@ import com.exe101.exe.dto.response.AdminUserListItem;
 import com.exe101.exe.dto.response.PagedResponse;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
+import com.exe101.exe.model.entity.Role;
 import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.entity.UserRole;
 import com.exe101.exe.model.enums.UserStatus;
 import com.exe101.exe.repository.FocusSessionRepository;
+import com.exe101.exe.repository.RoleRepository;
 import com.exe101.exe.repository.SubscriptionRepository;
 import com.exe101.exe.repository.UserRepository;
+import com.exe101.exe.repository.UserRoleRepository;
 import com.exe101.exe.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +38,8 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final FocusSessionRepository focusSessionRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public PagedResponse<AdminUserListItem> listUsers(String keyword, UserStatus status, int page, int size) {
@@ -107,6 +113,37 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         u.setStatus(newStatus);
         userRepository.save(u);
+
+        return getUserDetail(userId);
+    }
+
+    @Override
+    @Transactional
+    public AdminUserDetailResponse updateUserRole(Long userId, String roleCode) {
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        Role newRole = roleRepository.findByCode(roleCode)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
+
+        UserRole currentActiveRole = userRoleRepository.findByUserAndActiveTrue(user);
+        if (currentActiveRole != null) {
+            currentActiveRole.setActive(false);
+            userRoleRepository.save(currentActiveRole);
+        }
+
+        UserRole newUserRole = userRoleRepository.findByUserAndRole(user, newRole);
+        if (newUserRole != null) {
+            newUserRole.setActive(true);
+        } else {
+            newUserRole = UserRole.builder()
+                    .user(user)
+                    .role(newRole)
+                    .active(true)
+                    .assignedAt(Instant.now())
+                    .build();
+        }
+        userRoleRepository.save(newUserRole);
 
         return getUserDetail(userId);
     }

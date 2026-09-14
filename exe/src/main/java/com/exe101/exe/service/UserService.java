@@ -52,4 +52,6 @@ public interface UserService {
     User updateUserPersonality(Long userId, UpdateUserPersonalityRequest request);
 
     User changeLanguage(Long userId, ChangeLanguageRequest request);
+
+    void recordLogin(Long userId);
 }

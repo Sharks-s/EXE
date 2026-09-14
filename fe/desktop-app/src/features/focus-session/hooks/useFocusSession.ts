@@ -4,12 +4,16 @@ import { useFocusStore } from "../stores/focusStore";
 import { focusApi } from "../api/focus.api";
 import { emit, listen } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { usePointsStore } from "@/features/points";
 
 import { useCameraViolationWatch } from "./useCameraViolationWatch";
 import { useAppViolationWatch } from "./useAppViolationWatch";
 import { useBotAction } from "./useBotAction";
 import { useSessionCloseGuard } from "./useSessionCloseGuard";
-import { isDailyLimitExceededError } from "@/utils/api-error-code";
+import {
+  getApiErrorCode,
+  isDailyLimitExceededError,
+} from "@/utils/api-error-code";
 
 // ── Hằng số cấu hình (gom lại 1 chỗ, không rải rác trong hàm) ──
 const PROMPT_DURATION_SECONDS = 60;
@@ -18,7 +22,15 @@ const MAIN_INTERVAL_MS = 1000;
 const FINAL_STRETCH_WARNING_SECONDS = 3 * 60;
 
 export function useFocusSession() {
-  const { session, syncSession, appRules, allowedCache, violatingCache } = useFocusStore();
+  const {
+    session,
+    syncSession,
+    completeSession,
+    clearSession,
+    appRules,
+    allowedCache,
+    violatingCache,
+  } = useFocusStore();
 
   // ── State phục vụ UI ──
   const [elapsed, setElapsed] = useState<number>(0);
@@ -409,6 +421,15 @@ export function useFocusSession() {
     stopCameraWatch();
   };
 
+  const restoreMainWindow = async () => {
+    const main = await WebviewWindow.getByLabel("main");
+    const widget = await WebviewWindow.getByLabel("widget");
+    if (main && widget) {
+      await main.show();
+      await widget.hide();
+    }
+  };
+
   const handleEndSession = async (isAborted: boolean) => {
     const latestSession = sessionRef.current;
     if (!latestSession) return;
@@ -417,16 +438,29 @@ export function useFocusSession() {
     stopOrchestrator();
 
     try {
-      const res = await focusApi.endSession(latestSession.id, isAborted);
-      syncSession(res);
+      if (isAborted) {
+        const res = await focusApi.endSession(latestSession.id, true);
+        syncSession(res);
+      } else {
+        const result = await focusApi.completeSession(latestSession.id);
+        const completedSession = {
+          ...latestSession,
+          status: "COMPLETED" as const,
+          actualDuration: Math.max(Math.ceil(elapsed / 60), 0),
+          endedAt: new Date().toISOString(),
+        };
 
-      const main = await WebviewWindow.getByLabel("main");
-      const widget = await WebviewWindow.getByLabel("widget");
-      if (main && widget) {
-        await main.show();
-        await widget.hide();
+        completeSession(completedSession, result);
+        usePointsStore.getState().setCurrentPoints(result.currentPoints);
       }
+
+      await restoreMainWindow();
     } catch (err) {
+      if (!isAborted && getApiErrorCode(err) === "SESSION_002") {
+        clearSession();
+        await restoreMainWindow();
+        return;
+      }
       console.error("[useFocusSession] Lỗi khi kết thúc phiên học:", err);
     } finally {
       setIsEnding(false);

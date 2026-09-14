@@ -69,6 +69,22 @@ public class FocusSessionController {
         return ApiResponse.success(response);
     }
 
+    @PostMapping("/{sessionId}/complete")
+    public ApiResponse<SessionCompleteResponse> completeSession(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.success(focusSessionService.completeSession(sessionId, userDetails.getId()));
+    }
+
+    @PostMapping("/{sessionId}/cancel")
+    public ApiResponse<FocusSessionResponse> cancelSession(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.success(focusSessionService.cancelSession(sessionId, userDetails.getId()));
+    }
+
     @PatchMapping("/{sessionId}/end")
     public ApiResponse<FocusSessionResponse> endSession(
             @PathVariable Long sessionId,

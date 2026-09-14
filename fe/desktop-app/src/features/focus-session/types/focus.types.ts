@@ -108,6 +108,22 @@ export interface HeartbeatResponse {
   unlimited: boolean;
 }
 
+export interface UnlockedAchievementSummary {
+  code: string;
+  name: string;
+  rewardPoints: number;
+}
+
+export interface FocusSessionCompleteResult {
+  earnedPoints: number;
+  currentPoints: number;
+  unlockedAchievements: UnlockedAchievementSummary[];
+  streak: {
+    current: number;
+    isNewMilestone: boolean;
+  };
+}
+
 // ── UI helper types ────────────────────────────────────
 
 export interface GoalPresetItem {
@@ -168,6 +184,7 @@ export interface BreakPromptAiResponse {
 export interface FocusState {
   session: FocusSessionResponse | null;
   lastCompletedSession: FocusSessionResponse | null;
+  lastCompletionResult: FocusSessionCompleteResult | null;
   violationCount: number; // Đảm bảo store có biến đếm tổng số lần vi phạm hiển thị UI
   currentPet: UserPetDetails | null;
   currentPersonality: PersonalityDetails | null;
@@ -201,6 +218,10 @@ export interface FocusState {
   syncSession: (
     session: FocusSessionResponse,
     serverViolationCount?: number,
+  ) => void;
+  completeSession: (
+    session: FocusSessionResponse,
+    result: FocusSessionCompleteResult,
   ) => void;
   clearSession: () => void;
   dismissSummary: () => void;

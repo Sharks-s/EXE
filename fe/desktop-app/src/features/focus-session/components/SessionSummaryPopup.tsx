@@ -1,9 +1,13 @@
 import { useTranslation } from "react-i18next";
-import type { FocusSessionResponse } from "../types/focus.types";
+import type {
+    FocusSessionCompleteResult,
+    FocusSessionResponse,
+} from "../types/focus.types";
 import "./SessionSummaryPopup.css";
 
 interface SessionSummaryPopupProps {
     session: FocusSessionResponse;
+    completionResult?: FocusSessionCompleteResult | null;
     onClose: () => void;
 }
 
@@ -11,10 +15,14 @@ const formatMinutes = (minutes: number) => {
     return `${Math.max(Math.round(minutes), 0)} phút`;
 };
 
-export function SessionSummaryPopup({ session, onClose }: SessionSummaryPopupProps) {
+export function SessionSummaryPopup({
+    session,
+    completionResult,
+    onClose,
+}: SessionSummaryPopupProps) {
     const { t } = useTranslation("common");
     const isAborted = session.status === "ABORTED";
-    const xpGained = session.accumulatedReward * 60;
+    const earnedPoints = completionResult?.earnedPoints ?? session.accumulatedReward * 60;
     const actualMinutes = session.actualDuration ?? 0;
     const completionRate = Math.min(
         Math.round((actualMinutes / Math.max(session.plannedDuration, 1)) * 100),
@@ -129,13 +137,57 @@ export function SessionSummaryPopup({ session, onClose }: SessionSummaryPopupPro
                                 />
                             </div>
                             <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
-                                XP earned
+                                Focus Points
                             </p>
                             <p className="mt-1 text-4xl font-black text-emerald-500">
-                                +{xpGained}
+                                +{earnedPoints}
                             </p>
-                            <p className="text-xs font-semibold text-slate-400">XP</p>
+                            <p className="text-xs font-semibold text-slate-400">
+                                {completionResult
+                                    ? t("focusSession.summary.current_points", {
+                                        points: completionResult.currentPoints,
+                                      })
+                                    : "Points"}
+                            </p>
                         </div>
+
+                        {completionResult && (
+                            <div className="session-summary-rewards rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+                                <p className="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-emerald-700">
+                                    <span className="material-symbols-outlined text-[18px]">
+                                        verified
+                                    </span>
+                                    {t("focusSession.summary.rewards_title")}
+                                </p>
+                                <div className="session-summary-reward-line">
+                                    <span>{t("focusSession.summary.streak_label")}</span>
+                                    <strong>
+                                        {completionResult.streak.current}
+                                        {completionResult.streak.isNewMilestone
+                                            ? ` ${t("focusSession.summary.streak_milestone")}`
+                                            : ""}
+                                    </strong>
+                                </div>
+                                {completionResult.unlockedAchievements.length > 0 && (
+                                    <div className="session-summary-achievements">
+                                        {completionResult.unlockedAchievements.map((achievement) => (
+                                            <div
+                                                key={achievement.code}
+                                                className="session-summary-achievement"
+                                            >
+                                                <span className="material-symbols-outlined">
+                                                    emoji_events
+                                                </span>
+                                                <div>
+                                                    <strong>{achievement.name}</strong>
+                                                    <small>+{achievement.rewardPoints}</small>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="session-summary-progress rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                             <div className="mb-3 flex items-center justify-between">

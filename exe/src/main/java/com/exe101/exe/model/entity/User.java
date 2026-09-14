@@ -111,6 +111,10 @@ public class User {
     @Column(name = "preferred_language", length = 10)
     private String preferredLanguage; // Preferred language for the user (e.g., "en", "vi", "fr")
 
+    @Size(max = 64)
+    @Column(name = "time_zone", length = 64)
+    private String timeZone;
+
     @Column(name = "onboarding_completed", nullable = false)
     @Builder.Default
     private boolean onboardingCompleted = false;

@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface PetRepository extends JpaRepository<Pet, Long> {
     Optional<Pet> findByCode(String code);
 
-    @Query("SELECT p FROM Pet p WHERE NOT EXISTS " +
+    @Query("SELECT p FROM Pet p WHERE p.active = true AND NOT EXISTS " +
             "(SELECT 1 FROM UserPet up WHERE up.pet = p AND up.user.id = :userId) " +
             "ORDER BY p.id ASC")
     List<Pet> findAllNotOwnedByUser(@Param("userId") Long userId);

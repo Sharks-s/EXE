@@ -19,7 +19,11 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
 
     List<FocusSession> findByUserIdAndStatus(Long userId, SessionStatus status);
 
+    List<FocusSession> findByStatusAndStartedAtBefore(SessionStatus status, Instant startedBefore);
+
     Optional<FocusSession> findFirstByUserIdAndStatusOrderByStartedAtDesc(Long userId, SessionStatus status);
+
+    Optional<FocusSession> findFirstByUserIdAndStatusOrderByEndedAtDesc(Long userId, SessionStatus status);
 
     Page<FocusSession> findByUserIdOrderByStartedAtDesc(Long userId, Pageable pageable);
 
@@ -40,6 +44,20 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
     Optional<FocusSession> findByIdForUpdate(@Param("id") Long id);
 
     long countByUserId(Long userId);
+
+    long countByUserIdAndStatus(Long userId, SessionStatus status);
+
+    @Query("""
+            SELECT COALESCE(SUM(
+                CASE
+                    WHEN s.activeSeconds IS NOT NULL AND s.activeSeconds > 0 THEN s.activeSeconds / 60
+                    ELSE COALESCE(s.actualDuration, 0)
+                END
+            ), 0)
+            FROM FocusSession s
+            WHERE s.user.id = :userId AND s.status = :status
+            """)
+    Integer sumDurationByUserIdAndStatus(@Param("userId") Long userId, @Param("status") SessionStatus status);
 
     @Query("""
     select s from FocusSession s

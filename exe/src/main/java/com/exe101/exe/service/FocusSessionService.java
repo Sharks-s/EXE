@@ -13,6 +13,10 @@ public interface FocusSessionService {
 
     FocusSessionResponse completeCycle(Long sessionId, Long userId);
 
+    SessionCompleteResponse completeSession(Long sessionId, Long userId);
+
+    FocusSessionResponse cancelSession(Long sessionId, Long userId);
+
     FocusSessionResponse endSession(Long sessionId, Long userId, boolean isAborted);
 
     HandleViolationResponse handleViolation(Long sessionId, Long userId, ViolationRequest request);

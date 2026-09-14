@@ -15,6 +15,7 @@ import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.mapper.FocusSessionMapper;
 import com.exe101.exe.model.enums.SessionStatus;
+import com.exe101.exe.model.enums.PointTransactionType;
 import com.exe101.exe.repository.FocusSessionRepository;
 import com.exe101.exe.repository.PersonalityRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +50,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private final AiCloudService aiCloudService;
     private final PersonalityService personalityService;
     private final PromptTemplateService promptTemplateService;
+    private final PointService pointService;
+    private final AchievementService achievementService;
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
 
@@ -71,6 +74,13 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         if (!activeSessions.isEmpty()) {
             throw new BusinessException(ErrorCode.SESSION_ALREADY_RUNNING);
         }
+
+        focusSessionRepository.findFirstByUserIdAndStatusOrderByEndedAtDesc(userId, SessionStatus.COMPLETED)
+                .filter(lastSession -> lastSession.getEndedAt() != null)
+                .filter(lastSession -> Duration.between(lastSession.getEndedAt(), now).toSeconds() < 60)
+                .ifPresent(lastSession -> {
+                    throw new BusinessException(ErrorCode.SESSION_STARTED_TOO_SOON);
+                });
 
         // 2. Kiểm tra và cập nhật hạn mức ngày (Daily Limit)
         User user = userService.findById(userId);
@@ -181,10 +191,12 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_IN_PROGRESS);
         }
 
+        int activeSeconds = calculateActiveSeconds(session, now);
         int actualMinutes = isAborted
-                ? Math.min(getActualFocusMinutes(session), session.getPlannedDuration())
-                : session.getPlannedDuration();
+                ? Math.min(activeSeconds / 60, session.getPlannedDuration())
+                : activeSeconds / 60;
 
+        session.setActiveSeconds(activeSeconds);
         session.setActualDuration(actualMinutes);
         session.setEndedAt(now);
 
@@ -192,6 +204,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             session.setStatus(SessionStatus.ABORTED);
             session.setAccumulatedReward(session.getAccumulatedReward() / 2);
         } else {
+            session.setCompletedAt(now);
             session.setStatus(SessionStatus.COMPLETED);
         }
 
@@ -202,7 +215,90 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         }
 
         FocusSession savedSession = focusSessionRepository.save(session);
+        if (!isAborted) {
+            int earnedPoints = calculateSessionRewardPoints(savedSession);
+            if (earnedPoints > 0) {
+                pointService.creditWallet(
+                        userId,
+                        earnedPoints,
+                        PointTransactionType.SESSION_REWARD,
+                        "Focus session reward",
+                        String.valueOf(savedSession.getId())
+                );
+            }
+            achievementService.checkSessionCompletedAchievements(userId);
+        }
         return focusSessionMapper.toResponse(savedSession);
+    }
+
+    @Override
+    @Transactional
+    public SessionCompleteResponse completeSession(Long sessionId, Long userId) {
+        Instant now = Instant.now();
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+
+        if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.SESSION_ALREADY_ENDED);
+        }
+
+        int activeSeconds = calculateActiveSeconds(session, now);
+        session.setActiveSeconds(activeSeconds);
+        session.setActualDuration(activeSeconds / 60);
+        session.setEndedAt(now);
+        session.setCompletedAt(now);
+        session.setStatus(SessionStatus.COMPLETED);
+
+        FocusSession savedSession = focusSessionRepository.save(session);
+        int earnedPoints = calculateSessionRewardPointsWithDailyCap(userId, savedSession, now);
+        if (earnedPoints > 0) {
+            pointService.creditWallet(
+                    userId,
+                    earnedPoints,
+                    PointTransactionType.SESSION_REWARD,
+                    "Focus session reward",
+                    String.valueOf(savedSession.getId())
+            );
+        }
+
+        List<UnlockedAchievementResponse> unlocked = achievementService.checkSessionCompletedAchievements(userId);
+        WalletResponse wallet = pointService.getWallet(userId);
+        int currentStreak = achievementService.getCurrentStreakDays(userId);
+        boolean newStreakMilestone = unlocked.stream().anyMatch(a -> a.code().startsWith("STREAK_"));
+
+        return new SessionCompleteResponse(
+                earnedPoints,
+                wallet.currentPoints(),
+                unlocked,
+                new StreakResponse(currentStreak, newStreakMilestone)
+        );
+    }
+
+    @Override
+    @Transactional
+    public FocusSessionResponse cancelSession(Long sessionId, Long userId) {
+        Instant now = Instant.now();
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+
+        if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.SESSION_ALREADY_ENDED);
+        }
+
+        session.setActiveSeconds(calculateActiveSeconds(session, now));
+        session.setActualDuration(session.getActiveSeconds() / 60);
+        session.setEndedAt(now);
+        session.setStatus(SessionStatus.CANCELLED);
+
+        return focusSessionMapper.toResponse(focusSessionRepository.save(session));
     }
 
 
@@ -323,18 +419,16 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_PAUSED);
         }
 
-        //Không tính Duration.between nữa, tin tưởng hoàn toàn vào số phút FE gửi lên
-        // Bọc thêm Math.min để chống trường hợp FE gửi bậy số phút lớn hơn ví hiện có
-        int minutesConsumed = Math.max(
-                0,
-                Math.min(minutesUsedByFrontEnd, session.getAccumulatedReward())
-        );
+        long pauseSeconds = Math.max(0, Duration.between(session.getPausedAt(), Instant.now()).getSeconds());
+        int secondsConsumed = (int) Math.min(pauseSeconds, (long) session.getAccumulatedReward() * 60L);
+        int minutesConsumed = (int) Math.ceil(secondsConsumed / 60.0);
 
         // Khấu trừ vào ví nghỉ thưởng
         session.setAccumulatedReward(session.getAccumulatedReward() - minutesConsumed);
 
         // Cộng dồn vào thời gian pause tổng để loại trừ khỏi thời gian học thực tế
         session.setPausedMinutes(session.getPausedMinutes() + minutesConsumed);
+        session.setPausedSeconds(session.getPausedSeconds() + secondsConsumed);
 
         // Giải phóng trạng thái nghỉ
         session.setPausedAt(null);
@@ -446,9 +540,10 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         return new FocusSessionResponse(
                 response.id(), response.goal(), response.plannedDuration(), response.actualDuration(),
                 response.totalRewardPool(), response.potentialReward(), response.accumulatedReward(),
-                response.status(), response.startedAt(), response.endedAt(), response.userPetId(),
+                response.status(), response.startedAt(), response.endedAt(), response.completedAt(),
+                response.activeSeconds(), response.distractionCount(), response.distractionSeconds(), response.userPetId(),
                 response.personalityId(), response.lastCycleAt(), response.violations(), response.breakCount(),
-                response.pausedMinutes(), elapsed != null ? elapsed : 0,
+                response.pausedMinutes(), response.pausedSeconds(), elapsed != null ? elapsed : 0,
                 session.getWasBreakingWhenClosed(),
                 session.getBreakRemainingSecondsAtClose()
         );
@@ -666,10 +761,77 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
     // Helper dùng chung cho cả handleViolation và classifyAndHandleViolation
     // Trừ điểm phạt, tạo bản ghi Violation, trả về response đã build sẵn phần session + violationCount
+    private int calculateSessionRewardPoints(FocusSession session) {
+        int actualMinutes = session.getActiveSeconds() != null && session.getActiveSeconds() > 0
+                ? session.getActiveSeconds() / 60
+                : session.getActualDuration() != null ? session.getActualDuration() : 0;
+        return rewardPointsForMinutes(actualMinutes);
+    }
+
+    private int calculateSessionRewardPointsWithDailyCap(Long userId, FocusSession session, Instant completedAt) {
+        int activeSeconds = session.getActiveSeconds() != null && session.getActiveSeconds() > 0
+                ? session.getActiveSeconds()
+                : safeInt(session.getActualDuration()) * 60;
+        int rewardableSeconds = Math.min(activeSeconds, remainingDailyCreditableSeconds(userId, session, completedAt));
+        return rewardPointsForMinutes(rewardableSeconds / 60);
+    }
+
+    private int rewardPointsForMinutes(int actualMinutes) {
+        if (actualMinutes < 5) {
+            return 0;
+        }
+        if (actualMinutes >= 60) {
+            return 20;
+        }
+        if (actualMinutes >= 30) {
+            return 10;
+        }
+        if (actualMinutes >= 15) {
+            return 5;
+        }
+        return 0;
+    }
+
+    private int remainingDailyCreditableSeconds(Long userId, FocusSession currentSession, Instant completedAt) {
+        User user = userService.findById(userId);
+        ZoneId zone = resolveUserZone(user);
+        LocalDate localDate = completedAt.atZone(zone).toLocalDate();
+        Instant from = localDate.atStartOfDay(zone).toInstant();
+        Instant to = localDate.plusDays(1).atStartOfDay(zone).toInstant();
+
+        int usedSeconds = focusSessionRepository
+                .findByUserIdAndStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(userId, from, to)
+                .stream()
+                .filter(session -> session.getStatus() == SessionStatus.COMPLETED)
+                .filter(session -> !session.getId().equals(currentSession.getId()))
+                .mapToInt(session -> {
+                    if (session.getActiveSeconds() != null && session.getActiveSeconds() > 0) {
+                        return session.getActiveSeconds();
+                    }
+                    return safeInt(session.getActualDuration()) * 60;
+                })
+                .sum();
+
+        return Math.max(0, 12 * 60 * 60 - usedSeconds);
+    }
+
+    private ZoneId resolveUserZone(User user) {
+        if (user.getTimeZone() != null && !user.getTimeZone().isBlank()) {
+            try {
+                return ZoneId.of(user.getTimeZone());
+            } catch (Exception ignored) {
+                return VN_ZONE;
+            }
+        }
+        return VN_ZONE;
+    }
+
     private FocusSession applyPenaltyAndRecordViolation(
             FocusSession session, ViolationType type, String appName, String windowTitle, int penaltyMinutes) {
 
         if (penaltyMinutes > 0) {
+            session.setDistractionCount(safeInt(session.getDistractionCount()) + 1);
+            session.setDistractionSeconds(safeInt(session.getDistractionSeconds()) + penaltyMinutes * 60);
             if (session.getPotentialReward() >= penaltyMinutes) {
                 session.setPotentialReward(session.getPotentialReward() - penaltyMinutes);
             } else {
@@ -689,6 +851,19 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.addViolation(violation);
 
         return focusSessionRepository.save(session);
+    }
+
+    private int calculateActiveSeconds(FocusSession session, Instant now) {
+        Instant effectiveEnd = session.getPausedAt() != null ? session.getPausedAt() : now;
+        long wallSeconds = Math.max(0, Duration.between(session.getStartedAt(), effectiveEnd).getSeconds());
+        int pausedSeconds = session.getPausedSeconds() != null
+                ? session.getPausedSeconds()
+                : Math.max(0, session.getPausedMinutes()) * 60;
+        return (int) Math.max(0, wallSeconds - pausedSeconds);
+    }
+
+    private int safeInt(Integer value) {
+        return value != null ? value : 0;
     }
 
     private String[] getAddressPair(User user) {

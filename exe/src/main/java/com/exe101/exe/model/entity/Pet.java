@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.exe101.exe.model.enums.PetRarity;
 
 import java.time.Instant;
 
@@ -58,6 +59,20 @@ public class Pet {
     @Column(name = "is_premium", nullable = false)
     @Builder.Default
     private boolean premium = false; // Pet vip hay pet free
+
+    @Min(0)
+    @Column(nullable = false, columnDefinition = "integer default 120")
+    @Builder.Default
+    private Integer price = 120;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30, columnDefinition = "varchar(30) default 'BASIC'")
+    @Builder.Default
+    private PetRarity rarity = PetRarity.BASIC;
+
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    @Builder.Default
+    private boolean active = true;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

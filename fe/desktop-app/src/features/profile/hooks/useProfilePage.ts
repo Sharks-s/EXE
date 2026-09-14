@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, MouseEvent } from "react";
 import { analyticsApi, type AnalyticsSummary } from "@/features/analytics";
-import { petApi, type UserPet } from "@/features/pet";
+import { achievementsApi, type Achievement } from "@/features/achievements";
 import { toast } from "@/shared/store/toastStore";
 import { locationApi } from "../api/location.api";
 import { profileApi } from "../api/profile.api";
@@ -72,9 +72,7 @@ export function useProfilePage() {
     const [profile, setProfile] = useState<UserSummary | null>(null);
     const [isProActive, setIsProActive] = useState(false);
     const [yearSummary, setYearSummary] = useState<AnalyticsSummary | null>(null);
-    const [daySummary, setDaySummary] = useState<AnalyticsSummary | null>(null);
-    const [weekSummary, setWeekSummary] = useState<AnalyticsSummary | null>(null);
-    const [equippedPet, setEquippedPet] = useState<UserPet | null>(null);
+    const [achievements, setAchievements] = useState<Achievement[]>([]);
     const [provinces, setProvinces] = useState<LocationOption[]>([]);
     const [wards, setWards] = useState<LocationOption[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -90,13 +88,11 @@ export function useProfilePage() {
         const loadProfileData = async () => {
             setIsLoading(true);
 
-            const [profileResult, dayResult, weekResult, yearResult, petsResult, dailyUsageResult] =
+            const [profileResult, yearResult, achievementsResult, dailyUsageResult] =
                 await Promise.allSettled([
                     profileApi.getMyProfile(),
-                    analyticsApi.getSummary({ range: "DAY" }),
-                    analyticsApi.getSummary({ range: "WEEK" }),
                     analyticsApi.getSummary({ range: "YEAR" }),
-                    petApi.getMyPets(),
+                    achievementsApi.getMine(),
                     profileApi.getDailyUsage(),
                 ]);
 
@@ -109,14 +105,8 @@ export function useProfilePage() {
                 toast.error("Không thể tải thông tin hồ sơ.");
             }
 
-            if (dayResult.status === "fulfilled") setDaySummary(dayResult.value);
-            if (weekResult.status === "fulfilled") setWeekSummary(weekResult.value);
             if (yearResult.status === "fulfilled") setYearSummary(yearResult.value);
-            if (petsResult.status === "fulfilled") {
-                setEquippedPet(
-                    petsResult.value.find((pet) => pet.equipped) ?? petsResult.value[0] ?? null,
-                );
-            }
+            if (achievementsResult.status === "fulfilled") setAchievements(achievementsResult.value);
             if (dailyUsageResult.status === "fulfilled") {
                 setIsProActive(dailyUsageResult.value.unlimited);
             }
@@ -275,9 +265,7 @@ export function useProfilePage() {
     return {
         avatarInputRef,
         yearSummary,
-        daySummary,
-        weekSummary,
-        equippedPet,
+        achievements,
         provinces,
         wards,
         isLoading,

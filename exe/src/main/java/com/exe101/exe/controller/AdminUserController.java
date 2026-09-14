@@ -1,5 +1,6 @@
 package com.exe101.exe.controller;
 
+import com.exe101.exe.dto.request.UpdateUserRoleRequest;
 import com.exe101.exe.dto.request.UpdateUserStatusRequest;
 import com.exe101.exe.dto.response.AdminUserDetailResponse;
 import com.exe101.exe.dto.response.AdminUserListItem;
@@ -39,5 +40,13 @@ public class AdminUserController {
             @Valid @RequestBody UpdateUserStatusRequest request
     ) {
         return ApiResponse.success(adminUserService.updateUserStatus(id, request.status()));
+    }
+
+    @PatchMapping("/{id}/role")
+    public ApiResponse<AdminUserDetailResponse> updateRole(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRoleRequest request
+    ) {
+        return ApiResponse.success(adminUserService.updateUserRole(id, request.roleCode()));
     }
 }

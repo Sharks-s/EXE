@@ -23,4 +23,8 @@ public interface AppRuleRepository extends JpaRepository<AppRule, Long> {
     void deleteByIdAndUserId(Long id, Long userId);
 
     boolean existsByUserIdAndWindowTitleKeywordAndRuleType(Long userId, String windowTitleKeyword, RuleType ruleType);
+
+    Optional<AppRule> findByIdAndUserIsNull(Long id);
+
+    boolean existsByUserIsNullAndWindowTitleKeywordAndRuleType(String keyword, RuleType ruleType);
 }

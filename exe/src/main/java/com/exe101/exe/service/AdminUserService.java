@@ -9,4 +9,5 @@ public interface AdminUserService {
     PagedResponse<AdminUserListItem> listUsers(String keyword, UserStatus status, int page, int size);
     AdminUserDetailResponse getUserDetail(Long userId);
     AdminUserDetailResponse updateUserStatus(Long userId, UserStatus newStatus);
+    AdminUserDetailResponse updateUserRole(Long userId, String roleCode);
 }

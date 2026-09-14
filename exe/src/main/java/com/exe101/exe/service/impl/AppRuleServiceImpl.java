@@ -136,4 +136,40 @@ public class AppRuleServiceImpl implements AppRuleService {
 
         return new AppRulesResponse(blacklist, whitelist);
     }
+
+    @Override
+    public List<AppRuleResponse> adminGetGlobalRules() {
+        return appRuleRepository.findByUserIsNull()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public AppRuleResponse adminCreateGlobalRule(CreateAppRuleRequest request) {
+        String keyword = request.keyword().toLowerCase().trim();
+
+        if (appRuleRepository.existsByUserIsNullAndWindowTitleKeywordAndRuleType(keyword, request.ruleType())) {
+            throw new BusinessException(ErrorCode.APP_RULE_ALREADY_EXISTS);
+        }
+
+        AppRule rule = AppRule.builder()
+                .user(null)
+                .appName(null)
+                .windowTitleKeyword(keyword)
+                .ruleType(request.ruleType())
+                .build();
+
+        return toResponse(appRuleRepository.save(rule));
+    }
+
+    @Override
+    @Transactional
+    public void adminDeleteGlobalRule(Long ruleId) {
+        AppRule rule = appRuleRepository.findByIdAndUserIsNull(ruleId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.APP_RULE_NOT_FOUND));
+
+        appRuleRepository.delete(rule);
+    }
 }

@@ -1,5 +1,7 @@
 package com.exe101.exe.service.impl;
 
+import com.exe101.exe.dto.request.UpdatePromptTemplateRequest;
+import com.exe101.exe.dto.response.PromptTemplateResponse;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.PromptTemplate;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -198,6 +201,36 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
     public String renderWithPersona(String taskPromptKey, Map<String, String> values) {
         String combined = getRawTemplate("PERSONA_HEADER") + "\n" + getRawTemplate(taskPromptKey);
         return applyValues(combined, values);
+    }
+
+    @Override
+    public List<PromptTemplateResponse> adminGetAll() {
+        return promptTemplateRepository.findAll()
+                .stream()
+                .map(this::toAdminResponse)
+                .toList();
+    }
+
+    @Override
+    public PromptTemplateResponse adminGetById(Long id) {
+        PromptTemplate pt = promptTemplateRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROMPT_TEMPLATE_NOT_FOUND));
+        return toAdminResponse(pt);
+    }
+
+    @Override
+    @Transactional
+    public PromptTemplateResponse adminUpdate(Long id, UpdatePromptTemplateRequest request) {
+        PromptTemplate pt = promptTemplateRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROMPT_TEMPLATE_NOT_FOUND));
+
+        pt.setTemplate(request.template());
+
+        return toAdminResponse(promptTemplateRepository.save(pt));
+    }
+
+    private PromptTemplateResponse toAdminResponse(PromptTemplate pt) {
+        return new PromptTemplateResponse(pt.getId(), pt.getPromptKey(), pt.getTemplate(), pt.getUpdatedAt());
     }
 
     private String getRawTemplate(String promptKey) {

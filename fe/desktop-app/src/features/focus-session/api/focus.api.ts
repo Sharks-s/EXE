@@ -10,6 +10,7 @@ import type {
   BreakPromptAiResponse,
   ClassifyAndHandleViolationResponse,
   HeartbeatResponse,
+  FocusSessionCompleteResult,
   PagedResponse,
   SessionStatus,
 } from "../types/focus.types";
@@ -96,6 +97,14 @@ export const focusApi = {
   // GET /focus-sessions/active
   getActiveSession: async (): Promise<FocusSessionResponse | null> => {
     const res = await api.get("/focus-sessions/active");
+    return res.data.data;
+  },
+
+  // POST /focus-sessions/{id}/complete
+  completeSession: async (
+    sessionId: number,
+  ): Promise<FocusSessionCompleteResult> => {
+    const res = await api.post(`/focus-sessions/${sessionId}/complete`);
     return res.data.data;
   },
 

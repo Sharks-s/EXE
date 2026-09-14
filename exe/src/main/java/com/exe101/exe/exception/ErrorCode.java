@@ -81,6 +81,7 @@ public enum ErrorCode {
     SESSION_ALREADY_PAUSED("SESSION_007", HttpStatus.BAD_REQUEST, "Session already paused"),
     SESSION_NOT_PAUSED("SESSION_008", HttpStatus.BAD_REQUEST, "Session is not paused"),
     NO_BREAK_TIME_AVAILABLE("SESSION_009", HttpStatus.BAD_REQUEST, "No break time available"),
+    SESSION_STARTED_TOO_SOON("SESSION_010", HttpStatus.CONFLICT, "Please wait before starting another focus session"),
     // ===== PREMIUM =====
     DAILY_LIMIT_EXCEEDED("PREMIUM_001", HttpStatus.BAD_REQUEST, "Daily limit exceeded"),
 
@@ -92,6 +93,11 @@ public enum ErrorCode {
     USER_PET_NOT_FOUND("PET_005", HttpStatus.NOT_FOUND, "User pet not found"),
     PET_NOT_FOUND("PET_006", HttpStatus.NOT_FOUND, "Pet not found"),
     USER_PET_ALREADY_EXISTS("PET_007", HttpStatus.CONFLICT, "User already owns this pet"),
+
+    // ===== POINTS =====
+    INVALID_POINT_AMOUNT("POINT_001", HttpStatus.BAD_REQUEST, "Point amount must be positive"),
+    INSUFFICIENT_POINTS("POINT_002", HttpStatus.CONFLICT, "Insufficient points"),
+    POINT_TRANSACTION_DUPLICATE("POINT_003", HttpStatus.CONFLICT, "Duplicate point transaction"),
 
     // ===== CLOUDINARY =====
 

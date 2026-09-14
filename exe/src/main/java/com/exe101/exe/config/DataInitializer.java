@@ -10,6 +10,7 @@ import com.exe101.exe.repository.*;
 import com.exe101.exe.security.SecurityConfig;
 
 import com.exe101.exe.service.AppRuleService;
+import com.exe101.exe.service.AchievementService;
 import com.exe101.exe.service.PersonalityService;
 import com.exe101.exe.service.PetService;
 import com.exe101.exe.service.PromptTemplateService;
@@ -43,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
     private final AppRuleService appRuleService;
     private final PromptTemplateService promptTemplateService;
     private final SubscriptionService subscriptionService;
+    private final AchievementService achievementService;
 
     @Override
     @Transactional
@@ -113,6 +115,8 @@ public class DataInitializer implements CommandLineRunner {
         promptTemplateService.seedDefaultPromptTemplates();
         //--------Init default subscription plans-----------
         subscriptionService.seedDefaultSubscriptionPlans();
+        //--------Init default achievements-----------
+        achievementService.seedDefaultAchievements();
 
     }
 }

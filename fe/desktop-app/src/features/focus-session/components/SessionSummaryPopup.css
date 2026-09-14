@@ -8,6 +8,53 @@
   border-radius: clamp(18px, 2.6vmin, 28px);
 }
 
+.session-summary-reward-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.session-summary-achievements {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.session-summary-achievement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  color: #065f46;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(167, 243, 208, 0.78);
+  border-radius: 14px;
+}
+
+.session-summary-achievement .material-symbols-outlined {
+  color: #f59e0b;
+}
+
+.session-summary-achievement strong,
+.session-summary-achievement small {
+  display: block;
+}
+
+.session-summary-achievement strong {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.session-summary-achievement small {
+  color: #059669;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 @media (max-width: 860px), (max-height: 780px) {
   .session-summary-modal {
     width: min(760px, calc(100vw - 20px));
@@ -69,6 +116,7 @@
   }
 
   .session-summary-progress,
+  .session-summary-rewards,
   .session-summary-violations {
     padding: 12px !important;
   }

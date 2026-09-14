@@ -8,6 +8,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   // ── STATE ────────────────────────────────────────────────────────
   session: null,
   lastCompletedSession: null,
+  lastCompletionResult: null,
   violationCount: 0,
   currentPet: null,
   currentPersonality: null,
@@ -32,6 +33,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       session,
       violationCount: 0,
       lastCompletedSession: null,
+      lastCompletionResult: null,
       currentPet: null,
       currentPersonality: null,
       botMessage: null,
@@ -88,6 +90,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       return {
         session: isEnded ? null : session,
         lastCompletedSession: isEnded ? session : state.lastCompletedSession,
+        lastCompletionResult: isEnded ? null : state.lastCompletionResult,
         violationCount: nextViolationCount, //  Gán con số đã tính toán chuẩn vào đây
         botMessage: isEnded ? null : state.botMessage,
         botActions: isEnded ? undefined : state.botActions,
@@ -95,6 +98,17 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       };
     });
   },
+
+  completeSession: (session, result) =>
+    set({
+      session: null,
+      lastCompletedSession: session,
+      lastCompletionResult: result,
+      botMessage: null,
+      botActions: undefined,
+      isBubbleVisible: false,
+      isClosing: false,
+    }),
 
   addToViolatingCache: (appOrTitle) => {
     const currentCache = get().violatingCache;
@@ -106,6 +120,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   clearSession: () =>
     set({
       session: null,
+      lastCompletionResult: null,
       violationCount: 0,
       appRules: null,
       allowedCache: new Set<string>(),
@@ -119,7 +134,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       violatingCache: new Set<string>(),
     }),
 
-  dismissSummary: () => set({ lastCompletedSession: null }),
+  dismissSummary: () =>
+    set({ lastCompletedSession: null, lastCompletionResult: null }),
 
   updateBotBubble: (message, actions = undefined, visible = true) =>
     set({ botMessage: message, botActions: actions, isBubbleVisible: visible }),
@@ -194,3 +210,4 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       allowedCache: new Set<string>(),
     }),
 }));
+

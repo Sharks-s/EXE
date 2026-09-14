@@ -14,6 +14,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   const {
     session,
     lastCompletedSession,
+    lastCompletionResult,
     dismissSummary,
     isUpgradeNudgeOpen,
     hideUpgradeNudge,
@@ -24,6 +25,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       {lastCompletedSession ? (
         <SessionSummaryPopup
           session={lastCompletedSession}
+          completionResult={lastCompletionResult}
           onClose={dismissSummary}
         />
       ) : session ? (

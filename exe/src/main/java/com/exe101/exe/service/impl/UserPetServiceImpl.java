@@ -8,8 +8,10 @@ import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.Pet;
 import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.entity.UserPet;
+import com.exe101.exe.model.enums.PointTransactionType;
 import com.exe101.exe.repository.PetRepository;
 import com.exe101.exe.repository.UserPetRepository;
+import com.exe101.exe.service.PointService;
 import com.exe101.exe.service.UserPetService;
 import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class UserPetServiceImpl implements UserPetService {
     private final PetRepository petRepository;
     private final UserPetRepository userPetRepository;
     private final UserService userService;
+    private final PointService pointService;
 
     @Override
     @Transactional
@@ -101,6 +104,8 @@ public class UserPetServiceImpl implements UserPetService {
                             .imageUrl(pet.getImageUrl())
                             .premium(pet.isPremium())
                             .equipped(userPet.isEquipped())
+                            .price(pet.getPrice())
+                            .rarity(pet.getRarity())
                             .build();
                 })
                 .toList();
@@ -121,6 +126,8 @@ public class UserPetServiceImpl implements UserPetService {
                 .imageUrl(pet.getImageUrl())
                 .premium(pet.isPremium())
                 .equipped(userPet.isEquipped())
+                .price(pet.getPrice())
+                .rarity(pet.getRarity())
                 .build();
     }
 
@@ -147,6 +154,8 @@ public class UserPetServiceImpl implements UserPetService {
                 .imageUrl(pet.getImageUrl())
                 .premium(pet.isPremium())
                 .equipped(userPet.isEquipped())
+                .price(pet.getPrice())
+                .rarity(pet.getRarity())
                 .build();
     }
 
@@ -156,9 +165,22 @@ public class UserPetServiceImpl implements UserPetService {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_NOT_FOUND));
 
+        if (!pet.isActive()) {
+            throw new BusinessException(ErrorCode.PET_NOT_FOUND);
+        }
+
         if (userPetRepository.existsByUserIdAndPetId(userId, petId)) {
             throw new BusinessException(ErrorCode.USER_PET_ALREADY_EXISTS);
         }
+
+        pointService.debitWallet(
+                userId,
+                pet.getPrice(),
+                PointTransactionType.PET_PURCHASE,
+                "Pet purchase: " + pet.getCode(),
+                String.valueOf(pet.getId())
+        );
+
         User user = userService.findById(userId);
 
         UserPet userPet = UserPet.builder()
@@ -188,6 +210,8 @@ public class UserPetServiceImpl implements UserPetService {
                 .imageUrl(pet.getImageUrl())
                 .premium(pet.isPremium())
                 .equipped(userPet.isEquipped())
+                .price(pet.getPrice())
+                .rarity(pet.getRarity())
                 .build();
     }
 
@@ -214,6 +238,8 @@ public class UserPetServiceImpl implements UserPetService {
                 .imageUrl(pet.getImageUrl())
                 .premium(pet.isPremium())
                 .equipped(selectedUserPet.isEquipped())
+                .price(pet.getPrice())
+                .rarity(pet.getRarity())
                 .build();
     }
 

@@ -7,6 +7,7 @@ import com.exe101.exe.dto.response.PetResponse;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.model.entity.Pet;
+import com.exe101.exe.model.enums.PetRarity;
 import com.exe101.exe.repository.PetRepository;
 import com.exe101.exe.service.PetService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,9 @@ public class PetServiceImpl implements PetService {
                     .description(seed.getDescription())
                     .premium(seed.isPremium())
                     .imageUrl(seed.getImageUrl())
+                    .price(resolveSeedPrice(seed))
+                    .rarity(resolveSeedRarity(seed))
+                    .active(seed.getActive() == null || seed.getActive())
                     .createdAt(Instant.now())
                     .build();
 
@@ -62,6 +66,9 @@ public class PetServiceImpl implements PetService {
                         .description(pet.getDescription())
                         .imageUrl(pet.getImageUrl())
                         .premium(pet.isPremium())
+                        .price(pet.getPrice())
+                        .rarity(pet.getRarity())
+                        .active(pet.isActive())
                         .build())
                 .toList();
     }
@@ -90,6 +97,9 @@ public class PetServiceImpl implements PetService {
         pet.setDescription(request.description());
         pet.setImageUrl(request.imageUrl());
         pet.setPremium(request.premium());
+        pet.setPrice(request.price() != null ? request.price() : pet.getPrice());
+        pet.setRarity(request.rarity() != null ? request.rarity() : pet.getRarity());
+        pet.setActive(request.active() == null || request.active());
 
         return toAdminResponse(petRepository.save(pet));
     }
@@ -97,7 +107,22 @@ public class PetServiceImpl implements PetService {
     private AdminPetResponse toAdminResponse(Pet pet) {
         return new AdminPetResponse(
                 pet.getId(), pet.getCode(), pet.getName(),
-                pet.getDescription(), pet.getImageUrl(), pet.isPremium()
+                pet.getDescription(), pet.getImageUrl(), pet.isPremium(),
+                pet.getPrice(), pet.getRarity(), pet.isActive()
         );
+    }
+
+    private Integer resolveSeedPrice(AppSeedProperties.PetSeed seed) {
+        if (seed.getPrice() != null) {
+            return seed.getPrice();
+        }
+        return seed.isPremium() ? 300 : 120;
+    }
+
+    private PetRarity resolveSeedRarity(AppSeedProperties.PetSeed seed) {
+        if (seed.getRarity() != null) {
+            return seed.getRarity();
+        }
+        return seed.isPremium() ? PetRarity.RARE : PetRarity.BASIC;
     }
 }

@@ -4,8 +4,10 @@ import com.exe101.exe.dto.request.UpdatePetRequest;
 import com.exe101.exe.dto.response.AdminPetResponse;
 import com.exe101.exe.dto.response.ApiResponse;
 import com.exe101.exe.dto.response.PetResponse;
+import com.exe101.exe.dto.response.UserPetSummaryResponse;
 import com.exe101.exe.security.CustomUserDetails;
 import com.exe101.exe.service.PetService;
+import com.exe101.exe.service.UserPetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,12 +22,28 @@ import java.util.List;
 public class PetController {
 
     private final PetService petService;
+    private final UserPetService userPetService;
 
     @GetMapping
     public ApiResponse<List<PetResponse>> getAll(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ApiResponse.success(petService.getAll(userDetails.getId()));
+    }
+
+    @GetMapping("/shop")
+    public ApiResponse<List<PetResponse>> getShop(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.success(petService.getAll(userDetails.getId()));
+    }
+
+    @PostMapping("/{petId}/purchase")
+    public ApiResponse<UserPetSummaryResponse> purchase(
+            @PathVariable Long petId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.success(userPetService.addPetFromStore(petId, userDetails.getId()));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

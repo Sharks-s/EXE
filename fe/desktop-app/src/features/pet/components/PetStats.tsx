@@ -5,12 +5,14 @@ type PetStatsProps = {
     totalPets: number;
     equippedPet: UserPet | null;
     premiumCount: number;
+    currentPoints?: number | null;
 };
 
 export function PetStats({
     totalPets,
     equippedPet,
     premiumCount,
+    currentPoints,
 }: PetStatsProps) {
     const { t } = useTranslation("common");
 
@@ -42,6 +44,22 @@ export function PetStats({
 
             <div className="pet-stat-card">
                 <div className="stat-icon orange">☆</div>
+                <div>
+                    <strong>{currentPoints ?? 0}</strong>
+                    <span>{t("common:pet.focus_points", { defaultValue: "Focus Points" })}</span>
+
+                    <small>
+                        {t("common:pet.point_balance", {
+                            defaultValue: "Số dư hiện tại",
+                        })}
+                    </small>
+                </div>
+            </div>
+
+            <div className="pet-stat-card">
+                <div className="stat-icon blue">
+                    <span className="material-symbols-outlined icon-fill">workspace_premium</span>
+                </div>
                 <div>
                     <strong>{premiumCount}</strong>
                     <span>{t("common:pet.premium_companions")}</span>

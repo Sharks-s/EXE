@@ -1,14 +1,19 @@
+import { useMemo, useState } from "react";
+import type { Achievement } from "@/features/achievements";
 import type { Gender } from "../types/profile.types";
 import { formatMinutes, mockProfileExtras, useProfilePage } from "../hooks/useProfilePage";
 import "./ProfilePage.css";
+
+const getAchievementProgressPercent = (progress: number, targetValue: number) => {
+  if (targetValue <= 0) return 0;
+  return Math.min(Math.round((progress / targetValue) * 100), 100);
+};
 
 export default function ProfilePage() {
   const {
     avatarInputRef,
     yearSummary,
-    daySummary,
-    weekSummary,
-    equippedPet,
+    achievements,
     provinces,
     wards,
     isLoading,
@@ -26,6 +31,24 @@ export default function ProfilePage() {
     handleAvatarChange,
     handleProfileSubmit,
   } = useProfilePage();
+  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+
+  const completedAchievements = useMemo(
+    () => achievements.filter((achievement) => achievement.status === "UNLOCKED"),
+    [achievements],
+  );
+
+  const incompleteAchievements = useMemo(
+    () => achievements.filter((achievement) => achievement.status !== "UNLOCKED"),
+    [achievements],
+  );
+
+  const selectedProgressPercent = selectedAchievement
+    ? getAchievementProgressPercent(
+      selectedAchievement.progress,
+      selectedAchievement.targetValue,
+    )
+    : 0;
 
   return (
     <div>
@@ -172,66 +195,111 @@ export default function ProfilePage() {
             </button>
           </section>
 
-          <section className="card productivity-card grid-right">
+          <section className="card achievement-progress-card grid-right">
             <div className="card-header">
-              <h3>Tổng quan hiệu suất</h3>
+              <h3>Thành tựu</h3>
             </div>
 
-            <div className="productivity-grid">
-              <article className="stat-box">
-                <span>
-                  <span className="material-symbols-outlined">today</span>
-                  Hôm nay
-                </span>
-                <strong>{formatMinutes(daySummary?.totalFocusMinutes)}</strong>
-              </article>
-              <article className="stat-box">
-                <span>
-                  <span className="material-symbols-outlined">calendar_view_week</span>
-                  Tuần này
-                </span>
-                <strong>{formatMinutes(weekSummary?.totalFocusMinutes)}</strong>
-              </article>
-              <article className="stat-box">
-                <span>
-                  <span className="material-symbols-outlined">linear_scale</span>
-                  Phiên dài nhất
-                </span>
-                <strong>{formatMinutes(mockProfileExtras.longestSessionMinutes)}</strong>
-              </article>
-              <article className="stat-box mascot-box">
-                <div>
-                  <span>
-                    <span className="material-symbols-outlined">pets</span>
-                    Mascot
-                  </span>
-                  <strong>{equippedPet?.code ?? "Chưa trang bị"}</strong>
-                </div>
-                <div className="mascot-icon">
-                  <span className="material-symbols-outlined icon-fill">
-                    <img src={equippedPet?.imageUrl} alt="" />
-                  </span>
-                </div>
-              </article>
-            </div>
+            {achievements.length > 0 ? (
+              <div className="achievement-board">
+                <section className="achievement-frame">
+                  <div className="achievement-frame-header">
+                    <h4>Đã hoàn thành</h4>
+                    <span>{completedAchievements.length}</span>
+                  </div>
+                  <div className="achievement-icon-grid">
+                    {completedAchievements.length > 0 ? (
+                      completedAchievements.map((achievement) => (
+                        <button
+                          className={`achievement-icon-button rarity-${achievement.rarity.toLowerCase()} status-${achievement.status.toLowerCase()} ${selectedAchievement?.code === achievement.code ? "selected" : ""}`}
+                          key={achievement.code}
+                          type="button"
+                          aria-label={achievement.name}
+                          title={achievement.name}
+                          onClick={() => setSelectedAchievement(achievement)}
+                        >
+                          <span className="material-symbols-outlined icon-fill">
+                            {achievement.icon || "emoji_events"}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="achievement-frame-empty">Chưa có</div>
+                    )}
+                  </div>
+                </section>
 
-            <div className="achievement-section">
-              <h4>Thành tựu gần đây</h4>
-              <div className="achievement-list">
-                <span className="achievement achievement-yellow">
-                  <span className="material-symbols-outlined icon-fill">emoji_events</span>
-                </span>
-                <span className="achievement achievement-blue">
-                  <span className="material-symbols-outlined icon-fill">dark_mode</span>
-                </span>
-                <span className="achievement achievement-green">
-                  <span className="material-symbols-outlined icon-fill">sprint</span>
-                </span>
-                <span className="achievement achievement-more">
-                  +{mockProfileExtras.achievementsMore}
-                </span>
+                <section className="achievement-frame">
+                  <div className="achievement-frame-header">
+                    <h4>Chưa hoàn thành</h4>
+                    <span>{incompleteAchievements.length}</span>
+                  </div>
+                  <div className="achievement-icon-grid">
+                    {incompleteAchievements.length > 0 ? (
+                      incompleteAchievements.map((achievement) => (
+                        <button
+                          className={`achievement-icon-button rarity-${achievement.rarity.toLowerCase()} status-${achievement.status.toLowerCase()} ${selectedAchievement?.code === achievement.code ? "selected" : ""}`}
+                          key={achievement.code}
+                          type="button"
+                          aria-label={achievement.name}
+                          title={achievement.name}
+                          onClick={() => setSelectedAchievement(achievement)}
+                        >
+                          <span className="material-symbols-outlined icon-fill">
+                            {achievement.icon || "emoji_events"}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="achievement-frame-empty">Không còn thành tựu đang chờ</div>
+                    )}
+                  </div>
+                </section>
+
+                {selectedAchievement && (
+                  <article
+                    className={`achievement-detail-panel rarity-${selectedAchievement.rarity.toLowerCase()} status-${selectedAchievement.status.toLowerCase()}`}
+                  >
+                    <div className="achievement-detail-icon">
+                      <span className="material-symbols-outlined icon-fill">
+                        {selectedAchievement.icon || "emoji_events"}
+                      </span>
+                    </div>
+                    <div className="achievement-detail-body">
+                      <div className="achievement-detail-heading">
+                        <h4>{selectedAchievement.name}</h4>
+                        <span>{selectedAchievement.rarity}</span>
+                      </div>
+                      <p>
+                        {selectedAchievement.description || "Chưa có mô tả cho thành tựu này."}
+                      </p>
+                      <small className="achievement-detail-status">
+                        {selectedAchievement.status === "UNLOCKED"
+                          ? "Đã hoàn thành"
+                          : selectedAchievement.status === "IN_PROGRESS"
+                            ? "Đang tiến hành"
+                            : "Đang khóa"}
+                      </small>
+                      {selectedAchievement.status !== "LOCKED" && (
+                        <>
+                          <div className="achievement-progress-meta">
+                            <span>
+                              {selectedAchievement.progress}/{selectedAchievement.targetValue}
+                            </span>
+                            <strong>+{selectedAchievement.rewardPoints}</strong>
+                          </div>
+                          <div className="achievement-progress-track">
+                            <div style={{ width: `${selectedProgressPercent}%` }} />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </article>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="achievement-empty">Chưa có dữ liệu thành tựu.</div>
+            )}
           </section>
         </div>
       </main>

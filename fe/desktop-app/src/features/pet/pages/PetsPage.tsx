@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUserPets } from "../hooks/useUserPets";
 import type { UserPet } from "../types/pet.type";
+import { usePointsStore } from "@/features/points";
 import "./PetsPage.css";
 
 // Import các Component con đã được tách ra file riêng
@@ -34,6 +35,7 @@ export default function PetsPage() {
     handleRename,
     handleUpgrade,
   } = useUserPets();
+  const { wallet, fetchWallet } = usePointsStore();
 
   const [activeTab, setActiveTab] = useState<PetTab>("my-pets");
   const [keyword, setKeyword] = useState("");
@@ -42,6 +44,12 @@ export default function PetsPage() {
 
   // State Modal Đổi tên (Chỉ cần lưu Pet nào đang được chọn)
   const [renamePet, setRenamePet] = useState<UserPet | null>(null);
+
+  useEffect(() => {
+    fetchWallet().catch((err) => {
+      console.error("[PetsPage] Không thể tải ví điểm:", err);
+    });
+  }, [fetchWallet]);
 
   const openRenameModal = (pet: UserPet) => setRenamePet(pet);
 
@@ -54,6 +62,13 @@ export default function PetsPage() {
     if (!renamePet) return;
     const renamed = await handleRename(renamePet.userPetId, newName);
     if (renamed) closeRenameModal();
+  };
+
+  const handlePetAdded = (pet: UserPet) => {
+    addPetToCollection(pet);
+    fetchWallet().catch((err) => {
+      console.error("[PetsPage] Không thể cập nhật ví điểm:", err);
+    });
   };
 
   const filteredPets = useMemo(() => {
@@ -91,6 +106,7 @@ export default function PetsPage() {
               totalPets={pets.length}
               equippedPet={equippedPet}
               premiumCount={premiumCount}
+              currentPoints={wallet?.currentPoints}
             />
 
             <PetToolbar
@@ -143,7 +159,7 @@ export default function PetsPage() {
             )}
           </>
         ) : (
-          <ShopPanel onPetAdded={addPetToCollection} />
+          <ShopPanel onPetAdded={handlePetAdded} />
         )}
       </section>
 

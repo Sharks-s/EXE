@@ -1,6 +1,9 @@
 package com.exe101.exe.config;
 
 import com.exe101.exe.model.enums.RuleType;
+import com.exe101.exe.model.enums.PetRarity;
+import com.exe101.exe.model.enums.AchievementCategory;
+import com.exe101.exe.model.enums.AchievementRarity;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,6 +19,7 @@ public class AppSeedProperties {
 
     private List<PersonalitySeed> personalities;
     private List<PetSeed> pets;
+    private List<AchievementSeed> achievements;
     private List<AppRuleSeed> appRules;
     private List<SubscriptionPlanSeed> subscriptionPlans;
     private String defaultPetCode;
@@ -40,6 +44,23 @@ public class AppSeedProperties {
         private String description;
         private boolean premium;
         private String imageUrl;
+        private Integer price;
+        private PetRarity rarity;
+        private Boolean active;
+    }
+
+    @Getter
+    @Setter
+    public static class AchievementSeed {
+        private String code;
+        private String name;
+        private String description;
+        private String icon;
+        private AchievementCategory category;
+        private AchievementRarity rarity;
+        private Integer targetValue;
+        private Integer rewardPoints;
+        private Boolean active;
     }
 
     @Getter

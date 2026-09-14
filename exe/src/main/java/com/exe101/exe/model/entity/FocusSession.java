@@ -66,12 +66,31 @@ public class FocusSession {
     @Column(name = "ended_at")
     private Instant endedAt;
 
+    @Column(name = "completed_at")
+    private Instant completedAt;
+
+    @Column(name = "active_seconds", nullable = false)
+    @Builder.Default
+    private Integer activeSeconds = 0;
+
     @Column(name = "paused_at")
     private Instant pausedAt;
 
     @Column(name = "paused_minutes", nullable = false)
     @Builder.Default
     private Integer pausedMinutes = 0;
+
+    @Column(name = "paused_seconds", nullable = false)
+    @Builder.Default
+    private Integer pausedSeconds = 0;
+
+    @Column(name = "distraction_count", nullable = false)
+    @Builder.Default
+    private Integer distractionCount = 0;
+
+    @Column(name = "distraction_seconds", nullable = false)
+    @Builder.Default
+    private Integer distractionSeconds = 0;
 
     @Column(name = "total_reward_pool", nullable = false)
     private Integer totalRewardPool; // Tổng quỹ thưởng gốc ban đầu (Ví dụ: 10 phút)

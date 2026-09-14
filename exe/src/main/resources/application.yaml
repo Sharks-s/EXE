@@ -185,22 +185,335 @@ app:
         name: "Monkey"
         description: "A playful and mischievous companion that loves to swing from trees and eat bananas."
         premium: false
+        price: 120
+        rarity: BASIC
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/MONKI_vtf7p6.png"
       - code: "PANDO"
         name: "Panda"
         description: "A gentle and cuddly companion that loves to eat bamboo and nap in the sun."
         premium: false
+        price: 300
+        rarity: RARE
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/PANDO_gs0n1c.png"
       - code: "PIGGY"
         name: "Pig"
         description: "A cute and friendly companion that loves to roll in the mud and eat snacks."
         premium: true
+        price: 700
+        rarity: EPIC
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/PIGGY_kky3tf.png"
       - code: "FROGI"
         name: "Frog"
         description: "A lively and energetic companion that loves to hop around and catch flies."
         premium: true
+        price: 1500
+        rarity: LEGENDARY
         image-url: "https://res.cloudinary.com/dlkcf2b8w/image/upload/v1781511641/FROGI_dxvowf.png"
+    achievements:
+      - code: "FOCUS_START_SERIOUS"
+        name: "Khởi đầu nghiêm túc"
+        description: "Hoàn thành phiên tập trung đầu tiên."
+        icon: "flag"
+        category: FOCUS_TIME
+        rarity: COMMON
+        target-value: 1
+        reward-points: 20
+      - code: "FOCUS_RHYTHM_KEEPER"
+        name: "Người giữ nhịp"
+        description: "Tập trung tổng cộng 5 giờ."
+        icon: "timer"
+        category: FOCUS_TIME
+        rarity: RARE
+        target-value: 300
+        reward-points: 80
+      - code: "FOCUS_MASTER"
+        name: "Bậc thầy tập trung"
+        description: "Tập trung tổng cộng 25 giờ."
+        icon: "hourglass"
+        category: FOCUS_TIME
+        rarity: EPIC
+        target-value: 1500
+        reward-points: 180
+      - code: "FOCUS_STEEL_DISCIPLINE"
+        name: "Kỷ luật thép"
+        description: "Tập trung tổng cộng 100 giờ."
+        icon: "workspace_premium"
+        category: FOCUS_TIME
+        rarity: LEGENDARY
+        target-value: 6000
+        reward-points: 500
+      - code: "FOCUS_LEGEND"
+        name: "Huyền thoại tập trung"
+        description: "Tập trung tổng cộng 500 giờ."
+        icon: "emoji_events"
+        category: FOCUS_TIME
+        rarity: LEGENDARY
+        target-value: 30000
+        reward-points: 1000
+      - code: "PERFECT_SESSION_1"
+        name: "Không một lần xao nhãng"
+        description: "Hoàn thành 1 phiên hoàn hảo."
+        icon: "shield"
+        category: BEHAVIORAL
+        rarity: COMMON
+        target-value: 1
+        reward-points: 30
+      - code: "PERFECT_SESSION_5"
+        name: "Tâm trí vững vàng"
+        description: "Hoàn thành 5 phiên hoàn hảo."
+        icon: "verified"
+        category: BEHAVIORAL
+        rarity: RARE
+        target-value: 5
+        reward-points: 80
+      - code: "PERFECT_SESSION_20"
+        name: "Chế độ chuyên tâm"
+        description: "Hoàn thành 20 phiên hoàn hảo."
+        icon: "psychology"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 20
+        reward-points: 180
+      - code: "PERFECT_SESSION_50"
+        name: "Không thể lay chuyển"
+        description: "Hoàn thành 50 phiên hoàn hảo."
+        icon: "fort"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 50
+        reward-points: 300
+      - code: "PERFECT_SESSION_100"
+        name: "Tập trung tuyệt đối"
+        description: "Hoàn thành 100 phiên hoàn hảo."
+        icon: "diamond"
+        category: BEHAVIORAL
+        rarity: LEGENDARY
+        target-value: 100
+        reward-points: 700
+      - code: "STREAK_1_DAY"
+        name: "Ngày đầu tiên"
+        description: "Streak 1 ngày."
+        icon: "local_fire_department"
+        category: STREAK
+        rarity: COMMON
+        target-value: 1
+        reward-points: 10
+      - code: "STREAK_3_DAYS"
+        name: "Không bỏ cuộc"
+        description: "Streak 3 ngày."
+        icon: "local_fire_department"
+        category: STREAK
+        rarity: COMMON
+        target-value: 3
+        reward-points: 30
+      - code: "STREAK_7_DAYS"
+        name: "Một tuần kỷ luật"
+        description: "Streak 7 ngày."
+        icon: "whatshot"
+        category: STREAK
+        rarity: RARE
+        target-value: 7
+        reward-points: 70
+      - code: "STREAK_21_DAYS"
+        name: "Thói quen mới"
+        description: "Streak 21 ngày."
+        icon: "routine"
+        category: STREAK
+        rarity: EPIC
+        target-value: 21
+        reward-points: 180
+      - code: "STREAK_30_DAYS"
+        name: "Kỷ luật trở thành bản năng"
+        description: "Streak 30 ngày."
+        icon: "military_tech"
+        category: STREAK
+        rarity: LEGENDARY
+        target-value: 30
+        reward-points: 350
+      - code: "STREAK_100_DAYS"
+        name: "Trăm ngày tiến bộ"
+        description: "Streak 100 ngày."
+        icon: "emoji_events"
+        category: STREAK
+        rarity: LEGENDARY
+        target-value: 100
+        reward-points: 1000
+      - code: "BREAK_FUND_KEEP_REWARD"
+        name: "Biết giữ phần thưởng"
+        description: "Kết thúc phiên với quỹ nghỉ lớn hơn 0."
+        icon: "savings"
+        category: BEHAVIORAL
+        rarity: COMMON
+        target-value: 1
+        reward-points: 20
+      - code: "BREAK_FUND_80_5"
+        name: "Người quản lý thời gian"
+        description: "Giữ ít nhất 80% quỹ trong 5 phiên."
+        icon: "manage_history"
+        category: BEHAVIORAL
+        rarity: RARE
+        target-value: 5
+        reward-points: 80
+      - code: "BREAK_FUND_100_10"
+        name: "Không lãng phí phút nào"
+        description: "Giữ 100% quỹ trong 10 phiên."
+        icon: "all_inclusive"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 10
+        reward-points: 180
+      - code: "BREAK_FUND_AVG_90_30"
+        name: "Chủ nhân thời gian"
+        description: "Giữ trung bình 90% quỹ trong 30 phiên."
+        icon: "schedule"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 30
+        reward-points: 250
+      - code: "PHONE_DOWN_1"
+        name: "Đặt điện thoại xuống"
+        description: "Hoàn thành 1 phiên không dùng điện thoại."
+        icon: "phone_disabled"
+        category: BEHAVIORAL
+        rarity: COMMON
+        target-value: 1
+        reward-points: 20
+      - code: "PHONE_STREAK_5"
+        name: "Không còn lệ thuộc"
+        description: "5 phiên liên tiếp không dùng điện thoại."
+        icon: "phonelink_erase"
+        category: BEHAVIORAL
+        rarity: RARE
+        target-value: 5
+        reward-points: 80
+      - code: "PHONE_FREE_20"
+        name: "Chiến thắng cám dỗ"
+        description: "20 phiên không dùng điện thoại."
+        icon: "do_not_disturb_on"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 20
+        reward-points: 180
+      - code: "PHONE_FREE_50"
+        name: "Điện thoại không điều khiển tôi"
+        description: "50 phiên không dùng điện thoại."
+        icon: "mobile_off"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 50
+        reward-points: 300
+      - code: "ENTERTAINMENT_BACK_ON_TRACK"
+        name: "Đóng tab lại"
+        description: "Tự quay về công việc sau một lời nhắc."
+        icon: "tab_close"
+        category: BEHAVIORAL
+        rarity: COMMON
+        target-value: 1
+        reward-points: 20
+      - code: "ENTERTAINMENT_CLEAN_5"
+        name: "Biết mình đang làm gì"
+        description: "5 phiên không mở ứng dụng giải trí."
+        icon: "web_asset_off"
+        category: BEHAVIORAL
+        rarity: RARE
+        target-value: 5
+        reward-points: 80
+      - code: "ENTERTAINMENT_CLEAN_20"
+        name: "Không còn lạc hướng"
+        description: "20 phiên sạch."
+        icon: "explore_off"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 20
+        reward-points: 180
+      - code: "ENTERTAINMENT_CLEAN_50"
+        name: "Làm chủ màn hình"
+        description: "50 phiên sạch."
+        icon: "desktop_windows"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 50
+        reward-points: 300
+      - code: "RECOVERY_BACK_ON_TRACK"
+        name: "Quay lại đường đua"
+        description: "Tiếp tục tập trung trong 2 phút sau cảnh báo."
+        icon: "restart_alt"
+        category: BEHAVIORAL
+        rarity: COMMON
+        target-value: 1
+        reward-points: 20
+      - code: "RECOVERY_5"
+        name: "Vấp ngã nhưng không bỏ cuộc"
+        description: "Phục hồi thành công 5 lần."
+        icon: "healing"
+        category: BEHAVIORAL
+        rarity: RARE
+        target-value: 5
+        reward-points: 80
+      - code: "RECOVERY_20"
+        name: "Tự kéo mình trở lại"
+        description: "Phục hồi thành công 20 lần."
+        icon: "self_improvement"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 20
+        reward-points: 180
+      - code: "RECOVERY_50"
+        name: "Ý chí không thể đánh bại"
+        description: "Phục hồi thành công 50 lần."
+        icon: "fitness_center"
+        category: BEHAVIORAL
+        rarity: EPIC
+        target-value: 50
+        reward-points: 300
+      - code: "MILESTONE_EARLY_MORNING"
+        name: "Sáng sớm rõ ràng"
+        description: "Hoàn thành phiên lúc sáng sớm."
+        icon: "wb_sunny"
+        category: MILESTONE
+        rarity: COMMON
+        target-value: 1
+        reward-points: 20
+      - code: "MILESTONE_90_MIN_SESSION"
+        name: "Chín mươi phút sâu"
+        description: "Hoàn thành phiên tập trung dài 90 phút."
+        icon: "timer"
+        category: MILESTONE
+        rarity: RARE
+        target-value: 1
+        reward-points: 60
+      - code: "MILESTONE_RETURN_AFTER_7_DAYS"
+        name: "Trở lại sau im lặng"
+        description: "Quay lại sau 7 ngày không sử dụng ứng dụng."
+        icon: "event_repeat"
+        category: MILESTONE
+        rarity: RARE
+        target-value: 1
+        reward-points: 60
+      - code: "MILESTONE_WEEKLY_GOAL"
+        name: "Giữ lời hứa tuần này"
+        description: "Hoàn thành mục tiêu tuần."
+        icon: "calendar_month"
+        category: MILESTONE
+        rarity: RARE
+        target-value: 1
+        reward-points: 80
+      - code: "MILESTONE_ALL_PERSONALITIES"
+        name: "Hiểu mọi người bạn đồng hành"
+        description: "Sử dụng đủ các tính cách trợ lý."
+        icon: "diversity_3"
+        category: MILESTONE
+        rarity: EPIC
+        target-value: 1
+        reward-points: 180
+      - code: "MILESTONE_LAST_BREAK_MINUTE"
+        name: "Một phút cuối cùng"
+        description: "Hoàn thành phiên khi quỹ giải lao chỉ còn 1 phút."
+        icon: "hourglass_bottom"
+        category: MILESTONE
+        rarity: COMMON
+        target-value: 1
+        reward-points: 30
     app-rules:
       - app-name: "TikTok"
         window-title-keyword: "tiktok"

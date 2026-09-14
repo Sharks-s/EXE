@@ -817,18 +817,6 @@ input {
   color: #483bfc !important;
 }
 
-.stat-inline {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-}
-
-.stat-inline span {
-  color: #464557;
-  font-size: 10px;
-  font-weight: 700;
-}
-
 .streak-box {
   background: rgba(255, 219, 208, 0.2);
   border-color: rgba(255, 219, 208, 0.3);
@@ -848,15 +836,6 @@ input {
 
 .fire-row .material-symbols-outlined {
   font-size: 18px;
-}
-
-.performance-box {
-  background: rgba(160, 159, 253, 0.1);
-  border-color: rgba(160, 159, 253, 0.15);
-}
-
-.performance-box p {
-  color: rgba(51, 49, 137, 0.6);
 }
 
 .mascot-card {

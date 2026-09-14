@@ -149,6 +149,16 @@
       "recent_item_empty": "Chưa có phiên gần đây",
       "recent_item_hint": "Bắt đầu một phiên để ghi nhận dữ liệu",
       "session_count": "{{count}} phiên",
+      "history_less": "Thu gọn",
+      "history_loading": "Đang tải lịch sử phiên...",
+      "history_violations": "{{count}} vi phạm",
+      "history_total": "Tổng {{count}} phiên",
+      "history_status": {
+        "in_progress": "Đang chạy",
+        "completed": "Hoàn thành",
+        "aborted": "Dừng sớm",
+        "cancelled": "Đã hủy"
+      },
       "daily_limit_message": "Bạn đã vượt quá giới hạn sử dụng trong ngày."
     },
     "summary": {
@@ -164,6 +174,30 @@
       "violation_detail_title": "Chi tiết các lần vi phạm",
       "xp_formula": "({{minutes}} phút × 60)",
       "back_button": "Quay lại"
+    },
+    "review": {
+      "kicker": "Đánh giá phiên",
+      "close": "Đóng đánh giá",
+      "score_label": "điểm",
+      "grade_label": "Xếp loại {{grade}}",
+      "completion": "Hoàn thành",
+      "actual_time": "Thời gian tập trung",
+      "penalties": "Lần bị phạt",
+      "xp": "XP",
+      "strength_title": "Điểm tốt",
+      "improve_title": "Cần cải thiện",
+      "strength_clean": "Phiên này rất sạch, không có lần xao nhãng bị phạt.",
+      "strength_progress": "Bạn vẫn giữ được tiến độ dù có {{count}} lần xao nhãng bị phạt.",
+      "improve_keep": "Hãy giữ nhịp này và cố gắng lặp lại ở phiên tiếp theo.",
+      "improve_completion": "Bạn hoàn thành {{percent}}% kế hoạch. Lần sau hãy thử phiên ngắn hơn hoặc giảm yếu tố gây xao nhãng.",
+      "violation_title": "Xao nhãng đã ghi nhận",
+      "grade_message": {
+        "s": "Chất lượng tập trung xuất sắc. Đây là một phiên rất đáng để lặp lại.",
+        "a": "Phiên tốt, mức hoàn thành cao và ít bị gián đoạn.",
+        "b": "Nỗ lực ổn, nhưng vẫn còn chỗ để làm phiên sạch hơn.",
+        "c": "Phiên có khá nhiều gián đoạn. Hãy chuẩn bị môi trường kỹ hơn trước khi bắt đầu.",
+        "d": "Phiên này cần phục hồi. Hãy chọn mục tiêu ngắn hơn và loại bỏ nguồn xao nhãng rõ ràng trước."
+      }
     },
     "cameraSetup": {
       "back": "Quay lại",
@@ -238,6 +272,16 @@
     "time_filter_label": "Bộ lọc thời gian",
     "overview_label": "Thống kê tổng quan",
     "additional_info_label": "Thông tin bổ sung",
+    "session_review_title": "Đánh giá phiên gần đây",
+    "session_review_subtitle": "Tổng hợp chất lượng các phiên mới nhất",
+    "session_history_title": "Lịch sử phiên",
+    "session_history_subtitle": "Xem lại điểm và đánh giá từng phiên",
+    "session_history_popup_title": "Chọn một phiên",
+    "session_history_select_hint": "Chọn một phiên trong danh sách để xem đánh giá chi tiết.",
+    "open_session_history": "Mở lịch sử",
+    "average_score": "điểm TB",
+    "session_completion": "{{percent}}% hoàn thành",
+    "no_session_review_data": "Chưa có phiên nào để đánh giá.",
     "range_day": "Ngày",
     "range_week": "Tuần",
     "range_month": "Tháng",

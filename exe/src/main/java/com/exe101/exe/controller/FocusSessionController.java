@@ -6,13 +6,13 @@ import com.exe101.exe.dto.request.CreateSessionRequest;
 import com.exe101.exe.dto.request.ViolationRequest;
 import com.exe101.exe.dto.response.*;
 import com.exe101.exe.model.enums.ViolationType;
+import com.exe101.exe.model.enums.SessionStatus;
 import com.exe101.exe.security.CustomUserDetails;
 import com.exe101.exe.service.FocusSessionService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/focus-sessions")
@@ -38,6 +38,18 @@ public class FocusSessionController {
             return ApiResponse.success(null);
         }
         return ApiResponse.success(activeSession);
+    }
+
+    @GetMapping("/history")
+    public ApiResponse<PagedResponse<FocusSessionResponse>> getSessionHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) SessionStatus status,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        PagedResponse<FocusSessionResponse> history =
+                focusSessionService.getSessionHistory(userDetails.getId(), status, page, size);
+        return ApiResponse.success(history);
     }
 
     @PostMapping("/{id}/heartbeat")

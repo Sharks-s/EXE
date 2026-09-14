@@ -51,8 +51,9 @@ export interface ProfileCompletionResponse {
 
 export interface DailyUsageResponse {
   dailyUsedMinute: number;
-  dailyLimitMinute: number;
-  remainingMinute: number;
+  dailyLimitMinute: number | null;
+  remainingMinute: number | null;
+  unlimited: boolean;
 }
 
 export interface LocationOption {

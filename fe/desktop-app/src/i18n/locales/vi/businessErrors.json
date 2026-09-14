@@ -57,6 +57,7 @@
   "SESSION_008": "Phiên tập trung chưa bị tạm dừng",
   "SESSION_009": "Không còn thời gian nghỉ giải lao",
   "PREMIUM_001": "Bạn đã vượt quá giới hạn sử dụng trong ngày",
+  "DAILY_LIMIT_EXCEEDED": "Bạn đã vượt quá giới hạn sử dụng trong ngày",
   "PET_001": "Không tìm thấy thú cưng mặc định",
   "PET_003": "Thú cưng mặc định chưa được cấu hình",
   "PET_004": "Khởi tạo thú cưng cho người dùng thất bại",

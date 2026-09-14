@@ -34,11 +34,12 @@ const createFallbackDailyUsage = (user: User | null): DailyUsageResponse => {
     dailyUsedMinute,
     dailyLimitMinute: DAILY_USAGE_FALLBACK_LIMIT,
     remainingMinute: Math.max(DAILY_USAGE_FALLBACK_LIMIT - dailyUsedMinute, 0),
+    unlimited: false,
   };
 };
 
-const formatUsageMinutes = (minutes: number) => {
-  const safeMinutes = Math.max(Math.round(minutes), 0);
+const formatUsageMinutes = (minutes: number | null) => {
+  const safeMinutes = Math.max(Math.round(minutes ?? 0), 0);
   return `${safeMinutes} phút`;
 };
 
@@ -49,9 +50,60 @@ function DailyUsageCard({
   usage: DailyUsageResponse;
   collapsed: boolean;
 }) {
+  if (usage.unlimited) {
+    const label = "Pro unlimited";
+
+    return (
+      <div
+        title={collapsed ? label : undefined}
+        className={`
+          w-full flex items-center rounded-xl
+          border border-emerald-100 bg-emerald-50/80 text-emerald-700
+          shadow-sm shadow-emerald-100/60 overflow-hidden
+          ${collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"}
+        `}
+      >
+        <span className="shrink-0 w-[18px] h-[18px] flex items-center justify-center">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M13 2L3 14h8l-1 8 11-13h-8l1-7Z" />
+          </svg>
+        </span>
+
+        <div
+          className={`
+            min-w-0 flex-1 overflow-hidden transition-all duration-300 ease-in-out
+            ${collapsed ? "max-w-0 opacity-0 ml-0" : "max-w-[160px] opacity-100 ml-3"}
+          `}
+        >
+          <p className="m-0 text-[11px] leading-none font-bold text-emerald-500 whitespace-nowrap">
+            Pro unlimited
+          </p>
+          <strong className="block mt-1 text-sm leading-none font-extrabold whitespace-nowrap">
+            Unlimited
+          </strong>
+          <p className="m-0 mt-1 text-[10px] leading-none font-bold text-emerald-500 whitespace-nowrap">
+            Used {formatUsageMinutes(usage.dailyUsedMinute)} today
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const dailyLimitMinute = usage.dailyLimitMinute ?? DAILY_USAGE_FALLBACK_LIMIT;
+  const remainingMinute =
+    usage.remainingMinute ?? Math.max(dailyLimitMinute - usage.dailyUsedMinute, 0);
   const usedPercent =
-    usage.dailyLimitMinute > 0
-      ? Math.min((usage.dailyUsedMinute / usage.dailyLimitMinute) * 100, 100)
+    dailyLimitMinute > 0
+      ? Math.min((usage.dailyUsedMinute / dailyLimitMinute) * 100, 100)
       : 0;
   const label = `Còn lại ${formatUsageMinutes(usage.remainingMinute)} hôm nay`;
 
@@ -92,7 +144,7 @@ function DailyUsageCard({
             Còn lại
           </p>
           <strong className="text-sm leading-none font-extrabold whitespace-nowrap">
-            {formatUsageMinutes(usage.remainingMinute)}
+            {formatUsageMinutes(remainingMinute)}
           </strong>
         </div>
 
@@ -105,7 +157,7 @@ function DailyUsageCard({
 
         <p className="m-0 mt-1 text-[10px] leading-none font-bold text-blue-400 whitespace-nowrap">
           Đã dùng {formatUsageMinutes(usage.dailyUsedMinute)} /{" "}
-          {formatUsageMinutes(usage.dailyLimitMinute)}
+          {formatUsageMinutes(dailyLimitMinute)}
         </p>
       </div>
     </div>
@@ -193,10 +245,13 @@ export default function Sidebar({
     ? {
       dailyUsedMinute: focusStoreDailyUsage.dailyUsedMinutes,
       dailyLimitMinute: focusStoreDailyUsage.dailyLimitMinutes,
-      remainingMinute: Math.max(
-        focusStoreDailyUsage.dailyLimitMinutes - focusStoreDailyUsage.dailyUsedMinutes,
-        0,
-      ),
+      remainingMinute: focusStoreDailyUsage.dailyLimitMinutes === null
+        ? null
+        : Math.max(
+          focusStoreDailyUsage.dailyLimitMinutes - focusStoreDailyUsage.dailyUsedMinutes,
+          0,
+        ),
+      unlimited: focusStoreDailyUsage.unlimited,
     }
     : dailyUsage;
 

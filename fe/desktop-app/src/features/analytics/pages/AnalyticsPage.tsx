@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAnalytics } from "../hooks/useAnalytics";
 import type { AnalyticsRange, AnalyticsViolationType } from "../types/analytics.types";
 import type { RangeOption, SVGChartPath, StatCardData, StatTone, Trend } from "../index";
+import { focusApi } from "@/features/focus-session/api/focus.api";
+import type { FocusSessionResponse, SessionStatus } from "@/features/focus-session/types/focus.types";
 import "./AnalyticsPage.css";
 
 const formatMinutes = (minutes: number | undefined, t: (key: string, opts?: any) => string) =>
@@ -36,8 +38,53 @@ const buildChartPath = (items: { focusMinutes: number }[]): SVGChartPath | null 
   return { line, area };
 };
 
+const getSessionMinutes = (session: FocusSessionResponse) => {
+  return session.actualDuration ?? session.plannedDuration ?? 0;
+};
+
+const clampScore = (value: number) => Math.max(0, Math.min(Math.round(value), 100));
+
+const getSessionReview = (session: FocusSessionResponse) => {
+  const plannedMinutes = Math.max(session.plannedDuration ?? 0, 1);
+  const actualMinutes = Math.max(getSessionMinutes(session), 0);
+  const completionRate = clampScore((actualMinutes / plannedMinutes) * 100);
+  const penaltyViolations =
+    session.violations?.filter((violation) => violation.minutesDeducted > 0).length ?? 0;
+  const reminderViolations = (session.violations?.length ?? 0) - penaltyViolations;
+  const rewardRate =
+    session.totalRewardPool > 0
+      ? (session.accumulatedReward / session.totalRewardPool) * 100
+      : completionRate;
+  const abortPenalty = session.status === "ABORTED" ? 18 : 0;
+  const score = clampScore(
+    completionRate * 0.68 +
+      Math.max(rewardRate, 0) * 0.22 -
+      penaltyViolations * 6 -
+      reminderViolations * 2 -
+      abortPenalty,
+  );
+  const grade = score >= 90 ? "S" : score >= 78 ? "A" : score >= 62 ? "B" : score >= 45 ? "C" : "D";
+
+  return {
+    score,
+    grade,
+    completionRate,
+  };
+};
+
+const getSessionStatusIcon = (status: SessionStatus) => {
+  if (status === "COMPLETED") return "check_circle";
+  if (status === "ABORTED") return "cancel";
+  if (status === "IN_PROGRESS") return "play_circle";
+  return "do_not_disturb_on";
+};
+
 export default function AnalyticsPage() {
   const { t, i18n } = useTranslation("common");
+  const [sessionHistory, setSessionHistory] = useState<FocusSessionResponse[]>([]);
+  const [isSessionHistoryLoading, setIsSessionHistoryLoading] = useState(true);
+  const [isHistoryPopupOpen, setIsHistoryPopupOpen] = useState(false);
+  const [selectedHistorySession, setSelectedHistorySession] = useState<FocusSessionResponse | null>(null);
 
   const {
     range,
@@ -56,6 +103,27 @@ export default function AnalyticsPage() {
 
   // Locale cho Intl.DateTimeFormat đổi theo ngôn ngữ đang chọn
   const dateLocale = i18n.language === "en" ? "en-US" : "vi-VN";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSessionHistory = async () => {
+      try {
+        setIsSessionHistoryLoading(true);
+        const result = await focusApi.getSessionHistory({ page: 0, size: 12 });
+        if (!cancelled) setSessionHistory(result.items);
+      } catch {
+        if (!cancelled) setSessionHistory([]);
+      } finally {
+        if (!cancelled) setIsSessionHistoryLoading(false);
+      }
+    };
+
+    loadSessionHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const rangeLabels: RangeOption[] = [
     { range: "DAY", label: t("analytics.range_day", { defaultValue: "Ngày" }) },
@@ -160,9 +228,27 @@ export default function AnalyticsPage() {
     .slice(0, 2);
   const goalItems = (goals?.items ?? []).slice(0, 2);
   const violationItems = [...(violations?.byType ?? [])]
+    .filter((item) => item.minutesDeducted > 0)
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
   const topApps = (violations?.topApps ?? []).slice(0, 4);
+  const reviewedSessions = sessionHistory.map((session) => ({
+    session,
+    review: getSessionReview(session),
+  }));
+  const averageReviewScore = reviewedSessions.length
+    ? Math.round(
+        reviewedSessions.reduce((total, item) => total + item.review.score, 0) /
+          reviewedSessions.length,
+      )
+    : 0;
+  const previewSessions = reviewedSessions.slice(0, 3);
+  const selectedReview = selectedHistorySession ? getSessionReview(selectedHistorySession) : null;
+
+  const openHistoryPopup = () => {
+    setSelectedHistorySession((current) => current ?? sessionHistory[0] ?? null);
+    setIsHistoryPopupOpen(true);
+  };
 
   const weekdayLabels = t("analytics.weekdays", {
     defaultValue: "T2,T3,T4,T5,T6,T7,CN",
@@ -332,6 +418,74 @@ export default function AnalyticsPage() {
           className="bottom-grid"
           aria-label={t("analytics.additional_info_label", { defaultValue: "Thông tin bổ sung" })}
         >
+          <article className="info-card session-review-card">
+            <div className="session-review-header">
+              <div>
+                <h2>
+                  {t("analytics.session_review_title", {
+                    defaultValue: "Đánh giá phiên gần đây",
+                  })}
+                </h2>
+                <p>
+                  {t("analytics.session_review_subtitle", {
+                    defaultValue: "Tổng hợp chất lượng các phiên mới nhất",
+                  })}
+                </p>
+              </div>
+              <div className="average-score">
+                <strong>{isSessionHistoryLoading ? "..." : averageReviewScore}</strong>
+                <span>
+                  {t("analytics.average_score", {
+                    defaultValue: "điểm TB",
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <div className="session-review-list">
+              {isSessionHistoryLoading ? (
+                <p className="empty-copy">
+                  {t("focusSession.setup.history_loading", {
+                    defaultValue: "Đang tải lịch sử phiên...",
+                  })}
+                </p>
+              ) : reviewedSessions.length ? (
+                reviewedSessions.map(({ session, review }) => (
+                  <div className="analytics-session-row" key={session.id}>
+                    <div className={`analytics-session-icon status-${session.status.toLowerCase()}`}>
+                      <span className="material-symbols-outlined">
+                        {getSessionStatusIcon(session.status)}
+                      </span>
+                    </div>
+                    <div className="analytics-session-main">
+                      <h3>{session.goal || t("focusSession.summary.no_goal")}</h3>
+                      <p>
+                        {formatMinutes(getSessionMinutes(session), t)} •{" "}
+                        {t("analytics.session_completion", {
+                          defaultValue: "{{percent}}% hoàn thành",
+                          percent: review.completionRate,
+                        })}
+                      </p>
+                      <div className="analytics-score-track">
+                        <span style={{ width: `${review.score}%` }} />
+                      </div>
+                    </div>
+                    <div className={`analytics-session-score grade-${review.grade.toLowerCase()}`}>
+                      <strong>{review.score}</strong>
+                      <span>{review.grade}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="empty-copy">
+                  {t("analytics.no_session_review_data", {
+                    defaultValue: "Chưa có phiên nào để đánh giá.",
+                  })}
+                </p>
+              )}
+            </div>
+          </article>
+
           <article className="info-card">
             <h2>{t("analytics.best_hours_title", { defaultValue: "Giờ hiệu quả nhất" })}</h2>
             {(topHourlyItems.length
@@ -388,6 +542,57 @@ export default function AnalyticsPage() {
             </div>
           </article>
 
+          <article className="info-card history-launch-card">
+            <button className="history-launch-button" type="button" onClick={openHistoryPopup}>
+              <div className="session-review-header compact">
+                <div>
+                  <h2>
+                    {t("analytics.session_history_title", {
+                      defaultValue: "Lịch sử phiên",
+                    })}
+                  </h2>
+                  <p>
+                    {t("analytics.session_history_subtitle", {
+                      defaultValue: "Xem lại điểm và đánh giá từng phiên",
+                    })}
+                  </p>
+                </div>
+                <div className="average-score">
+                  <strong>{isSessionHistoryLoading ? "..." : averageReviewScore}</strong>
+                  <span>{t("analytics.average_score", { defaultValue: "điểm TB" })}</span>
+                </div>
+              </div>
+
+              <div className="history-preview-list">
+                {isSessionHistoryLoading ? (
+                  <p className="empty-copy">
+                    {t("focusSession.setup.history_loading", {
+                      defaultValue: "Đang tải lịch sử phiên...",
+                    })}
+                  </p>
+                ) : previewSessions.length ? (
+                  previewSessions.map(({ session, review }) => (
+                    <div className="history-preview-row" key={session.id}>
+                      <span>{session.goal || t("focusSession.summary.no_goal")}</span>
+                      <strong>{review.score}</strong>
+                    </div>
+                  ))
+                ) : (
+                  <p className="empty-copy">
+                    {t("analytics.no_session_review_data", {
+                      defaultValue: "Chưa có phiên nào để đánh giá.",
+                    })}
+                  </p>
+                )}
+              </div>
+
+              <div className="history-launch-footer">
+                <span>{t("analytics.open_session_history", { defaultValue: "Mở lịch sử" })}</span>
+                <span className="material-symbols-outlined">open_in_new</span>
+              </div>
+            </button>
+          </article>
+
           <article className="info-card violations-card">
             <div className="violation-header">
               <h2>{t("analytics.violation_detail_title", { defaultValue: "Chi tiết số lần mất tập trung" })}</h2>
@@ -438,6 +643,170 @@ export default function AnalyticsPage() {
             </div>
           </article>
         </section>
+
+        {isHistoryPopupOpen && (
+          <div className="analytics-history-overlay" role="dialog" aria-modal="true">
+            <div className="analytics-history-modal">
+              <button
+                className="analytics-history-close"
+                type="button"
+                aria-label={t("focusSession.review.close")}
+                onClick={() => setIsHistoryPopupOpen(false)}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+
+              <div className="analytics-history-list-panel">
+                <div className="analytics-history-modal-header">
+                  <span>{t("analytics.session_history_title", { defaultValue: "Lịch sử phiên" })}</span>
+                  <h2>{t("analytics.session_history_popup_title", { defaultValue: "Chọn một phiên" })}</h2>
+                </div>
+
+                <div className="analytics-history-list">
+                  {isSessionHistoryLoading ? (
+                    <p className="empty-copy">
+                      {t("focusSession.setup.history_loading", {
+                        defaultValue: "Đang tải lịch sử phiên...",
+                      })}
+                    </p>
+                  ) : reviewedSessions.length ? (
+                    reviewedSessions.map(({ session, review }) => (
+                      <button
+                        className={`analytics-history-list-item ${
+                          selectedHistorySession?.id === session.id ? "active" : ""
+                        }`}
+                        key={session.id}
+                        type="button"
+                        onClick={() => setSelectedHistorySession(session)}
+                      >
+                        <span className={`analytics-session-icon status-${session.status.toLowerCase()}`}>
+                          <span className="material-symbols-outlined">
+                            {getSessionStatusIcon(session.status)}
+                          </span>
+                        </span>
+                        <span className="history-list-copy">
+                          <strong>{session.goal || t("focusSession.summary.no_goal")}</strong>
+                          <small>
+                            {formatMinutes(getSessionMinutes(session), t)} •{" "}
+                            {t("analytics.session_completion", {
+                              defaultValue: "{{percent}}% hoàn thành",
+                              percent: review.completionRate,
+                            })}
+                          </small>
+                        </span>
+                        <span className={`analytics-session-score grade-${review.grade.toLowerCase()}`}>
+                          <strong>{review.score}</strong>
+                          <span>{review.grade}</span>
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="empty-copy">
+                      {t("analytics.no_session_review_data", {
+                        defaultValue: "Chưa có phiên nào để đánh giá.",
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="analytics-history-detail-panel">
+                {selectedHistorySession && selectedReview ? (
+                  <>
+                    <div className="history-detail-header">
+                      <div>
+                        <span>{t("focusSession.review.kicker")}</span>
+                        <h2>{selectedHistorySession.goal || t("focusSession.summary.no_goal")}</h2>
+                      </div>
+                      <div className={`detail-score grade-${selectedReview.grade.toLowerCase()}`}>
+                        <strong>{selectedReview.score}</strong>
+                        <span>{selectedReview.grade}</span>
+                      </div>
+                    </div>
+
+                    <div className="history-detail-grade">
+                      <strong>
+                        {t("focusSession.review.grade_label", { grade: selectedReview.grade })}
+                      </strong>
+                      <p>{t(`focusSession.review.grade_message.${selectedReview.grade.toLowerCase()}`)}</p>
+                    </div>
+
+                    <div className="history-detail-stats">
+                      <div>
+                        <span className="material-symbols-outlined">task_alt</span>
+                        <small>{t("focusSession.review.completion")}</small>
+                        <strong>{selectedReview.completionRate}%</strong>
+                      </div>
+                      <div>
+                        <span className="material-symbols-outlined">timer</span>
+                        <small>{t("focusSession.review.actual_time")}</small>
+                        <strong>{formatMinutes(getSessionMinutes(selectedHistorySession), t)}</strong>
+                      </div>
+                      <div>
+                        <span className="material-symbols-outlined">warning</span>
+                        <small>{t("focusSession.review.penalties")}</small>
+                        <strong>
+                          {selectedHistorySession.violations.filter((violation) => violation.minutesDeducted > 0).length}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="material-symbols-outlined">stars</span>
+                        <small>{t("focusSession.review.xp")}</small>
+                        <strong>{(selectedHistorySession.accumulatedReward ?? 0) * 60}</strong>
+                      </div>
+                    </div>
+
+                    <div className="history-detail-feedback">
+                      <div>
+                        <h3>{t("focusSession.review.strength_title")}</h3>
+                        <p>
+                          {selectedHistorySession.violations.filter((violation) => violation.minutesDeducted > 0).length === 0
+                            ? t("focusSession.review.strength_clean")
+                            : t("focusSession.review.strength_progress", {
+                                count: selectedHistorySession.violations.filter(
+                                  (violation) => violation.minutesDeducted > 0,
+                                ).length,
+                              })}
+                        </p>
+                      </div>
+                      <div>
+                        <h3>{t("focusSession.review.improve_title")}</h3>
+                        <p>
+                          {selectedReview.completionRate >= 90
+                            ? t("focusSession.review.improve_keep")
+                            : t("focusSession.review.improve_completion", {
+                                percent: selectedReview.completionRate,
+                              })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {selectedHistorySession.violations.length > 0 && (
+                      <div className="history-detail-violations">
+                        <h3>{t("focusSession.review.violation_title")}</h3>
+                        <div>
+                          {selectedHistorySession.violations.map((violation, index) => (
+                            <span key={`${violation.type}-${violation.occurredAt}-${index}`}>
+                              {t(`focusSession.activeView.violation_${violation.type.toLowerCase()}`, {
+                                defaultValue: violation.type.replace(/_/g, " "),
+                              })}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="history-detail-empty">
+                    {t("analytics.session_history_select_hint", {
+                      defaultValue: "Chọn một phiên trong danh sách để xem đánh giá chi tiết.",
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

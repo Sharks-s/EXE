@@ -7,6 +7,7 @@ import { useFocusStore } from "../stores/focusStore";
 import { focusApi } from "../api/focus.api";
 import { cameraApi } from "../api/cameraApi";
 import { tauriStore } from "@/lib/tauriStore";
+import { isDailyLimitExceededError } from "@/utils/api-error-code";
 
 import { CheckItem } from "./CheckItemProps";
 
@@ -94,7 +95,12 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
       await emit("widget-active-state", { active: true });
     } catch (err: any) {
       console.error("[Start Focus Error]:", err);
-      setSubmitError(err.message || t("focusSession.cameraSetup.start_error"));
+      if (isDailyLimitExceededError(err)) {
+        useFocusStore.getState().showUpgradeNudge();
+        setSubmitError("Daily usage limit exceeded. Upgrade Pro to keep focusing.");
+      } else {
+        setSubmitError(err.message || t("focusSession.cameraSetup.start_error"));
+      }
 
       // Nếu lỗi tạo phiên (Modal không đóng), lúc này mới cần chủ động tắt cam để giải phóng thiết bị
       await cameraApi.stop().catch(() => { });

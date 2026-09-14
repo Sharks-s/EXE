@@ -131,6 +131,37 @@ app:
     default-personality-code: "SWEET"
     daily-free-usage: 60
     default-cycle-minutes: 5
+    subscription-plans:
+      - code: "FREE"
+        name: "Free"
+        description: "Basic focus plan with daily usage limit."
+        plan: "FREE"
+        billing-cycle: "NONE"
+        price-vnd: 0
+        daily-limit-minutes: 60
+        unlimited-usage: false
+        active: true
+        display-order: 1
+      - code: "PRO_MONTHLY"
+        name: "Pro Monthly"
+        description: "Unlimited focus time for 1 month."
+        plan: "PRO"
+        billing-cycle: "MONTHLY"
+        price-vnd: 49000
+        duration-days: 30
+        unlimited-usage: true
+        active: true
+        display-order: 2
+      - code: "PRO_YEARLY"
+        name: "Pro Yearly"
+        description: "Unlimited focus time for 1 year."
+        plan: "PRO"
+        billing-cycle: "YEARLY"
+        price-vnd: 399000
+        duration-days: 365
+        unlimited-usage: true
+        active: true
+        display-order: 3
     personalities:
       - code: "SWEET"
         name: "Sweet Assistant"

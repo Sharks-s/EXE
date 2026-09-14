@@ -57,6 +57,7 @@
   "SESSION_008": "Session is not paused",
   "SESSION_009": "No break time available",
   "PREMIUM_001": "Daily usage limit exceeded",
+  "DAILY_LIMIT_EXCEEDED": "Daily usage limit exceeded",
   "PET_001": "Default pet not found",
   "PET_002": "User personality is not set",
   "PET_003": "Default pet is not configured",

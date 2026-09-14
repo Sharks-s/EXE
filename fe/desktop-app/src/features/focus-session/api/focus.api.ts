@@ -10,6 +10,8 @@ import type {
   BreakPromptAiResponse,
   ClassifyAndHandleViolationResponse,
   HeartbeatResponse,
+  PagedResponse,
+  SessionStatus,
 } from "../types/focus.types";
 
 export const focusApi = {
@@ -94,6 +96,16 @@ export const focusApi = {
   // GET /focus-sessions/active
   getActiveSession: async (): Promise<FocusSessionResponse | null> => {
     const res = await api.get("/focus-sessions/active");
+    return res.data.data;
+  },
+
+  // GET /focus-sessions/history
+  getSessionHistory: async (params?: {
+    page?: number;
+    size?: number;
+    status?: SessionStatus;
+  }): Promise<PagedResponse<FocusSessionResponse>> => {
+    const res = await api.get("/focus-sessions/history", { params });
     return res.data.data;
   },
 

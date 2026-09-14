@@ -19,6 +19,8 @@ import com.exe101.exe.repository.FocusSessionRepository;
 import com.exe101.exe.repository.PersonalityRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,10 +77,10 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         resetDailyUsageIfNeeded(user, now);
 
-        // 3. Chặn nếu vượt hạn mức 120 phút (Chỉ áp dụng với Free User)
-        boolean isPremium = subscriptionRepository.existsByUserIdAndIsActiveTrue(userId);
+        // 3. Chặn nếu vượt hạn mức ngày (chỉ áp dụng với Free user)
+        boolean hasProAccess = hasActiveProAccess(userId, now);
 
-        if (!isPremium) {
+        if (!hasProAccess) {
             if (exceedsDailyUsageLimit(user, request.durationMinutes())) {
                 throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
             }
@@ -416,6 +418,29 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         return response;
     }
 
+    @Override
+    public PagedResponse<FocusSessionResponse> getSessionHistory(Long userId, SessionStatus status, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        PageRequest pageRequest = PageRequest.of(safePage, safeSize);
+
+        Page<FocusSession> sessionPage = status == null
+                ? focusSessionRepository.findByUserIdOrderByStartedAtDesc(userId, pageRequest)
+                : focusSessionRepository.findByUserIdAndStatusOrderByStartedAtDesc(userId, status, pageRequest);
+
+        List<FocusSessionResponse> items = sessionPage.getContent().stream()
+                .map(focusSessionMapper::toResponse)
+                .toList();
+
+        return new PagedResponse<>(
+                items,
+                sessionPage.getNumber(),
+                sessionPage.getTotalElements(),
+                sessionPage.getTotalPages(),
+                sessionPage.hasNext()
+        );
+    }
+
     private FocusSessionResponse withCloseState(FocusSessionResponse response, FocusSession session) {
         Integer elapsed = session.getElapsedSecondsAtClose();
         return new FocusSessionResponse(
@@ -444,7 +469,9 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         int deltaMinutes = deltaSeconds / 60;
 
         if (deltaMinutes > 0) {
-            if (exceedsDailyUsageLimit(user, deltaMinutes)) {
+            boolean hasProAccess = hasActiveProAccess(user.getId(), now);
+
+            if (!hasProAccess && exceedsDailyUsageLimit(user, deltaMinutes)) {
                 throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
             }
 
@@ -457,9 +484,12 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.setLastHeartbeatAt(now);
         focusSessionRepository.save(session);
 
+        boolean unlimited = hasActiveProAccess(user.getId(), now);
+
         return new HeartbeatResponse(
                 currentDailyUsedMinutes(user),
-                appSeedProperties.getDailyFreeUsage()
+                unlimited ? null : appSeedProperties.getDailyFreeUsage(),
+                unlimited
         );
     }
 
@@ -624,6 +654,10 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
     private boolean exceedsDailyUsageLimit(User user, int minutesToAdd) {
         return currentDailyUsedMinutes(user) + minutesToAdd > appSeedProperties.getDailyFreeUsage();
+    }
+
+    private boolean hasActiveProAccess(Long userId, Instant now) {
+        return subscriptionRepository.hasActiveProAccess(userId, now);
     }
 
     private int currentDailyUsedMinutes(User user) {

@@ -77,6 +77,14 @@ export interface FocusSessionResponse {
   breakRemainingSecondsAtClose: number | null;
 }
 
+export interface PagedResponse<T> {
+  items: T[];
+  currentPage: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
 export interface HandleViolationResponse {
   focusSessionResponse: FocusSessionResponse;
   isPenalty: boolean;
@@ -94,7 +102,11 @@ export interface ClassifyAndHandleViolationResponse {
   violationCount: number;
 }
 
-export interface HeartbeatResponse { dailyUsedMinutes: number; dailyLimitMinutes: number; }
+export interface HeartbeatResponse {
+  dailyUsedMinutes: number;
+  dailyLimitMinutes: number | null;
+  unlimited: boolean;
+}
 
 // ── UI helper types ────────────────────────────────────
 
@@ -176,7 +188,12 @@ export interface FocusState {
 
   violatingCache: Set<string>; // cache app đã bị AI phán là vi phạm, tránh hỏi AI lại trong session
 
-  dailyUsage: { dailyUsedMinutes: number; dailyLimitMinutes: number } | null;
+  dailyUsage: {
+    dailyUsedMinutes: number;
+    dailyLimitMinutes: number | null;
+    unlimited: boolean;
+  } | null;
+  isUpgradeNudgeOpen: boolean;
 
 
   // Actions
@@ -202,6 +219,12 @@ export interface FocusState {
   addAiMessage: (message: string) => void;
   addToViolatingCache: (appOrTitle: string) => void;
 
-  setDailyUsage: (usage: { dailyUsedMinutes: number; dailyLimitMinutes: number }) => void;
+  setDailyUsage: (usage: {
+    dailyUsedMinutes: number;
+    dailyLimitMinutes: number | null;
+    unlimited: boolean;
+  }) => void;
+  showUpgradeNudge: () => void;
+  hideUpgradeNudge: () => void;
 }
 

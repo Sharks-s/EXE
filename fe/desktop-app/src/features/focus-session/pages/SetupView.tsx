@@ -4,7 +4,6 @@ import { CameraSetupModal } from "../components/CameraSetupModal";
 import {
   analyticsApi,
   type AnalyticsSummary,
-  type FocusTimeAnalytics,
   type HourlyAnalytics,
 } from "@/features/analytics";
 import { petApi, type UserPet } from "@/features/pet";
@@ -12,6 +11,9 @@ import { profileApi } from "@/features/profile";
 import { toast } from "@/shared/store/toastStore";
 import type { Page } from "@/shared/components/Sidebar";
 import { useTranslation } from "react-i18next";
+import { useFocusStore } from "../stores/focusStore";
+import { focusApi } from "../api/focus.api";
+import type { FocusSessionResponse, SessionStatus } from "../types/focus.types";
 
 
 const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
@@ -41,6 +43,47 @@ const formatRecentDate = (dateValue?: string) => {
     day: "2-digit",
     month: "2-digit",
   }).format(date);
+};
+
+const getSessionMinutes = (session: FocusSessionResponse) => {
+  return session.actualDuration ?? session.plannedDuration ?? 0;
+};
+
+const getSessionStatusIcon = (status: SessionStatus) => {
+  if (status === "COMPLETED") return "check_circle";
+  if (status === "ABORTED") return "cancel";
+  if (status === "IN_PROGRESS") return "play_circle";
+  return "do_not_disturb_on";
+};
+
+const clampScore = (value: number) => Math.max(0, Math.min(Math.round(value), 100));
+
+const getSessionReview = (session: FocusSessionResponse) => {
+  const plannedMinutes = Math.max(session.plannedDuration ?? 0, 1);
+  const actualMinutes = Math.max(getSessionMinutes(session), 0);
+  const completionRate = clampScore((actualMinutes / plannedMinutes) * 100);
+  const penaltyViolations =
+    session.violations?.filter((violation) => violation.minutesDeducted > 0).length ?? 0;
+  const reminderViolations =
+    (session.violations?.length ?? 0) - penaltyViolations;
+  const rewardRate =
+    session.totalRewardPool > 0
+      ? (session.accumulatedReward / session.totalRewardPool) * 100
+      : completionRate;
+  const abortPenalty = session.status === "ABORTED" ? 18 : 0;
+  const score = clampScore(
+    completionRate * 0.68 + Math.max(rewardRate, 0) * 0.22 - penaltyViolations * 6 - reminderViolations * 2 - abortPenalty,
+  );
+  const grade = score >= 90 ? "S" : score >= 78 ? "A" : score >= 62 ? "B" : score >= 45 ? "C" : "D";
+
+  return {
+    score,
+    grade,
+    completionRate,
+    penaltyViolations,
+    reminderViolations,
+    xpGained: (session.accumulatedReward ?? 0) * 60,
+  };
 };
 
 function MaterialIcon({
@@ -76,11 +119,14 @@ export function SetupView({ onNavigate }: SetupViewProps) {
   const [daySummary, setDaySummary] = useState<AnalyticsSummary | null>(null);
   const [weekSummary, setWeekSummary] = useState<AnalyticsSummary | null>(null);
   const [yearSummary, setYearSummary] = useState<AnalyticsSummary | null>(null);
-  const [weeklyFocusTime, setWeeklyFocusTime] =
-    useState<FocusTimeAnalytics | null>(null);
   const [hourly, setHourly] = useState<HourlyAnalytics | null>(null);
   const [equippedPet, setEquippedPet] = useState<UserPet | null>(null);
   const [isCheckingDailyLimit, setIsCheckingDailyLimit] = useState(false);
+  const [sessionHistory, setSessionHistory] = useState<FocusSessionResponse[]>([]);
+  const [sessionHistoryTotal, setSessionHistoryTotal] = useState(0);
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [reviewSession, setReviewSession] = useState<FocusSessionResponse | null>(null);
 
   const focusGoal = useMemo(
     () => customGoal.trim() || selectedGoal,
@@ -93,29 +139,30 @@ export function SetupView({ onNavigate }: SetupViewProps) {
     [duration],
   );
 
-  const recentFocusItem = useMemo(() => {
-    const items = weeklyFocusTime?.items ?? [];
-    return [...items].reverse().find((item) => item.focusMinutes > 0) ?? null;
-  }, [weeklyFocusTime]);
+  const visibleSessionHistory = useMemo(
+    () => sessionHistory.slice(0, isHistoryExpanded ? 8 : 3),
+    [isHistoryExpanded, sessionHistory],
+  );
 
   useEffect(() => {
     let cancelled = false;
 
     const loadDashboardData = async () => {
+      setIsHistoryLoading(true);
       const [
         dayResult,
         weekResult,
         yearResult,
-        focusTimeResult,
         hourlyResult,
         petsResult,
+        historyResult,
       ] = await Promise.allSettled([
         analyticsApi.getSummary({ range: "DAY" }),
         analyticsApi.getSummary({ range: "WEEK" }),
         analyticsApi.getSummary({ range: "YEAR" }),
-        analyticsApi.getFocusTime({ range: "WEEK" }),
         analyticsApi.getHourly({ range: "WEEK" }),
         petApi.getMyPets(),
+        focusApi.getSessionHistory({ page: 0, size: 8 }),
       ]);
 
       if (cancelled) return;
@@ -123,9 +170,6 @@ export function SetupView({ onNavigate }: SetupViewProps) {
       if (dayResult.status === "fulfilled") setDaySummary(dayResult.value);
       if (weekResult.status === "fulfilled") setWeekSummary(weekResult.value);
       if (yearResult.status === "fulfilled") setYearSummary(yearResult.value);
-      if (focusTimeResult.status === "fulfilled") {
-        setWeeklyFocusTime(focusTimeResult.value);
-      }
       if (hourlyResult.status === "fulfilled") setHourly(hourlyResult.value);
       if (petsResult.status === "fulfilled") {
         setEquippedPet(
@@ -134,6 +178,11 @@ export function SetupView({ onNavigate }: SetupViewProps) {
           null,
         );
       }
+      if (historyResult.status === "fulfilled") {
+        setSessionHistory(historyResult.value.items);
+        setSessionHistoryTotal(historyResult.value.totalItems);
+      }
+      setIsHistoryLoading(false);
     };
 
     loadDashboardData();
@@ -159,7 +208,12 @@ export function SetupView({ onNavigate }: SetupViewProps) {
     setIsCheckingDailyLimit(true);
     try {
       const usage = await profileApi.getDailyUsage();
-      if (usage.remainingMinute <= 0 || duration > usage.remainingMinute) {
+      if (
+        !usage.unlimited &&
+        ((usage.remainingMinute ?? 0) <= 0 ||
+          duration > (usage.remainingMinute ?? 0))
+      ) {
+        useFocusStore.getState().showUpgradeNudge();
         toast.error(t("focusSession.setup.daily_limit_message"));
         return;
       }
@@ -175,6 +229,8 @@ export function SetupView({ onNavigate }: SetupViewProps) {
   const handleNavigate = (page: Page) => {
     onNavigate?.(page);
   };
+
+  const review = reviewSession ? getSessionReview(reviewSession) : null;
 
   return (
     <div className="focus-dashboard">
@@ -438,35 +494,71 @@ export function SetupView({ onNavigate }: SetupViewProps) {
             <section className="bento-card recent-card">
               <div className="recent-header">
                 <h3>{t("focusSession.setup.recent_title")}</h3>
-                <button type="button">{t("focusSession.setup.recent_all")}</button>
+                {sessionHistory.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsHistoryExpanded((expanded) => !expanded)}
+                  >
+                    {isHistoryExpanded
+                      ? t("focusSession.setup.history_less")
+                      : t("focusSession.setup.recent_all")}
+                  </button>
+                )}
               </div>
 
-              <div className="session-item">
-                <div className="session-icon">
-                  <MaterialIcon name="terminal" />
-                </div>
-                <div className="session-content">
-                  <h5>
-                    {recentFocusItem
-                      ? t("focusSession.setup.recent_item_title")
-                      : t("focusSession.setup.recent_item_empty")}
-                  </h5>
-                  <p>
-                    {recentFocusItem
-                      ? `${formatRecentDate(recentFocusItem.date)} - ${formatMinutes(
-                        recentFocusItem.focusMinutes,
-                      )}`
-                      : t("focusSession.setup.recent_item_hint")}
-                  </p>
-                </div>
-                <div className="xp-badge">
-                  {recentFocusItem
-                    ? t("focusSession.setup.session_count", {
-                      count: recentFocusItem.completedSessions,
-                    })
-                    : t("focusSession.setup.session_count", { count: 0 })}
-                </div>
+              <div className="session-history-list">
+                {isHistoryLoading ? (
+                  <div className="session-empty">
+                    {t("focusSession.setup.history_loading")}
+                  </div>
+                ) : visibleSessionHistory.length > 0 ? (
+                  visibleSessionHistory.map((historyItem) => (
+                    <button
+                      className="session-item"
+                      key={historyItem.id}
+                      type="button"
+                      onClick={() => setReviewSession(historyItem)}
+                    >
+                      <div className={`session-icon status-${historyItem.status.toLowerCase()}`}>
+                        <MaterialIcon name={getSessionStatusIcon(historyItem.status)} />
+                      </div>
+                      <div className="session-content">
+                        <h5>{historyItem.goal || t("focusSession.summary.no_goal")}</h5>
+                        <p>
+                          {formatRecentDate(historyItem.startedAt)} -{" "}
+                          {formatMinutes(getSessionMinutes(historyItem))}
+                        </p>
+                      </div>
+                      <div className="session-meta">
+                        <span className="score-badge">
+                          {getSessionReview(historyItem).score}
+                        </span>
+                        <span className={`status-pill status-${historyItem.status.toLowerCase()}`}>
+                          {t(`focusSession.setup.history_status.${historyItem.status.toLowerCase()}`)}
+                        </span>
+                        <span className="violation-count">
+                          {t("focusSession.setup.history_violations", {
+                            count: historyItem.violations?.length ?? 0,
+                          })}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="session-empty">
+                    <strong>{t("focusSession.setup.recent_item_empty")}</strong>
+                    <span>{t("focusSession.setup.recent_item_hint")}</span>
+                  </div>
+                )}
               </div>
+
+              {sessionHistoryTotal > 0 && (
+                <div className="history-total">
+                  {t("focusSession.setup.history_total", {
+                    count: sessionHistoryTotal,
+                  })}
+                </div>
+              )}
             </section>
           </div>
         </div>
@@ -478,6 +570,101 @@ export function SetupView({ onNavigate }: SetupViewProps) {
           durationMinutes={duration}
           onClose={() => setIsCameraSetupOpen(false)}
         />
+      )}
+
+      {reviewSession && review && (
+        <div className="review-overlay" role="dialog" aria-modal="true">
+          <div className="review-modal">
+            <button
+              className="review-close"
+              type="button"
+              aria-label={t("focusSession.review.close")}
+              onClick={() => setReviewSession(null)}
+            >
+              <MaterialIcon name="close" />
+            </button>
+
+            <div className="review-header">
+              <div>
+                <span className="review-kicker">{t("focusSession.review.kicker")}</span>
+                <h2>{reviewSession.goal || t("focusSession.summary.no_goal")}</h2>
+                <p>{formatRecentDate(reviewSession.startedAt)}</p>
+              </div>
+              <div className={`review-score grade-${review.grade.toLowerCase()}`}>
+                <strong>{review.score}</strong>
+                <span>{t("focusSession.review.score_label")}</span>
+              </div>
+            </div>
+
+            <div className="review-grade-row">
+              <span>{t("focusSession.review.grade_label", { grade: review.grade })}</span>
+              <p>
+                {t(`focusSession.review.grade_message.${review.grade.toLowerCase()}`)}
+              </p>
+            </div>
+
+            <div className="review-stat-grid">
+              <div>
+                <MaterialIcon name="task_alt" />
+                <span>{t("focusSession.review.completion")}</span>
+                <strong>{review.completionRate}%</strong>
+              </div>
+              <div>
+                <MaterialIcon name="timer" />
+                <span>{t("focusSession.review.actual_time")}</span>
+                <strong>{formatMinutes(getSessionMinutes(reviewSession))}</strong>
+              </div>
+              <div>
+                <MaterialIcon name="warning" />
+                <span>{t("focusSession.review.penalties")}</span>
+                <strong>{review.penaltyViolations}</strong>
+              </div>
+              <div>
+                <MaterialIcon name="stars" />
+                <span>{t("focusSession.review.xp")}</span>
+                <strong>{review.xpGained}</strong>
+              </div>
+            </div>
+
+            <div className="review-feedback">
+              <div>
+                <h3>{t("focusSession.review.strength_title")}</h3>
+                <p>
+                  {review.penaltyViolations === 0
+                    ? t("focusSession.review.strength_clean")
+                    : t("focusSession.review.strength_progress", {
+                      count: review.penaltyViolations,
+                    })}
+                </p>
+              </div>
+              <div>
+                <h3>{t("focusSession.review.improve_title")}</h3>
+                <p>
+                  {review.completionRate >= 90
+                    ? t("focusSession.review.improve_keep")
+                    : t("focusSession.review.improve_completion", {
+                      percent: review.completionRate,
+                    })}
+                </p>
+              </div>
+            </div>
+
+            {reviewSession.violations.length > 0 && (
+              <div className="review-violations">
+                <h3>{t("focusSession.review.violation_title")}</h3>
+                <div>
+                  {reviewSession.violations.map((violation, index) => (
+                    <span key={`${violation.type}-${violation.occurredAt}-${index}`}>
+                      {t(`focusSession.activeView.violation_${violation.type.toLowerCase()}`, {
+                        defaultValue: violation.type.replace(/_/g, " "),
+                      })}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

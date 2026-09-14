@@ -9,6 +9,7 @@ import { useCameraViolationWatch } from "./useCameraViolationWatch";
 import { useAppViolationWatch } from "./useAppViolationWatch";
 import { useBotAction } from "./useBotAction";
 import { useSessionCloseGuard } from "./useSessionCloseGuard";
+import { isDailyLimitExceededError } from "@/utils/api-error-code";
 
 // ── Hằng số cấu hình (gom lại 1 chỗ, không rải rác trong hàm) ──
 const PROMPT_DURATION_SECONDS = 60;
@@ -268,9 +269,15 @@ export function useFocusSession() {
             useFocusStore.getState().setDailyUsage({
               dailyUsedMinutes: res.dailyUsedMinutes,
               dailyLimitMinutes: res.dailyLimitMinutes,
+              unlimited: res.unlimited,
             });
           })
-          .catch((err) => {
+          .catch(async (err) => {
+            if (isDailyLimitExceededError(err)) {
+              await handleEndSession(true);
+              useFocusStore.getState().showUpgradeNudge();
+              return;
+            }
             console.error("[useFocusSession] Heartbeat thất bại:", err);
           });
       }

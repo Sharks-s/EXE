@@ -14,7 +14,8 @@ import java.util.Set;
         name = "focus_sessions",
         indexes = {
                 @Index(name = "idx_focus_session_status", columnList = "status"),
-                @Index(name = "idx_focus_session_started", columnList = "started_at")
+                @Index(name = "idx_focus_session_started", columnList = "started_at"),
+                @Index(name = "idx_focus_session_user_started", columnList = "user_id, started_at")
         }
 )
 @Getter

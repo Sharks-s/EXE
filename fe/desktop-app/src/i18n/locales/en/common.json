@@ -148,6 +148,16 @@
       "recent_item_empty": "No recent sessions",
       "recent_item_hint": "Start a session to record data",
       "session_count": "{{count}} sessions",
+      "history_less": "Less",
+      "history_loading": "Loading session history...",
+      "history_violations": "{{count}} violations",
+      "history_total": "{{count}} total sessions",
+      "history_status": {
+        "in_progress": "Active",
+        "completed": "Done",
+        "aborted": "Aborted",
+        "cancelled": "Cancelled"
+      },
       "daily_limit_message": "You have exceeded your daily usage limit."
     },
     "summary": {
@@ -163,6 +173,30 @@
       "violation_detail_title": "Violation Details",
       "xp_formula": "({{minutes}} mins × 60)",
       "back_button": "Go back"
+    },
+    "review": {
+      "kicker": "Session review",
+      "close": "Close review",
+      "score_label": "score",
+      "grade_label": "Grade {{grade}}",
+      "completion": "Completion",
+      "actual_time": "Focus time",
+      "penalties": "Penalties",
+      "xp": "XP",
+      "strength_title": "What went well",
+      "improve_title": "Improve next time",
+      "strength_clean": "You kept this session clean with no penalized distractions.",
+      "strength_progress": "You still maintained progress with {{count}} penalized distractions recorded.",
+      "improve_keep": "Keep this rhythm and try to repeat it in the next session.",
+      "improve_completion": "You completed {{percent}}% of the plan. Try a shorter duration or reduce distractions next time.",
+      "violation_title": "Recorded distractions",
+      "grade_message": {
+        "s": "Excellent focus quality. This session is a strong benchmark to repeat.",
+        "a": "Strong session with good completion and few interruptions.",
+        "b": "Solid effort, but there is still room to make the session cleaner.",
+        "c": "The session had noticeable interruptions. Tighten the environment before starting.",
+        "d": "This session needs recovery. Pick a shorter goal and remove obvious distractions first."
+      }
     },
     "cameraSetup": {
       "back": "Back",
@@ -237,6 +271,16 @@
     "time_filter_label": "Time filter",
     "overview_label": "Overview stats",
     "additional_info_label": "Additional info",
+    "session_review_title": "Recent session reviews",
+    "session_review_subtitle": "Quality summary from your latest sessions",
+    "session_history_title": "Session history",
+    "session_history_subtitle": "Review scores and feedback for each session",
+    "session_history_popup_title": "Choose a session",
+    "session_history_select_hint": "Choose a session from the list to view its detailed review.",
+    "open_session_history": "Open history",
+    "average_score": "avg score",
+    "session_completion": "{{percent}}% complete",
+    "no_session_review_data": "No sessions available for review.",
     "range_day": "Day",
     "range_week": "Week",
     "range_month": "Month",

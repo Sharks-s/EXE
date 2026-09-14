@@ -2,6 +2,8 @@ package com.exe101.exe.repository;
 
 import com.exe101.exe.model.entity.FocusSession;
 import com.exe101.exe.model.enums.SessionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -18,6 +20,14 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
     List<FocusSession> findByUserIdAndStatus(Long userId, SessionStatus status);
 
     Optional<FocusSession> findFirstByUserIdAndStatusOrderByStartedAtDesc(Long userId, SessionStatus status);
+
+    Page<FocusSession> findByUserIdOrderByStartedAtDesc(Long userId, Pageable pageable);
+
+    Page<FocusSession> findByUserIdAndStatusOrderByStartedAtDesc(
+            Long userId,
+            SessionStatus status,
+            Pageable pageable
+    );
 
     List<FocusSession> findByUserIdAndStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(
             Long userId,

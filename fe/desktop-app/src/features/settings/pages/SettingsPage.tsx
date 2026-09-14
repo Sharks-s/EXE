@@ -3,13 +3,15 @@ import "./SettingsPage.css";
 import { useSettings } from "../hooks/useSettings";
 
 const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> = {
-  INSPIRING: { icon: "psychology", className: "ai-primary" },
-  STRICT: { icon: "sports", className: "ai-red" },
-  CALM: { icon: "nature_people", className: "ai-green" },
-  FRIEND: { icon: "emoji_people", className: "ai-purple" },
+  INSPIRING: { icon: "emoji_objects", className: "ai-primary" },
+  SWEET: { icon: "volunteer_activism", className: "ai-primary" },
+  STRICT: { icon: "gavel", className: "ai-red" },
+  MEAN: { icon: "local_fire_department", className: "ai-red" },
+  CALM: { icon: "spa", className: "ai-green" },
+  FRIEND: { icon: "diversity_1", className: "ai-purple" },
 };
 
-const DEFAULT_PERSONALITY_ICON = { icon: "psychology", className: "ai-primary" };
+const DEFAULT_PERSONALITY_ICON = { icon: "smart_toy", className: "ai-primary" };
 
 export default function SettingsPage() {
   const {

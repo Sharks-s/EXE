@@ -14,7 +14,7 @@ export const mockProfileExtras = {
     joinedLabel: "Tham gia từ tháng 3, 2023",
     location: "TP. Hồ Chí Minh",
     rank: "Expert",
-    isPremium: true,
+    isPremium: false,
     currentStreakDays: 25,
     longestSessionMinutes: 120,
     achievementsMore: 12,
@@ -70,6 +70,7 @@ const toProfileForm = (profile: UserSummary | null): ProfileFormState => ({
 export function useProfilePage() {
     const avatarInputRef = useRef<HTMLInputElement | null>(null);
     const [profile, setProfile] = useState<UserSummary | null>(null);
+    const [isProActive, setIsProActive] = useState(false);
     const [yearSummary, setYearSummary] = useState<AnalyticsSummary | null>(null);
     const [daySummary, setDaySummary] = useState<AnalyticsSummary | null>(null);
     const [weekSummary, setWeekSummary] = useState<AnalyticsSummary | null>(null);
@@ -89,13 +90,14 @@ export function useProfilePage() {
         const loadProfileData = async () => {
             setIsLoading(true);
 
-            const [profileResult, dayResult, weekResult, yearResult, petsResult] =
+            const [profileResult, dayResult, weekResult, yearResult, petsResult, dailyUsageResult] =
                 await Promise.allSettled([
                     profileApi.getMyProfile(),
                     analyticsApi.getSummary({ range: "DAY" }),
                     analyticsApi.getSummary({ range: "WEEK" }),
                     analyticsApi.getSummary({ range: "YEAR" }),
                     petApi.getMyPets(),
+                    profileApi.getDailyUsage(),
                 ]);
 
             if (cancelled) return;
@@ -114,6 +116,9 @@ export function useProfilePage() {
                 setEquippedPet(
                     petsResult.value.find((pet) => pet.equipped) ?? petsResult.value[0] ?? null,
                 );
+            }
+            if (dailyUsageResult.status === "fulfilled") {
+                setIsProActive(dailyUsageResult.value.unlimited);
             }
 
             setIsLoading(false);
@@ -177,9 +182,6 @@ export function useProfilePage() {
     }, [profileForm.provinceCode]);
 
     const display = useMemo(() => {
-        const roles = profile?.roles ?? [];
-        const hasPremiumRole = roles.some((role) => role.toLowerCase().includes("premium"));
-
         return {
             name: profile?.fullName?.trim() || "Chưa cập nhật",
             email: profile?.email || "Chưa cập nhật",
@@ -189,9 +191,10 @@ export function useProfilePage() {
             avatarUrl: profile?.avatarUrl || fallbackAvatar,
             meta: `${formatJoinedLabel(profile?.createdAt)} • ${profile?.provinceName ?? mockProfileExtras.location
                 }`,
-            isPremium: hasPremiumRole || mockProfileExtras.isPremium,
+            isPremium: isProActive,
+            planLabel: isProActive ? "Pro" : "Free",
         };
-    }, [profile]);
+    }, [profile, isProActive]);
 
     const openProfileModal = () => {
         setProfileForm(toProfileForm(profile));

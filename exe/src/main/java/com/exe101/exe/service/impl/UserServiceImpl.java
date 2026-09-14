@@ -14,12 +14,14 @@ import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.mapper.UserMapper;
 import com.exe101.exe.model.entity.Personality;
 import com.exe101.exe.model.entity.Province;
+import com.exe101.exe.model.entity.Subscription;
 import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.entity.Ward;
 import com.exe101.exe.model.enums.UserStatus;
 import com.exe101.exe.repository.PersonalityRepository;
 import com.exe101.exe.repository.ProvinceRepository;
 import com.exe101.exe.repository.RefreshTokenRepository;
+import com.exe101.exe.repository.SubscriptionRepository;
 import com.exe101.exe.repository.UserIdentityRepository;
 import com.exe101.exe.repository.UserRepository;
 import com.exe101.exe.repository.WardRepository;
@@ -51,6 +53,7 @@ public class UserServiceImpl implements UserService {
     private final WardRepository wardRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserIdentityRepository userIdentityRepository;
+    private final SubscriptionRepository subscriptionRepository;
     private final UserMapper userMapper;
     private final ImageService cloudinaryService;
     private final UserIdentityService userIdentityService;
@@ -68,6 +71,7 @@ public class UserServiceImpl implements UserService {
             }
 
             if (user.getStatus() == UserStatus.PENDING) {
+                ensureFreeSubscription(user);
                 return user;
             }
         }
@@ -80,7 +84,10 @@ public class UserServiceImpl implements UserService {
                 .lastLoginAt(null)
                 .build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        ensureFreeSubscription(savedUser);
+
+        return savedUser;
     }
 
     @Override
@@ -111,7 +118,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User createOAuthUser(String email, String name, String avatarUrl) {
-        return userRepository.save(
+        User user = userRepository.save(
                 User.builder()
                         .email(email)
                         .fullName(name)
@@ -121,6 +128,10 @@ public class UserServiceImpl implements UserService {
                         .lastLoginAt(Instant.now())
                         .build()
         );
+
+        ensureFreeSubscription(user);
+
+        return user;
     }
 
     @Override
@@ -176,11 +187,22 @@ public class UserServiceImpl implements UserService {
 
         int dailyUsedMinutes = currentDailyUsedMinutes(user);
         int dailyLimitMinutes = appSeedProperties.getDailyFreeUsage();
+        boolean unlimited = hasActiveProAccess(userId, Instant.now());
+
+        if (unlimited) {
+            return DailyUsageResponse.builder()
+                    .dailyUsedMinute(dailyUsedMinutes)
+                    .dailyLimitMinute(null)
+                    .remainingMinute(null)
+                    .unlimited(true)
+                    .build();
+        }
 
         return DailyUsageResponse.builder()
                 .dailyUsedMinute(dailyUsedMinutes)
                 .dailyLimitMinute(dailyLimitMinutes)
                 .remainingMinute(Math.max(0, dailyLimitMinutes - dailyUsedMinutes))
+                .unlimited(false)
                 .build();
     }
 
@@ -407,6 +429,25 @@ public class UserServiceImpl implements UserService {
 
     private int currentDailyUsedMinutes(User user) {
         return user.getDailyUsedMinutes() != null ? user.getDailyUsedMinutes() : 0;
+    }
+
+    private boolean hasActiveProAccess(Long userId, Instant now) {
+        return subscriptionRepository.hasActiveProAccess(userId, now);
+    }
+
+    private void ensureFreeSubscription(User user) {
+        if (subscriptionRepository.existsByUserIdAndPlanIgnoreCase(user.getId(), "FREE")) {
+            return;
+        }
+
+        subscriptionRepository.save(Subscription.builder()
+                .user(user)
+                .plan("FREE")
+                .billingCycle("NONE")
+                .startedAt(Instant.now())
+                .expiresAt(null)
+                .isActive(true)
+                .build());
     }
 
     private String buildDeletedEmail(Long userId) {

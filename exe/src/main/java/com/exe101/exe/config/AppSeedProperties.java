@@ -17,6 +17,7 @@ public class AppSeedProperties {
     private List<PersonalitySeed> personalities;
     private List<PetSeed> pets;
     private List<AppRuleSeed> appRules;
+    private List<SubscriptionPlanSeed> subscriptionPlans;
     private String defaultPetCode;
     private String defaultPersonalityCode;
     private Integer dailyFreeUsage;
@@ -47,6 +48,22 @@ public class AppSeedProperties {
         private String appName;
         private String windowTitleKeyword;
         private RuleType ruleType;
+    }
+
+    @Getter
+    @Setter
+    public static class SubscriptionPlanSeed {
+        private String code;
+        private String name;
+        private String description;
+        private String plan;
+        private String billingCycle;
+        private Integer priceVnd;
+        private Integer durationDays;
+        private Integer dailyLimitMinutes;
+        private boolean unlimitedUsage;
+        private boolean active;
+        private Integer displayOrder;
     }
 
     public String getPetDescription(String code) {

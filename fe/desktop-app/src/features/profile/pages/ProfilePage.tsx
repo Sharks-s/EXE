@@ -80,7 +80,9 @@ export default function ProfilePage() {
               <div className="profile-heading">
                 <h2>{isLoading ? "Đang tải..." : display.name}</h2>
                 <div className="badge-group">
-                  {display.isPremium && <span className="badge badge-premium">Beginner</span>}
+                  <span className={`badge ${display.isPremium ? "badge-premium" : "badge-expert"}`}>
+                    {display.planLabel}
+                  </span>
                 </div>
               </div>
 

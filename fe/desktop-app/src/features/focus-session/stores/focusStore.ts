@@ -25,6 +25,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
   violatingCache: new Set<string>(),
 
   dailyUsage: null,
+  isUpgradeNudgeOpen: false,
   // ── ACTIONS ──────────────────────────────────────────────────────
   setSession: (session) =>
     set({
@@ -52,6 +53,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
     })),
 
   setDailyUsage: (usage) => set({ dailyUsage: usage }),
+  showUpgradeNudge: () => set({ isUpgradeNudgeOpen: true }),
+  hideUpgradeNudge: () => set({ isUpgradeNudgeOpen: false }),
 
   syncSession: (session, serverViolationCount) => {
     const isEnded =

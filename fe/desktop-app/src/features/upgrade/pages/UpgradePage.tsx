@@ -1,4 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { profileApi } from "@/features/profile";
+import { useFocusStore } from "@/features/focus-session";
+import { toast } from "@/shared/store/toastStore";
+import {
+  subscriptionApi,
+  type UpgradeProPlanCode,
+} from "../api/subscription.api";
 import "./UpgradePage.css";
 
 export type Plan = {
@@ -23,8 +30,8 @@ export type FaqItem = {
 
 const plans: Plan[] = [
   {
-    id: "beginner",
-    name: "Beginner",
+    id: "free",
+    name: "Free",
     price: "",
     period: "",
     yearlyOldPrice: "",
@@ -64,10 +71,76 @@ const plans: Plan[] = [
 
 const faqItems: FaqItem[] = [];
 
-export default function UpgradePage() {
+type BillingOption = "monthly" | "yearly";
 
-  const currentPlanLabel = "Bạn đang là một Beginner";
+export default function UpgradePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [selectedBilling, setSelectedBilling] =
+    useState<BillingOption | null>(null);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isProActive, setIsProActive] = useState(false);
+  const currentPlanLabel = isProActive
+    ? "Bạn đang là Pro"
+    : "Bạn đang là Free";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    profileApi
+      .getDailyUsage()
+      .then((usage) => {
+        if (!cancelled) setIsProActive(usage.unlimited);
+      })
+      .catch((err) => {
+        console.error("[UpgradePage] Failed to load current subscription:", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleUpgradeClick = (plan: Plan) => {
+    if (plan.id !== "pro") return;
+    setSelectedBilling("monthly");
+  };
+
+  const handleConfirmBilling = async () => {
+    if (!selectedBilling) return;
+
+    const planCode: UpgradeProPlanCode =
+      selectedBilling === "monthly" ? "PRO_MONTHLY" : "PRO_YEARLY";
+
+    setIsUpgrading(true);
+    try {
+      const upgradedSubscription = await subscriptionApi.upgradePro(planCode);
+      const previousUsage = useFocusStore.getState().dailyUsage;
+      useFocusStore.getState().setDailyUsage({
+        dailyUsedMinutes: previousUsage?.dailyUsedMinutes ?? 0,
+        dailyLimitMinutes: null,
+        unlimited: upgradedSubscription.unlimited,
+      });
+      profileApi
+        .getDailyUsage()
+        .then((usage) => {
+          useFocusStore.getState().setDailyUsage({
+            dailyUsedMinutes: usage.dailyUsedMinute,
+            dailyLimitMinutes: usage.dailyLimitMinute,
+            unlimited: usage.unlimited,
+          });
+        })
+        .catch((err) => {
+          console.error("[UpgradePage] Failed to refresh daily usage:", err);
+        });
+      setIsProActive(true);
+      toast.success("Nâng cấp Pro thành công. Bạn đã được dùng không giới hạn.");
+    } catch (err) {
+      console.error("[UpgradePage] Upgrade Pro failed:", err);
+      toast.error("Không thể nâng cấp Pro lúc này. Vui lòng thử lại.");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
 
   return (
@@ -91,9 +164,23 @@ export default function UpgradePage() {
       <main className="upgrade-body">
         <div className="pricing-grid">
           {plans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} />
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              isCurrentPlan={isProActive ? plan.id === "pro" : plan.id === "free"}
+              onUpgradeClick={() => handleUpgradeClick(plan)}
+            />
           ))}
         </div>
+
+        {selectedBilling && (
+          <BillingChoicePanel
+            selectedBilling={selectedBilling}
+            onSelect={setSelectedBilling}
+            isSubmitting={isUpgrading}
+            onConfirm={handleConfirmBilling}
+          />
+        )}
 
         <p className="pricing-note">
           Tất cả giá chưa bao gồm VAT · Thanh toán hàng tháng · Không cam kết dài hạn
@@ -121,7 +208,15 @@ export default function UpgradePage() {
   );
 }
 
-function PlanCard({ plan }: { plan: Plan }) {
+function PlanCard({
+  plan,
+  isCurrentPlan,
+  onUpgradeClick,
+}: {
+  plan: Plan;
+  isCurrentPlan: boolean;
+  onUpgradeClick: () => void;
+}) {
   return (
     <div className={`plan-card ${plan.highlight ? "highlight" : ""}`}>
       {plan.highlight && <div className="plan-stripe" />}
@@ -174,13 +269,84 @@ function PlanCard({ plan }: { plan: Plan }) {
 
         <button
           className={`plan-button ${plan.highlight ? "primary" : ""}`}
-          disabled={plan.id === "beginner"}
+          disabled={isCurrentPlan || plan.id === "free"}
           type="button"
+          onClick={onUpgradeClick}
         >
-          {plan.buttonLabel}
+          {isCurrentPlan
+            ? "Gói hiện tại"
+            : plan.id === "free"
+              ? "Gói Free"
+              : plan.buttonLabel}
         </button>
       </div>
     </div>
+  );
+}
+
+function BillingChoicePanel({
+  selectedBilling,
+  onSelect,
+  isSubmitting,
+  onConfirm,
+}: {
+  selectedBilling: BillingOption;
+  onSelect: (option: BillingOption) => void;
+  isSubmitting: boolean;
+  onConfirm: () => void;
+}) {
+  const isMonthly = selectedBilling === "monthly";
+
+  return (
+    <section className="billing-choice-panel" aria-label="Chọn chu kỳ thanh toán">
+      <div className="billing-choice-header">
+        <div>
+          <span>Pro plan</span>
+          <h2>Chọn chu kỳ thanh toán</h2>
+        </div>
+        <p>{isMonthly ? "49.000đ / tháng" : "399.000đ / năm"}</p>
+      </div>
+
+      <div className="billing-options">
+        <button
+          type="button"
+          className={`billing-option ${isMonthly ? "active" : ""}`}
+          onClick={() => onSelect("monthly")}
+          disabled={isSubmitting}
+        >
+          <span className="billing-radio" />
+          <span className="billing-option-copy">
+            <strong>Theo tháng</strong>
+            <small>49.000đ / tháng · linh hoạt, dễ bắt đầu</small>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className={`billing-option recommended ${!isMonthly ? "active" : ""}`}
+          onClick={() => onSelect("yearly")}
+          disabled={isSubmitting}
+        >
+          <span className="billing-radio" />
+          <span className="billing-option-copy">
+            <strong>Theo năm</strong>
+            <small>399.000đ / năm · tiết kiệm 200.000đ</small>
+          </span>
+          <span className="billing-save-badge">Tiết kiệm</span>
+        </button>
+      </div>
+
+      <button
+        type="button"
+        className="billing-confirm-button"
+        onClick={onConfirm}
+        disabled={isSubmitting}
+      >
+        {isSubmitting
+          ? "Đang nâng cấp..."
+          : `Tiếp tục với ${isMonthly ? "gói tháng" : "gói năm"}`}
+      </button>
+    </section>
   );
 }
 

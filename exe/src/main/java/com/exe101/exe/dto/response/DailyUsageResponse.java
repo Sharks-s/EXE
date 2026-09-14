@@ -15,4 +15,5 @@ public class DailyUsageResponse {
     private Integer dailyUsedMinute;
     private Integer dailyLimitMinute;
     private Integer remainingMinute;
+    private Boolean unlimited;
 }

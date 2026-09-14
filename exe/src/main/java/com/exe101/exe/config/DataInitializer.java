@@ -13,6 +13,7 @@ import com.exe101.exe.service.AppRuleService;
 import com.exe101.exe.service.PersonalityService;
 import com.exe101.exe.service.PetService;
 import com.exe101.exe.service.PromptTemplateService;
+import com.exe101.exe.service.SubscriptionService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +42,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PetService petService;
     private final AppRuleService appRuleService;
     private final PromptTemplateService promptTemplateService;
+    private final SubscriptionService subscriptionService;
 
     @Override
     @Transactional
@@ -109,6 +111,8 @@ public class DataInitializer implements CommandLineRunner {
         appRuleService.seedDefaultAppRules();
         //--------Init default prompt templates-----------
         promptTemplateService.seedDefaultPromptTemplates();
+        //--------Init default subscription plans-----------
+        subscriptionService.seedDefaultSubscriptionPlans();
 
     }
 }

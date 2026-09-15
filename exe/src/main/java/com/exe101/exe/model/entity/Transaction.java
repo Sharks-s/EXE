@@ -1,5 +1,6 @@
 package com.exe101.exe.model.entity;
 
+import com.exe101.exe.model.enums.PaymentProvider;
 import com.exe101.exe.model.enums.TransactionStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,8 +41,9 @@ public class Transaction {
     @Column(nullable = false)
     private Long amount;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String provider;
+    private PaymentProvider provider;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -58,10 +60,16 @@ public class Transaction {
     @Column(name = "admin_note", length = 500)
     private String adminNote;
 
-    @Column(name = "provider_transaction_id")
+    @Column(
+            name = "provider_transaction_id",
+            unique = true
+    )
     private String providerTransactionId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @Column(name = "provider_request_id", length = 64)
+    private String providerRequestId; // requestId của LẦN GỌI MoMo gần nhất (đổi mỗi lần retry)
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subscription_id")
     private Subscription subscription;
 

@@ -1,7 +1,9 @@
 package com.exe101.exe.repository;
 
 import com.exe101.exe.model.entity.Subscription;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -26,4 +28,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     @Query("SELECT s.user.id FROM Subscription s WHERE s.user.id IN :userIds AND s.isActive = true")
     Set<Long> findActivePremiumUserIds(@Param("userIds") List<Long> userIds);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Subscription s WHERE s.user.id = :userId AND s.isActive = true ORDER BY s.expiresAt DESC")
+    List<Subscription> findActiveByUserIdForUpdate(@Param("userId") Long userId);
 }

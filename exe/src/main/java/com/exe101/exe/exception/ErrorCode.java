@@ -117,8 +117,19 @@ public enum ErrorCode {
     APP_RULE_ALREADY_EXISTS("APPRULE_002", HttpStatus.CONFLICT, "App rule already exists"),
 
     // ===== ADMIN =====
-    INVALID_ADMIN_USER_STATUS("ADMIN_001", HttpStatus.BAD_REQUEST, "Invalid admin user status")
+    INVALID_ADMIN_USER_STATUS("ADMIN_001", HttpStatus.BAD_REQUEST, "Invalid admin user status"),
+
+
+    // ===== PAYMENT =====
+    SUBSCRIPTION_PLAN_NOT_FOUND("PAYMENT_001", HttpStatus.NOT_FOUND, "Subscription plan not found"),
+    INVALID_PLAN_FOR_PAYMENT("PAYMENT_002", HttpStatus.BAD_REQUEST, "This plan cannot be purchased"),
+    TRANSACTION_NOT_FOUND("PAYMENT_003", HttpStatus.NOT_FOUND, "Transaction not found"),
+    TRANSACTION_ALREADY_PROCESSED("PAYMENT_004", HttpStatus.BAD_REQUEST, "Transaction already processed"),
+    MOMO_REQUEST_FAILED("PAYMENT_005", HttpStatus.BAD_GATEWAY, "Failed to create MoMo payment request"),
+    MOMO_SIGNATURE_INVALID("PAYMENT_006", HttpStatus.BAD_REQUEST, "Invalid MoMo signature"),
+    MOMO_IPN_INVALID("PAYMENT_007", HttpStatus.BAD_REQUEST, "Invalid MoMo IPN payload"),
     ;
+
     private final String code;
     private final HttpStatus httpStatus;
     private final String defaultMessage;

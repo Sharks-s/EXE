@@ -17,14 +17,20 @@ export interface SubscriptionPlan {
   active: boolean;
 }
 
-export interface UpgradeProResponse {
-  id: number;
-  plan: "PRO" | "PREMIUM" | string;
-  billingCycle: "MONTHLY" | "YEARLY" | string;
-  startedAt: string;
-  expiresAt: string | null;
-  active: boolean;
-  unlimited: boolean;
+export interface CreatePaymentResponse {
+  orderCode: string;
+  payUrl: string;
+  deeplink: string | null;
+  amount: number;
+}
+
+export type TransactionStatus = "PENDING" | "SUCCESS" | "FAILED" | "CANCELLED";
+
+export interface TransactionStatusResponse {
+  orderCode: string;
+  status: TransactionStatus;
+  plan: string;
+  amount: number;
 }
 
 export const subscriptionApi = {
@@ -33,10 +39,17 @@ export const subscriptionApi = {
       .get<ApiResponse<SubscriptionPlan[]>>("/subscriptions/plans")
       .then((r) => r.data.data),
 
-  upgradePro: (planCode: UpgradeProPlanCode) =>
+  createMomoPayment: (planCode: UpgradeProPlanCode) =>
     api
-      .post<ApiResponse<UpgradeProResponse>>("/subscriptions/upgrade-pro", {
+      .post<ApiResponse<CreatePaymentResponse>>("/payments/momo/create", {
         planCode,
       })
+      .then((r) => r.data.data),
+
+  getPaymentStatus: (orderCode: string) =>
+    api
+      .get<ApiResponse<TransactionStatusResponse>>(
+        `/payments/${orderCode}/status`
+      )
       .then((r) => r.data.data),
 };

@@ -1,32 +1,11 @@
-import { useEffect, useState } from "react";
-import { profileApi } from "@/features/profile";
-import { useFocusStore } from "@/features/focus-session";
-import { toast } from "@/shared/store/toastStore";
-import {
-  subscriptionApi,
-  type UpgradeProPlanCode,
-} from "../api/subscription.api";
+import { useState } from "react";
+import { useCurrentPlan } from "../hooks/useCurrentPlan";
+import { useUpgradePayment } from "../hooks/useUpgradePayment";
+import { PlanCard } from "../components/PlanCard";
+import { BillingChoicePanel } from "../components/BillingChoicePanel";
+import { FaqItemComponent } from "../components/FaqItemComponent";
+import type { BillingOption, FaqItem, Plan } from "../types/subscription.types";
 import "./UpgradePage.css";
-
-export type Plan = {
-  id: string;
-  name: string;
-  price: string;
-  period: string;
-  yearlyOldPrice: string;
-  yearlyPrice: string;
-  yearlyPeriod: string;
-  tagline: string;
-  features: string[];
-  buttonLabel: string;
-  highlight: boolean;
-};
-
-export type FaqItem = {
-  q: string;
-  a: string;
-};
-
 
 const plans: Plan[] = [
   {
@@ -48,100 +27,51 @@ const plans: Plan[] = [
     highlight: false,
   },
   {
-  id: "pro",
-  name: "Pro",
-  price: "49.000đ",
-  period: "/ tháng",
-  yearlyOldPrice: "599.000đ",
-  yearlyPrice: "399.000đ",
-  yearlyPeriod: "/ năm",
-  tagline: "Dành cho người muốn tập trung nghiêm túc",
-  features: [
-    "Không giới hạn thời gian sử dụng",
-    "AI assistant đa personality",
-    "Dashboard phân tích nâng cao",
-    "Chiến lược tập trung cá nhân hóa",
-    "Theo dõi hành vi nâng cao",
-    "Ưu tiên cập nhật và tính năng premium",
-  ],
-  buttonLabel: "Nâng cấp Pro",
-  highlight: true,
-},
+    id: "pro",
+    name: "Pro",
+    price: "49.000đ",
+    period: "/ tháng",
+    yearlyOldPrice: "599.000đ",
+    yearlyPrice: "399.000đ",
+    yearlyPeriod: "/ năm",
+    tagline: "Dành cho người muốn tập trung nghiêm túc",
+    features: [
+      "Không giới hạn thời gian sử dụng",
+      "AI assistant đa personality",
+      "Dashboard phân tích nâng cao",
+      "Chiến lược tập trung cá nhân hóa",
+      "Theo dõi hành vi nâng cao",
+      "Ưu tiên cập nhật và tính năng premium",
+    ],
+    buttonLabel: "Nâng cấp Pro",
+    highlight: true,
+  },
 ];
 
 const faqItems: FaqItem[] = [];
-
-type BillingOption = "monthly" | "yearly";
 
 export default function UpgradePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [selectedBilling, setSelectedBilling] =
     useState<BillingOption | null>(null);
-  const [isUpgrading, setIsUpgrading] = useState(false);
-  const [isProActive, setIsProActive] = useState(false);
-  const currentPlanLabel = isProActive
-    ? "Bạn đang là Pro"
-    : "Bạn đang là Free";
 
-  useEffect(() => {
-    let cancelled = false;
+  const { isProActive, setIsProActive } = useCurrentPlan();
+  const { paymentState, isUpgrading, startUpgrade, resetPayment } =
+    useUpgradePayment(() => setIsProActive(true));
 
-    profileApi
-      .getDailyUsage()
-      .then((usage) => {
-        if (!cancelled) setIsProActive(usage.unlimited);
-      })
-      .catch((err) => {
-        console.error("[UpgradePage] Failed to load current subscription:", err);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const currentPlanLabel = isProActive ? "Bạn đang là Pro" : "Bạn đang là Free";
 
   const handleUpgradeClick = (plan: Plan) => {
     if (plan.id !== "pro") return;
+    resetPayment();
     setSelectedBilling("monthly");
   };
 
-  const handleConfirmBilling = async () => {
+  const handleConfirmBilling = () => {
     if (!selectedBilling) return;
-
-    const planCode: UpgradeProPlanCode =
-      selectedBilling === "monthly" ? "PRO_MONTHLY" : "PRO_YEARLY";
-
-    setIsUpgrading(true);
-    try {
-      const upgradedSubscription = await subscriptionApi.upgradePro(planCode);
-      const previousUsage = useFocusStore.getState().dailyUsage;
-      useFocusStore.getState().setDailyUsage({
-        dailyUsedMinutes: previousUsage?.dailyUsedMinutes ?? 0,
-        dailyLimitMinutes: null,
-        unlimited: upgradedSubscription.unlimited,
-      });
-      profileApi
-        .getDailyUsage()
-        .then((usage) => {
-          useFocusStore.getState().setDailyUsage({
-            dailyUsedMinutes: usage.dailyUsedMinute,
-            dailyLimitMinutes: usage.dailyLimitMinute,
-            unlimited: usage.unlimited,
-          });
-        })
-        .catch((err) => {
-          console.error("[UpgradePage] Failed to refresh daily usage:", err);
-        });
-      setIsProActive(true);
-      toast.success("Nâng cấp Pro thành công. Bạn đã được dùng không giới hạn.");
-    } catch (err) {
-      console.error("[UpgradePage] Upgrade Pro failed:", err);
-      toast.error("Không thể nâng cấp Pro lúc này. Vui lòng thử lại.");
-    } finally {
-      setIsUpgrading(false);
-    }
+    const planCode = selectedBilling === "monthly" ? "PRO_MONTHLY" : "PRO_YEARLY";
+    void startUpgrade(planCode);
   };
-
 
   return (
     <div className="upgrade-page">
@@ -167,7 +97,8 @@ export default function UpgradePage() {
             <PlanCard
               key={plan.id}
               plan={plan}
-              isCurrentPlan={isProActive ? plan.id === "pro" : plan.id === "free"}
+              isCurrentPlan={!isProActive && plan.id === "free"}
+              isProActive={isProActive}
               onUpgradeClick={() => handleUpgradeClick(plan)}
             />
           ))}
@@ -178,12 +109,13 @@ export default function UpgradePage() {
             selectedBilling={selectedBilling}
             onSelect={setSelectedBilling}
             isSubmitting={isUpgrading}
+            paymentState={paymentState}
             onConfirm={handleConfirmBilling}
           />
         )}
 
         <p className="pricing-note">
-          Tất cả giá chưa bao gồm VAT · Thanh toán hàng tháng · Không cam kết dài hạn
+          Tất cả giá chưa bao gồm VAT · Thanh toán theo chu kỳ đã chọn · Không tự động gia hạn
         </p>
 
         <section className="faq-section">
@@ -207,171 +139,3 @@ export default function UpgradePage() {
     </div>
   );
 }
-
-function PlanCard({
-  plan,
-  isCurrentPlan,
-  onUpgradeClick,
-}: {
-  plan: Plan;
-  isCurrentPlan: boolean;
-  onUpgradeClick: () => void;
-}) {
-  return (
-    <div className={`plan-card ${plan.highlight ? "highlight" : ""}`}>
-      {plan.highlight && <div className="plan-stripe" />}
-
-      {plan.highlight && <div className="popular-badge">PHỔ BIẾN NHẤT</div>}
-
-      <div className="plan-content">
-        <div className="plan-header">
-          <div className="plan-icon">{plan.name.charAt(0)}</div>
-
-          <div>
-            <h3>{plan.name}</h3>
-            <p>{plan.tagline}</p>
-          </div>
-        </div>
-
-        <div className="plan-price">
-          <span>{plan.price}</span>
-          <small>{plan.period}</small>
-        </div>
-
-        <div className="plan-divider" />
-
-        <div className="feature-list">
-  {plan.features.map((feature) => (
-    <div key={feature} className="feature-item">
-      <span className="check-icon">✓</span>
-      <p>{feature}</p>
-    </div>
-  ))}
-
-  {plan.yearlyPrice && (
-    <div className="feature-item yearly-payment">
-      <span className="check-icon">✓</span>
-
-      <p>
-  <span className="old-price">
-    {plan.yearlyOldPrice}
-  </span>{" "}
-
-  <span className="new-price">
-    {plan.yearlyPrice} {plan.yearlyPeriod}
-  </span>{" "}
-
-  nếu thanh toán theo năm
-</p>
-    </div>
-  )}
-</div>
-
-        <button
-          className={`plan-button ${plan.highlight ? "primary" : ""}`}
-          disabled={isCurrentPlan || plan.id === "free"}
-          type="button"
-          onClick={onUpgradeClick}
-        >
-          {isCurrentPlan
-            ? "Gói hiện tại"
-            : plan.id === "free"
-              ? "Gói Free"
-              : plan.buttonLabel}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function BillingChoicePanel({
-  selectedBilling,
-  onSelect,
-  isSubmitting,
-  onConfirm,
-}: {
-  selectedBilling: BillingOption;
-  onSelect: (option: BillingOption) => void;
-  isSubmitting: boolean;
-  onConfirm: () => void;
-}) {
-  const isMonthly = selectedBilling === "monthly";
-
-  return (
-    <section className="billing-choice-panel" aria-label="Chọn chu kỳ thanh toán">
-      <div className="billing-choice-header">
-        <div>
-          <span>Pro plan</span>
-          <h2>Chọn chu kỳ thanh toán</h2>
-        </div>
-        <p>{isMonthly ? "49.000đ / tháng" : "399.000đ / năm"}</p>
-      </div>
-
-      <div className="billing-options">
-        <button
-          type="button"
-          className={`billing-option ${isMonthly ? "active" : ""}`}
-          onClick={() => onSelect("monthly")}
-          disabled={isSubmitting}
-        >
-          <span className="billing-radio" />
-          <span className="billing-option-copy">
-            <strong>Theo tháng</strong>
-            <small>49.000đ / tháng · linh hoạt, dễ bắt đầu</small>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          className={`billing-option recommended ${!isMonthly ? "active" : ""}`}
-          onClick={() => onSelect("yearly")}
-          disabled={isSubmitting}
-        >
-          <span className="billing-radio" />
-          <span className="billing-option-copy">
-            <strong>Theo năm</strong>
-            <small>399.000đ / năm · tiết kiệm 200.000đ</small>
-          </span>
-          <span className="billing-save-badge">Tiết kiệm</span>
-        </button>
-      </div>
-
-      <button
-        type="button"
-        className="billing-confirm-button"
-        onClick={onConfirm}
-        disabled={isSubmitting}
-      >
-        {isSubmitting
-          ? "Đang nâng cấp..."
-          : `Tiếp tục với ${isMonthly ? "gói tháng" : "gói năm"}`}
-      </button>
-    </section>
-  );
-}
-
-function FaqItemComponent({
-  item,
-  open,
-  onToggle,
-}: {
-  item: FaqItem;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div className="faq-item">
-      <button onClick={onToggle} type="button" className="faq-question">
-        <span>{item.q}</span>
-        <span className={`faq-arrow ${open ? "open" : ""}`}>⌄</span>
-      </button>
-
-      {open && (
-        <div className="faq-answer">
-          <p>{item.a}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-

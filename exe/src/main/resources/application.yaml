@@ -555,3 +555,15 @@ app:
     model: "google/gemini-2.5-flash"
     timeout-seconds: 10
     max-tokens: 300
+
+  momo:
+    partner-code: ${MOMO_PARTNER_CODE:MOMO}
+    access-key: ${MOMO_ACCESS_KEY:F8BBA842ECF85}
+    secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX08PD3vg6EkVlz}
+    endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
+    redirect-url: ${MOMO_REDIRECT_URL:http://localhost:5173/payment/result}
+    ipn-url: ${MOMO_IPN_URL:http://localhost:8080/payments/momo/ipn}
+    request-type: ${MOMO_REQUEST_TYPE:payWithMethod}
+    partner-name: ${MOMO_PARTNER_NAME:Focus Buddy}
+    store-id: ${MOMO_STORE_ID:FocusBuddyStore}
+

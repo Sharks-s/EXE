@@ -505,6 +505,17 @@
   color: #16a34a;
 }
 
+.payment-success-panel {
+  text-align: center;
+  padding: 24px;
+}
+
+.payment-success-panel p:first-child {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
 @media (min-width: 1080px) {
 
   .upgrade-header,
@@ -693,6 +704,7 @@
     line-height: 1.45;
   }
 }
+
 
 @media (max-height: 720px) and (min-width: 721px) {
   .upgrade-header {

@@ -344,6 +344,8 @@
     "select_companion": "Chọn một bạn đồng hành để xem chi tiết.",
     "status": "Trạng thái",
     "type": "Loại",
+    "price": "Giá",
+    "price_points": "{{points}} Focus Points",
     "equipped_notice": "Đang được trang bị",
     "header_title": "Bạn đồng hành",
     "header_description": "Quản lý, trang bị và nâng cấp các bạn đồng hành trong ứng dụng.",

@@ -15,6 +15,7 @@ export type ShopPet = {
   description: string;
   imageUrl: string;
   premium: boolean;
+  price: number;
 };
 
 export type ApiResponse<T> = {

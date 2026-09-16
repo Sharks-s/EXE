@@ -106,6 +106,16 @@ function ShopPetCard({ pet, adding, onAdd }: ShopPetCardProps) {
                     </strong>
                 </div>
 
+                <div className="shop-price">
+                    <span>{t("common:pet.price", { defaultValue: "Giá" })}</span>
+                    <strong>
+                        {t("common:pet.price_points", {
+                            points: pet.price ?? 0,
+                            defaultValue: "{{points}} Focus Points",
+                        })}
+                    </strong>
+                </div>
+
                 <button
                     type="button"
                     disabled={adding}

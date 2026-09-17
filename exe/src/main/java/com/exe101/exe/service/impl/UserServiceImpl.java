@@ -26,6 +26,7 @@ import com.exe101.exe.repository.UserIdentityRepository;
 import com.exe101.exe.repository.UserRepository;
 import com.exe101.exe.repository.WardRepository;
 import com.exe101.exe.service.ImageService;
+import com.exe101.exe.service.AppSettingService;
 import com.exe101.exe.service.UserIdentityService;
 import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,7 @@ public class UserServiceImpl implements UserService {
     private final ImageService cloudinaryService;
     private final UserIdentityService userIdentityService;
     private final AppSeedProperties appSeedProperties;
+    private final AppSettingService appSettingService;
 
     @Override
     public User createLocalUser(String email) {
@@ -186,7 +188,9 @@ public class UserServiceImpl implements UserService {
         resetDailyUsageIfNeeded(user, Instant.now());
 
         int dailyUsedMinutes = currentDailyUsedMinutes(user);
-        int dailyLimitMinutes = appSeedProperties.getDailyFreeUsage();
+        int dailyLimitMinutes = appSettingService.getInt(
+                AppSettingServiceImpl.DAILY_FREE_USAGE,
+                appSeedProperties.getDailyFreeUsage());
         boolean unlimited = hasActiveProAccess(userId, Instant.now());
 
         if (unlimited) {

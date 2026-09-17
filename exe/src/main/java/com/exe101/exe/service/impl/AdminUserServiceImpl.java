@@ -54,7 +54,9 @@ public class AdminUserServiceImpl implements AdminUserService {
         List<Long> userIds = users.stream().map(User::getId).toList();
 
         // 2. Query 1 lần duy nhất để lấy tập hợp các user đang có Premium active
-        Set<Long> premiumUserIds = subscriptionRepository.findActivePremiumUserIds(userIds);
+        Set<Long> premiumUserIds = userIds.isEmpty()
+                ? Set.of()
+                : subscriptionRepository.findActivePremiumUserIds(userIds, Instant.now());
 
         List<AdminUserListItem> items = users.stream()
                 .map(u -> new AdminUserListItem(
@@ -83,7 +85,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         User u = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        boolean isPremium = subscriptionRepository.existsByUserIdAndIsActiveTrue(userId);
+        boolean isPremium = subscriptionRepository.hasActiveProAccess(userId, Instant.now());
         long totalSessions = focusSessionRepository.countByUserId(userId);
 
         List<String> roles = u.getUserRoles().stream()

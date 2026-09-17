@@ -56,7 +56,6 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
                         - 'angry': tức giận, gắt gỏng
                         - 'remind': nhắc nhở nhẹ nhàng
                         - 'question': hỏi dò ý, nghi ngờ
-                        - 'posture': đứng tạo dáng
                 """);
 
 

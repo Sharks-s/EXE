@@ -11,6 +11,7 @@ import com.exe101.exe.model.entity.UserPet;
 import com.exe101.exe.model.enums.PointTransactionType;
 import com.exe101.exe.repository.PetRepository;
 import com.exe101.exe.repository.UserPetRepository;
+import com.exe101.exe.service.AppSettingService;
 import com.exe101.exe.service.PointService;
 import com.exe101.exe.service.UserPetService;
 import com.exe101.exe.service.UserService;
@@ -27,6 +28,7 @@ import java.util.List;
 public class UserPetServiceImpl implements UserPetService {
 
     private final AppSeedProperties appSeedProperties;
+    private final AppSettingService appSettingService;
     private final PetRepository petRepository;
     private final UserPetRepository userPetRepository;
     private final UserService userService;
@@ -35,7 +37,9 @@ public class UserPetServiceImpl implements UserPetService {
     @Override
     @Transactional
     public UserPet provisionDefaultPet(User user) {
-        String defaultPetCode = appSeedProperties.getDefaultPetCode();
+        String defaultPetCode = appSettingService.getString(
+                AppSettingServiceImpl.DEFAULT_PET_CODE,
+                appSeedProperties.getDefaultPetCode());
         if (defaultPetCode == null || defaultPetCode.isBlank()) {
             throw new BusinessException(ErrorCode.DEFAULT_PET_NOT_CONFIGURED);
         }

@@ -39,6 +39,11 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
             Instant to
     );
 
+    List<FocusSession> findByStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(
+            Instant from,
+            Instant to
+    );
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM FocusSession s WHERE s.id = :id")
     Optional<FocusSession> findByIdForUpdate(@Param("id") Long id);

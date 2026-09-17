@@ -343,6 +343,8 @@
     "select_companion": "Select a companion to view its details.",
     "status": "Status",
     "type": "Type",
+    "price": "Price",
+    "price_points": "{{points}} Focus Points",
     "equipped_notice": "Currently equipped",
     "header_title": "Companions",
     "header_description": "Manage, equip, and upgrade your companions in the app.",

@@ -8,10 +8,12 @@ import {
 } from "@/features/analytics";
 import { petApi, type UserPet } from "@/features/pet";
 import { profileApi } from "@/features/profile";
+import type { UserSummary } from "@/features/profile/types/profile.types";
 import { toast } from "@/shared/store/toastStore";
 import type { Page } from "@/shared/components/Sidebar";
 import { useTranslation } from "react-i18next";
 import { useFocusStore } from "../stores/focusStore";
+import { getBuddyMessage } from "../utils/buddyMessage";
 
 
 const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
@@ -65,6 +67,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
   const [yearSummary, setYearSummary] = useState<AnalyticsSummary | null>(null);
   const [hourly, setHourly] = useState<HourlyAnalytics | null>(null);
   const [equippedPet, setEquippedPet] = useState<UserPet | null>(null);
+  const [userProfile, setUserProfile] = useState<UserSummary | null>(null);
   const [isCheckingDailyLimit, setIsCheckingDailyLimit] = useState(false);
 
   const focusGoal = useMemo(
@@ -77,6 +80,23 @@ export function SetupView({ onNavigate }: SetupViewProps) {
     () => Math.min((duration / MAX_DURATION_MINUTES) * 100, 100),
     [duration],
   );
+  const buddyMessage = useMemo(
+    () =>
+      getBuddyMessage({
+        petName: equippedPet?.customName,
+        personalityCode: userProfile?.personalityCode,
+        focusGoal,
+        durationMinutes: duration,
+        todayFocusMinutes: daySummary?.totalFocusMinutes,
+      }),
+    [
+      daySummary?.totalFocusMinutes,
+      duration,
+      equippedPet?.customName,
+      focusGoal,
+      userProfile?.personalityCode,
+    ],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -87,11 +107,13 @@ export function SetupView({ onNavigate }: SetupViewProps) {
         yearResult,
         hourlyResult,
         petsResult,
+        profileResult,
       ] = await Promise.allSettled([
         analyticsApi.getSummary({ range: "DAY" }),
         analyticsApi.getSummary({ range: "YEAR" }),
         analyticsApi.getHourly({ range: "WEEK" }),
         petApi.getMyPets(),
+        profileApi.getMyProfile(),
       ]);
 
       if (cancelled) return;
@@ -99,6 +121,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
       if (dayResult.status === "fulfilled") setDaySummary(dayResult.value);
       if (yearResult.status === "fulfilled") setYearSummary(yearResult.value);
       if (hourlyResult.status === "fulfilled") setHourly(hourlyResult.value);
+      if (profileResult.status === "fulfilled") setUserProfile(profileResult.value);
       if (petsResult.status === "fulfilled") {
         setEquippedPet(
           petsResult.value.find((pet) => pet.equipped) ??
@@ -377,13 +400,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               </div>
 
               <div className="mascot-message">
-                <p>
-                  {equippedPet
-                    ? t("focusSession.setup.pet_companion", {
-                      name: equippedPet.customName,
-                    })
-                    : t("focusSession.setup.pet_no_pet")}
-                </p>
+                <p>{buddyMessage}</p>
               </div>
             </section>
 

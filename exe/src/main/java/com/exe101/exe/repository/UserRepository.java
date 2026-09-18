@@ -1,5 +1,6 @@
 package com.exe101.exe.repository;
 
+import com.exe101.exe.dto.response.AdminUserListItem;
 import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.enums.UserStatus;
 import org.springframework.data.domain.Page;
@@ -49,14 +50,36 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByIdWithRoles(Long userId);
 
     // ===== ADMIN =====
-    @Query("""
-        select u from User u
+    @Query(
+            value = """
+        select new com.exe101.exe.dto.response.AdminUserListItem(
+            u.id,
+            u.email,
+            u.fullName,
+            u.avatarUrl,
+            u.status,
+            r.code,
+            u.lastLoginAt,
+            u.createdAt
+        )
+        from User u
+        left join u.userRoles ur on ur.active = true
+        left join ur.role r
         where (:status is null or u.status = :status)
-        and (:keyword is null or :keyword = ''
-             or lower(u.email) like lower(concat('%', :keyword, '%'))
-             or lower(u.fullName) like lower(concat('%', :keyword, '%')))
-        """)
-    Page<User> searchUsers(
+          and (:keyword is null or :keyword = ''
+               or lower(u.email) like lower(concat('%', :keyword, '%'))
+               or lower(u.fullName) like lower(concat('%', :keyword, '%')))
+    """,
+            countQuery = """
+        select count(u)
+        from User u
+        where (:status is null or u.status = :status)
+          and (:keyword is null or :keyword = ''
+               or lower(u.email) like lower(concat('%', :keyword, '%'))
+               or lower(u.fullName) like lower(concat('%', :keyword, '%')))
+    """
+    )
+    Page<AdminUserListItem> searchUsers(
             @Param("keyword") String keyword,
             @Param("status") UserStatus status,
             Pageable pageable

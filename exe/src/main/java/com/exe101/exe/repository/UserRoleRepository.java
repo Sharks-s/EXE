@@ -5,10 +5,14 @@ import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.entity.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface UserRoleRepository extends JpaRepository<UserRole, Integer> {
     boolean existsByUserAndRole(User user, Role role);
 
     UserRole findByUserAndRole(User user, Role role);
 
     UserRole findByUserAndActiveTrue(User user);
+
+    List<UserRole> findAllByUser(User user);
 }

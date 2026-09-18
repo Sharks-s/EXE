@@ -5,6 +5,8 @@ import com.exe101.exe.security.oauth.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -30,9 +32,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RestAccessDeniedHandler accessDeniedHandler;
     private final AuthenticationEntryPoint authenticationEntryPoint;
-
-    // 1. Inject thêm ClientRegistrationRepository (Lombok @RequiredArgsConstructor sẽ tự tạo constructor)
     private final ClientRegistrationRepository clientRegistrationRepository;
+
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        return RoleHierarchyImpl.withDefaultRolePrefix()
+                .role("SUPER_ADMIN").implies("ADMIN")
+                .role("ADMIN").implies("USER")
+                .build();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -76,7 +84,7 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(auth -> auth
                                 .baseUri("/oauth2/authorization")
-                                // 2. Gọi Custom Resolver tại đây
+                                // Gọi Custom Resolver
                                 .authorizationRequestResolver(customAuthorizationRequestResolver())
                         )
                         .successHandler(oAuth2SuccessHandler)
@@ -92,7 +100,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 3. Hàm tạo Custom Resolver thêm prompt=select_account
+    // Hàm tạo Custom Resolver thêm prompt=select_account
     private OAuth2AuthorizationRequestResolver customAuthorizationRequestResolver() {
         DefaultOAuth2AuthorizationRequestResolver defaultResolver =
                 new DefaultOAuth2AuthorizationRequestResolver(

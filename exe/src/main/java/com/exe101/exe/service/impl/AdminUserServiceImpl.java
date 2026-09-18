@@ -14,11 +14,15 @@ import com.exe101.exe.repository.RoleRepository;
 import com.exe101.exe.repository.SubscriptionRepository;
 import com.exe101.exe.repository.UserRepository;
 import com.exe101.exe.repository.UserRoleRepository;
+import com.exe101.exe.security.CustomUserDetails;
 import com.exe101.exe.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,38 +45,33 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
 
+    /**
+     * Tìm kiếm và phân trang danh sách người dùng kèm trạng thái gói Premium.
+     */
     @Override
     public PagedResponse<AdminUserListItem> listUsers(String keyword, UserStatus status, int page, int size) {
-        Page<User> result = userRepository.searchUsers(
-                keyword, status,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
-        );
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        List<User> users = result.getContent();
+        Page<AdminUserListItem> result = userRepository.searchUsers(keyword, status, pageable);
 
-        // 1. Lấy danh sách user IDs trên trang hiện tại
-        List<Long> userIds = users.stream().map(User::getId).toList();
-
-        // 2. Query 1 lần duy nhất để lấy tập hợp các user đang có Premium active
-        Set<Long> premiumUserIds = userIds.isEmpty()
-                ? Set.of()
-                : subscriptionRepository.findActivePremiumUserIds(userIds, Instant.now());
-
-        List<AdminUserListItem> items = users.stream()
-                .map(u -> new AdminUserListItem(
-                        u.getId(),
-                        u.getEmail(),
-                        u.getFullName(),
-                        u.getAvatarUrl(),
-                        u.getStatus(),
-                        premiumUserIds.contains(u.getId()),
-                        u.getLastLoginAt(),
-                        u.getCreatedAt()
-                ))
+        List<Long> userIds = result.getContent()
+                .stream()
+                .map(AdminUserListItem::getId)
                 .toList();
 
+        Set<Long> premiumUserIds = userIds.isEmpty()
+                ? Set.of()
+                : subscriptionRepository.findActivePremiumUserIds(
+                userIds,
+                Instant.now()
+        );
+
+        result.getContent().forEach(user ->
+                user.setPremium(premiumUserIds.contains(user.getId()))
+        );
+
         return new PagedResponse<>(
-                items,
+                result.getContent(),
                 result.getNumber(),
                 result.getTotalElements(),
                 result.getTotalPages(),
@@ -80,6 +79,9 @@ public class AdminUserServiceImpl implements AdminUserService {
         );
     }
 
+    /**
+     * Lấy thông tin chi tiết của người dùng theo ID (bao gồm danh sách role, thống kê session, premium).
+     */
     @Override
     public AdminUserDetailResponse getUserDetail(Long userId) {
         User u = userRepository.findByIdWithRoles(userId)
@@ -89,7 +91,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         long totalSessions = focusSessionRepository.countByUserId(userId);
 
         List<String> roles = u.getUserRoles().stream()
-                .filter(UserRole::isActive) // Đã đổi thành Method Reference cho gọn
+                .filter(UserRole::isActive)
                 .map(ur -> ur.getRole().getCode())
                 .toList();
 
@@ -103,50 +105,133 @@ public class AdminUserServiceImpl implements AdminUserService {
         );
     }
 
+    /**
+     * Cập nhật trạng thái người dùng (Active, Suspended, Blocked...).
+     * Ràng buộc: Không tự sửa bản thân, không sửa Super Admin, Admin không được sửa Admin khác.
+     */
     @Override
     @Transactional
-    public AdminUserDetailResponse updateUserStatus(Long userId, UserStatus newStatus) {
+    public AdminUserDetailResponse updateUserStatus(Long targetUserId, UserStatus newStatus) {
         if (!ADMIN_SETTABLE_STATUS.contains(newStatus)) {
             throw new BusinessException(ErrorCode.INVALID_ADMIN_USER_STATUS);
         }
 
-        User u = userRepository.findById(userId)
+        CustomUserDetails currentUser = getCurrentUserDetails();
+
+        if (currentUser.getId().equals(targetUserId)) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_OWN_ACCOUNT);
+        }
+
+        User targetUser = userRepository.findByIdWithRoles(targetUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        u.setStatus(newStatus);
-        userRepository.save(u);
+        boolean isTargetSuperAdmin = isUserInRole(targetUser, "SUPER_ADMIN");
+        boolean isTargetAdmin = isUserInRole(targetUser, "ADMIN");
+        boolean isCurrentSuperAdmin = isCurrentSuperAdmin(currentUser);
 
-        return getUserDetail(userId);
+        if (isTargetSuperAdmin) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_SUPER_ADMIN);
+        }
+
+        if (!isCurrentSuperAdmin && isTargetAdmin) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_ADMIN_PERMISSION);
+        }
+
+        targetUser.setStatus(newStatus);
+        return getUserDetail(targetUserId);
     }
 
+    /**
+     * Thay đổi vai trò người dùng (USER, ADMIN).
+     * Ràng buộc: Không tự sửa bản thân, không ai có thể tạo thêm hay đổi role của Super Admin duy nhất,
+     * chỉ Super Admin mới có quyền phong/hạ quyền liên quan đến ADMIN.
+     */
     @Override
     @Transactional
-    public AdminUserDetailResponse updateUserRole(Long userId, String roleCode) {
-        User user = userRepository.findByIdWithRoles(userId)
+    public AdminUserDetailResponse updateUserRole(Long targetUserId, String roleCode) {
+        if (roleCode == null || roleCode.isBlank()) {
+            throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
+        }
+        String normalizedRoleCode = roleCode.trim().toUpperCase();
+
+        CustomUserDetails currentUser = getCurrentUserDetails();
+
+        if (currentUser.getId().equals(targetUserId)) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_OWN_ACCOUNT);
+        }
+
+        User targetUser = userRepository.findByIdWithRoles(targetUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        Role newRole = roleRepository.findByCode(roleCode)
+        boolean isTargetSuperAdmin = isUserInRole(targetUser, "SUPER_ADMIN");
+        boolean isCurrentSuperAdmin = isCurrentSuperAdmin(currentUser);
+
+        if (isTargetSuperAdmin) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_SUPER_ADMIN);
+        }
+
+        if ("SUPER_ADMIN".equals(normalizedRoleCode)) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_ADMIN_PERMISSION);
+        }
+
+        boolean isTargetAdmin = isUserInRole(targetUser, "ADMIN");
+        boolean isPromotingToAdmin = "ADMIN".equals(normalizedRoleCode);
+
+        if (!isCurrentSuperAdmin && (isTargetAdmin || isPromotingToAdmin)) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_ADMIN_PERMISSION);
+        }
+
+        Role newRole = roleRepository.findByCode(normalizedRoleCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
 
-        UserRole currentActiveRole = userRoleRepository.findByUserAndActiveTrue(user);
-        if (currentActiveRole != null) {
-            currentActiveRole.setActive(false);
-            userRoleRepository.save(currentActiveRole);
+        List<UserRole> currentRoles = userRoleRepository.findAllByUser(targetUser);
+        for (UserRole ur : currentRoles) {
+            if (ur.isActive()) {
+                ur.setActive(false);
+            }
         }
 
-        UserRole newUserRole = userRoleRepository.findByUserAndRole(user, newRole);
-        if (newUserRole != null) {
-            newUserRole.setActive(true);
+        UserRole targetRole = currentRoles.stream()
+                .filter(ur -> ur.getRole().getCode().equalsIgnoreCase(normalizedRoleCode))
+                .findFirst()
+                .orElse(null);
+
+        Instant now = Instant.now();
+        if (targetRole != null) {
+            targetRole.setActive(true);
+            targetRole.setAssignedAt(now);
+            targetRole.setAssignedBy(currentUser.getUser().getId());
         } else {
-            newUserRole = UserRole.builder()
-                    .user(user)
+            UserRole newUserRole = UserRole.builder()
+                    .user(targetUser)
                     .role(newRole)
                     .active(true)
-                    .assignedAt(Instant.now())
+                    .assignedAt(now)
+                    .assignedBy(currentUser.getUser().getId())
                     .build();
+            userRoleRepository.save(newUserRole);
         }
-        userRoleRepository.save(newUserRole);
 
-        return getUserDetail(userId);
+        return getUserDetail(targetUserId);
+    }
+
+    private CustomUserDetails getCurrentUserDetails() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof CustomUserDetails)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return (CustomUserDetails) auth.getPrincipal();
+    }
+
+    private boolean isCurrentSuperAdmin(CustomUserDetails currentUser) {
+        return currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+    }
+
+    private boolean isUserInRole(User user, String roleCode) {
+        if (user.getUserRoles() == null) return false;
+        return user.getUserRoles().stream()
+                .filter(UserRole::isActive)
+                .anyMatch(ur -> ur.getRole().getCode().equalsIgnoreCase(roleCode));
     }
 }

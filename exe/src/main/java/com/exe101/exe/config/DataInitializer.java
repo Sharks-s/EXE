@@ -51,6 +51,16 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
+        //--------Role SUPER_ADMIN-----------
+        Role superAdminRole = roleRepository.findByCode("SUPER_ADMIN")
+                .orElseGet(() -> roleRepository.save(Role.builder()
+                        .code("SUPER_ADMIN")
+                        .name("Super Administrator")
+                        .description("Highest authority system owner")
+                        .system(true)
+                        .active(true)
+                        .createdBy(null)
+                        .build()));
         //--------Role ADMIN-----------
         Role adminRole = roleRepository.findByCode("ADMIN")
                 .orElseGet(() -> roleRepository.save(Role.builder()
@@ -78,7 +88,7 @@ public class DataInitializer implements CommandLineRunner {
                 .orElseGet(() -> userRepository.save(
                         User.builder()
                                 .email(adminEmail)
-                                .fullName("Admin")
+                                .fullName("Super Admin")
                                 .status(UserStatus.ACTIVE)
                                 .profileCompleted(true)
                                 .build()
@@ -95,12 +105,12 @@ public class DataInitializer implements CommandLineRunner {
                 ));
 
         //--------Assign ADMIN role-----------
-        boolean adminRoleAssigned = userRoleRepository.existsByUserAndRole(adminUser, adminRole);
+        boolean superAdminRoleAssigned = userRoleRepository.existsByUserAndRole(adminUser, superAdminRole);
 
-        if (!adminRoleAssigned) {
+        if (!superAdminRoleAssigned) {
             userRoleRepository.save(UserRole.builder()
                     .user(adminUser)
-                    .role(adminRole)
+                    .role(superAdminRole)
                     .assignedAt(Instant.now())
                     .assignedBy(null)
                     .active(true)

@@ -118,6 +118,11 @@ public enum ErrorCode {
 
     // ===== ADMIN =====
     INVALID_ADMIN_USER_STATUS("ADMIN_001", HttpStatus.BAD_REQUEST, "Invalid admin user status"),
+    CANNOT_MODIFY_OWN_ACCOUNT("ADMIN_002", HttpStatus.FORBIDDEN, "Cannot modify own account"),
+    CANNOT_MODIFY_SUPER_ADMIN("ADMIN_003", HttpStatus.FORBIDDEN, "Cannot modify Super Admin account"),
+    INSUFFICIENT_ADMIN_PERMISSION("ADMIN_004", HttpStatus.FORBIDDEN, "Insufficient admin permission"),
+    USER_ROLE_ALREADY_ASSIGNED("ADMIN_005", HttpStatus.CONFLICT, "User already has this role"),
+    USER_ROLE_NOT_ASSIGNED("ADMIN_006", HttpStatus.NOT_FOUND, "User does not have this role"),
 
 
     // ===== PAYMENT =====

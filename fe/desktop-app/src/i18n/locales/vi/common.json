@@ -373,12 +373,22 @@
     "btn_save": "Lưu tên",
     "shop_loading": "Đang tải shop bạn đồng hành...",
     "shop_title": "Shop bạn đồng hành",
+
     "shop_description": "Thêm bạn đồng hành mới vào bộ sưu tập của bạn.",
     "shop_empty": "Shop hiện chưa có bạn đồng hành nào.",
     "no_description": "Chưa có mô tả cho bạn đồng hành này.",
     "adding": "Đang thêm...",
     "add_now": "Thêm ngay",
     "loading_pets": "Đang tải danh sách bạn đồng hành...",
-    "not_found": "Không tìm thấy bạn đồng hành phù hợp."
+    "not_found": "Không tìm thấy bạn đồng hành phù hợp.",
+    "activities": "Các hoạt động",
+    "activity": {
+      "sleep": "Ngủ",
+      "working": "Làm việc",
+      "angry": "Tức giận",
+      "remind": "Nhắc nhở",
+      "question": "Hỏi han",
+      "posture": "Tư thế"
+    }
   }
 }

@@ -3,6 +3,7 @@ import type {
     FocusSessionCompleteResult,
     FocusSessionResponse,
 } from "../types/focus.types";
+import { useFocusStore } from "../stores/focusStore";
 import "./SessionSummaryPopup.css";
 
 interface SessionSummaryPopupProps {
@@ -21,6 +22,7 @@ export function SessionSummaryPopup({
     onClose,
 }: SessionSummaryPopupProps) {
     const { t } = useTranslation("common");
+    const { currentPet } = useFocusStore();
     const isAborted = session.status === "ABORTED";
     const earnedPoints = completionResult?.earnedPoints ?? session.accumulatedReward * 60;
     const actualMinutes = session.actualDuration ?? 0;
@@ -131,7 +133,7 @@ export function SessionSummaryPopup({
                         <div className="session-summary-xp text-center">
                             <div className="session-summary-pet mx-auto mb-3 flex h-32 w-32 items-center justify-center rounded-[24px] bg-white shadow-[inset_0_0_0_1px_rgba(199,196,218,0.45),0_16px_36px_rgba(72,59,252,0.12)]">
                                 <img
-                                    src="/pet/MONKI/working/bot_0.png"
+                                    src={`/pet/${currentPet?.code || 'MONKI'}/working/bot_0.png`}
                                     alt=""
                                     className="session-summary-pet-img h-24 w-24 object-contain drop-shadow-md"
                                 />

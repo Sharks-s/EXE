@@ -378,6 +378,15 @@
     "adding": "Adding...",
     "add_now": "Add now",
     "loading_pets": "Loading companion list...",
-    "not_found": "No matching companions found."
+    "not_found": "No matching companions found.",
+    "activities": "Activities",
+    "activity": {
+      "sleep": "Sleep",
+      "working": "Working",
+      "angry": "Angry",
+      "remind": "Remind",
+      "question": "Question",
+      "posture": "Posture"
+    }
   }
 }

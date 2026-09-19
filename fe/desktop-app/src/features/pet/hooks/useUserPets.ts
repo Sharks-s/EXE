@@ -20,9 +20,6 @@ export function useUserPets() {
       setError("");
       const data = await petApi.getMyPets();
       setPets(data);
-
-      const equippedPet = data.find((pet) => pet.equipped);
-      setSelectedPet(equippedPet ?? data[0] ?? null);
     } catch (err) {
       const msg = handleApiError(err, {
         context: LOG_CONTEXT,

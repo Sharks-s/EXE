@@ -195,14 +195,6 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               <span className="status-dot" />
               <span>{t("focusSession.setup.ready_status")}</span>
             </div>
-
-            <button
-              className="notification-btn"
-              type="button"
-              aria-label={t("focusSession.setup.notification_aria")}
-            >
-              <MaterialIcon name="notifications" />
-            </button>
           </div>
         </header>
 

@@ -85,6 +85,9 @@ public enum ErrorCode {
     // ===== PREMIUM =====
     DAILY_LIMIT_EXCEEDED("PREMIUM_001", HttpStatus.BAD_REQUEST, "Daily limit exceeded"),
 
+    // ===== NOTIFICATION =====
+    NOTIFICATION_NOT_FOUND("NOTIFICATION_001", HttpStatus.NOT_FOUND, "Notification not found"),
+
     // ===== PET =====
     DEFAULT_PET_NOT_FOUND("PET_001", HttpStatus.NOT_FOUND, "Default pet not found"),
 

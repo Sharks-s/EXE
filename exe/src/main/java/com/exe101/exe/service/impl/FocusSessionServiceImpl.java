@@ -17,6 +17,7 @@ import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.mapper.FocusSessionMapper;
 import com.exe101.exe.model.enums.SessionStatus;
 import com.exe101.exe.model.enums.PointTransactionType;
+import com.exe101.exe.model.enums.NotificationType;
 import com.exe101.exe.repository.FocusSessionRepository;
 import com.exe101.exe.repository.PersonalityRepository;
 import com.exe101.exe.service.result.AiCallResult;
@@ -55,6 +56,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private final PromptTemplateService promptTemplateService;
     private final PointService pointService;
     private final AchievementService achievementService;
+    private final NotificationService notificationService;
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
 
@@ -95,6 +97,19 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         if (!hasProAccess) {
             if (exceedsDailyUsageLimit(user, request.durationMinutes())) {
+                notificationService.create(
+                        userId,
+                        NotificationType.DAILY_LIMIT_REACHED,
+                        "Đã đạt giới hạn hôm nay",
+                        "Bạn đã dùng hết thời gian miễn phí hôm nay. Nâng cấp Pro để tiếp tục tập trung.",
+                        "upgrade",
+                        Map.of(
+                                "dailyUsedMinutes", currentDailyUsedMinutes(user),
+                                "dailyLimitMinutes", appSettingService.getInt(
+                                        AppSettingServiceImpl.DAILY_FREE_USAGE,
+                                        appSeedProperties.getDailyFreeUsage())
+                        )
+                );
                 throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
             }
         }
@@ -222,6 +237,16 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         }
 
         FocusSession savedSession = focusSessionRepository.save(session);
+        if (isAborted) {
+            notificationService.create(
+                    userId,
+                    NotificationType.SESSION_ABORTED,
+                    "Phiên tập trung đã dừng sớm",
+                    "Phiên của bạn đã kết thúc sớm sau " + actualMinutes + " phút.",
+                    "dashboard",
+                    Map.of("sessionId", savedSession.getId(), "actualMinutes", actualMinutes)
+            );
+        }
         if (!isAborted) {
             int earnedPoints = calculateSessionRewardPoints(savedSession);
             if (earnedPoints > 0) {
@@ -233,7 +258,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                         String.valueOf(savedSession.getId())
                 );
             }
-            achievementService.checkSessionCompletedAchievements(userId);
+            List<UnlockedAchievementResponse> unlocked = achievementService.checkSessionCompletedAchievements(userId);
+            notifySessionCompleted(userId, savedSession, earnedPoints, unlocked, achievementService.getCurrentStreakDays(userId));
         }
         return focusSessionMapper.toResponse(savedSession);
     }
@@ -276,6 +302,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         WalletResponse wallet = pointService.getWallet(userId);
         int currentStreak = achievementService.getCurrentStreakDays(userId);
         boolean newStreakMilestone = unlocked.stream().anyMatch(a -> a.code().startsWith("STREAK_"));
+        notifySessionCompleted(userId, savedSession, earnedPoints, unlocked, currentStreak);
 
         return new SessionCompleteResponse(
                 earnedPoints,
@@ -585,6 +612,19 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             boolean hasProAccess = hasActiveProAccess(user.getId(), now);
 
             if (!hasProAccess && exceedsDailyUsageLimit(user, deltaMinutes)) {
+                notificationService.create(
+                        user.getId(),
+                        NotificationType.DAILY_LIMIT_REACHED,
+                        "Đã đạt giới hạn hôm nay",
+                        "Bạn đã dùng hết thời gian miễn phí hôm nay. Nâng cấp Pro để tiếp tục tập trung.",
+                        "upgrade",
+                        Map.of(
+                                "dailyUsedMinutes", currentDailyUsedMinutes(user),
+                                "dailyLimitMinutes", appSettingService.getInt(
+                                        AppSettingServiceImpl.DAILY_FREE_USAGE,
+                                        appSeedProperties.getDailyFreeUsage())
+                        )
+                );
                 throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
             }
 
@@ -889,6 +929,55 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
     private int safeInt(Integer value) {
         return value != null ? value : 0;
+    }
+
+    private void notifySessionCompleted(
+            Long userId,
+            FocusSession session,
+            int earnedPoints,
+            List<UnlockedAchievementResponse> unlocked,
+            int currentStreak
+    ) {
+        int actualMinutes = session.getActualDuration() != null ? session.getActualDuration() : 0;
+        notificationService.create(
+                userId,
+                NotificationType.SESSION_COMPLETED,
+                "Hoàn thành phiên tập trung",
+                "Bạn đã hoàn thành " + actualMinutes + " phút và nhận " + earnedPoints + " điểm.",
+                "analytics",
+                Map.of(
+                        "sessionId", session.getId(),
+                        "actualMinutes", actualMinutes,
+                        "earnedPoints", earnedPoints
+                )
+        );
+
+        for (UnlockedAchievementResponse achievement : unlocked) {
+            NotificationType type = achievement.code().startsWith("STREAK_")
+                    ? NotificationType.STREAK_MILESTONE
+                    : NotificationType.ACHIEVEMENT_UNLOCKED;
+            String title = type == NotificationType.STREAK_MILESTONE
+                    ? "Đạt mốc streak mới"
+                    : "Mở khóa thành tựu mới";
+            String message = type == NotificationType.STREAK_MILESTONE
+                    ? "Bạn đang giữ streak " + currentStreak + " ngày liên tiếp."
+                    : "Bạn vừa mở khóa " + achievement.name() + " và nhận "
+                    + achievement.rewardPoints() + " điểm.";
+
+            notificationService.create(
+                    userId,
+                    type,
+                    title,
+                    message,
+                    "profile",
+                    Map.of(
+                            "achievementCode", achievement.code(),
+                            "achievementName", achievement.name(),
+                            "rewardPoints", achievement.rewardPoints(),
+                            "currentStreak", currentStreak
+                    )
+            );
+        }
     }
 
     private String[] getAddressPair(User user) {

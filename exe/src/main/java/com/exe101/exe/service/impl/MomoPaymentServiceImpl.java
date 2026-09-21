@@ -18,6 +18,7 @@ import com.exe101.exe.model.entity.Subscription;
 import com.exe101.exe.model.entity.SubscriptionPlan;
 import com.exe101.exe.model.entity.Transaction;
 import com.exe101.exe.model.entity.User;
+import com.exe101.exe.model.enums.NotificationType;
 import com.exe101.exe.model.enums.TransactionStatus;
 import com.exe101.exe.repository.SubscriptionPlanRepository;
 import com.exe101.exe.repository.SubscriptionRepository;
@@ -25,6 +26,7 @@ import com.exe101.exe.repository.TransactionRepository;
 import com.exe101.exe.repository.UserRepository;
 import com.exe101.exe.security.MomoSignatureUtil;
 import com.exe101.exe.service.PaymentService;
+import com.exe101.exe.service.NotificationService;
 import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +37,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,6 +58,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
     private final TransactionRecorder transactionRecorder;
     private final UserRepository userRepository;
 
@@ -261,7 +265,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
     }
 
     private String buildOrderInfo(SubscriptionPlan plan) {
-        return "Thanh toan goi " + plan.getName();
+        return "Thanh toán gói " + plan.getName();
     }
 
     private String nullToEmpty(String value) {
@@ -334,5 +338,18 @@ public class MomoPaymentServiceImpl implements PaymentService {
 
         transaction.setSubscription(savedSubscription);
         transactionRepository.save(transaction);
+        notificationService.create(
+                transaction.getUser().getId(),
+                NotificationType.PAYMENT_SUCCESS,
+                "Thanh toán thành công",
+                "Gói " + plan.getName() + " đã được kích hoạt thành công.",
+                "upgrade",
+                Map.of(
+                        "orderCode", transaction.getOrderCode(),
+                        "plan", transaction.getPlan(),
+                        "amount", transaction.getAmount(),
+                        "subscriptionId", savedSubscription.getId()
+                )
+        );
     }
 }

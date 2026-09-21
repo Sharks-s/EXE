@@ -12,6 +12,12 @@ import { profileApi } from "@/features/profile";
 import { queryClient } from "@/lib/queryClient";
 import { toast } from "@/shared/store/toastStore";
 import type { PersonalityResponse, AppRuleResponse } from "../types/settings.types";
+import {
+    loadNotificationPreferences,
+    saveNotificationPreferences,
+    type BooleanNotificationPreferenceKey,
+    type NotificationPreferences,
+} from "@/features/notifications/utils/notificationPreferences";
 
 export type AppListTab = "whitelist" | "blacklist";
 
@@ -41,6 +47,8 @@ export function useSettings() {
     // ── Thông báo ──
     const [warningWindowEnabled, setWarningWindowEnabled] = useState(true);
     const [soundReminderEnabled, setSoundReminderEnabled] = useState(false);
+    const [notificationPreferences, setNotificationPreferences] =
+        useState<NotificationPreferences>(loadNotificationPreferences);
 
     // ── Bảo mật & Tài khoản ──
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -207,6 +215,43 @@ export function useSettings() {
         }
     };
 
+    const handleNotificationPreferenceChange = (
+        key: BooleanNotificationPreferenceKey,
+    ) => {
+        setNotificationPreferences((prev) => {
+            const next = { ...prev, [key]: !prev[key] };
+            saveNotificationPreferences(next);
+            return next;
+        });
+    };
+
+    const handleNotificationPreferenceValueChange = <
+        Key extends keyof NotificationPreferences,
+    >(
+        key: Key,
+        value: NotificationPreferences[Key],
+    ) => {
+        setNotificationPreferences((prev) => {
+            const next = { ...prev, [key]: value };
+            saveNotificationPreferences(next);
+            return next;
+        });
+    };
+
+    const handleNotificationGroupChange = (
+        keys: BooleanNotificationPreferenceKey[],
+        enabled: boolean,
+    ) => {
+        setNotificationPreferences((prev) => {
+            const next = { ...prev };
+            keys.forEach((key) => {
+                next[key] = enabled;
+            });
+            saveNotificationPreferences(next);
+            return next;
+        });
+    };
+
     return {
         // i18n
         i18n,
@@ -242,6 +287,10 @@ export function useSettings() {
         setWarningWindowEnabled,
         soundReminderEnabled,
         setSoundReminderEnabled,
+        notificationPreferences,
+        handleNotificationPreferenceChange,
+        handleNotificationPreferenceValueChange,
+        handleNotificationGroupChange,
 
         // Bảo mật & Tài khoản
         isPasswordModalOpen,

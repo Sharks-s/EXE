@@ -3,5 +3,5 @@ export { subscriptionApi } from "./api/subscription.api";
 export type {
   SubscriptionPlan,
   UpgradeProPlanCode,
-  UpgradeProResponse,
+  CreatePaymentResponse,
 } from "./api/subscription.api";

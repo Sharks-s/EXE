@@ -300,19 +300,7 @@ function ActiveViewContent() {
               </span>
             </button>
 
-            <button
-              className="btn-minimize-widget"
-              onClick={handleResetWidgetPosition}
-              title={t("focusSession.activeView.reset_widget_position")}
-            >
-              <span className="action-button-icon primary">
-                <span className="material-symbols-outlined">restart_alt</span>
-              </span>
-              <span className="action-button-copy">
-                <strong>{t("focusSession.activeView.reset_widget_position")}</strong>
-                <small>{t("focusSession.activeView.reset_widget_position_sub")}</small>
-              </span>
-            </button>
+
           </>
         ) : (
           <>
@@ -345,19 +333,7 @@ function ActiveViewContent() {
               </span>
             </button>
 
-            <button
-              className="btn-minimize-widget"
-              onClick={handleResetWidgetPosition}
-              title={t("focusSession.activeView.reset_widget_position")}
-            >
-              <span className="action-button-icon primary">
-                <span className="material-symbols-outlined">restart_alt</span>
-              </span>
-              <span className="action-button-copy">
-                <strong>{t("focusSession.activeView.reset_widget_position")}</strong>
-                <small>{t("focusSession.activeView.reset_widget_position_sub")}</small>
-              </span>
-            </button>
+
           </>
         )}
       </div>

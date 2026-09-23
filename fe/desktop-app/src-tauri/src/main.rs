@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::{Manager, Position, PhysicalPosition, Emitter};
+use tauri::{Manager, Position, PhysicalPosition};
 use tauri_plugin_store::StoreExt;
 use active_win_pos_rs::get_active_window;
 use std::fs;

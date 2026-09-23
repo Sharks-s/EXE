@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { listen, emit } from "@tauri-apps/api/event";
-import {
-  WebviewWindow,
-  getCurrentWebviewWindow,
-} from "@tauri-apps/api/webviewWindow";
+import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { invoke } from "@tauri-apps/api/core";
+
 
 const ANIMATION_SPEED_FPS = 10;
+const DRAG_THRESHOLD = 4; // px
+const CLICK_TIME_MAX = 250; // ms
 
 const ACTION_FRAME_COUNTS: Record<string, number> = {
   sleep: 10,
@@ -33,6 +34,8 @@ export default function WidgetWindow() {
 
   const currentAction = overrideAction ?? backgroundAction;
   const frameCount = ACTION_FRAME_COUNTS[currentAction] ?? 10;
+  const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const didDragRef = useRef(false);
 
   useEffect(() => {
     const unlisten = listen<{ petCode: string }>(
@@ -140,9 +143,7 @@ export default function WidgetWindow() {
   }, [isReady, images, frameCount]);
 
   // ── CLICK VÀO CHÚ KHỈ → QUAY LẠI DASHBOARD ──
-  const handleClick = async () => {
-    const currentWin = getCurrentWebviewWindow();
-    console.log("[WidgetWindow] click on:", currentWin.label);
+  const handleReturnToDashboard = async () => {
     const mainWindow = await WebviewWindow.getByLabel("main");
     const widgetWindow = await WebviewWindow.getByLabel("widget");
     const bubbleWindow = await WebviewWindow.getByLabel("widget-bubble");
@@ -154,6 +155,40 @@ export default function WidgetWindow() {
       await bubbleWindow?.hide();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleMouseDown = async (e: React.MouseEvent) => {
+    dragStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+    didDragRef.current = false;
+
+    if (e.buttons === 1) {
+      try {
+        await getCurrentWebviewWindow().startDragging();
+        didDragRef.current = true; // startDragging() chỉ thực sự move nếu user kéo tay
+      } catch (err) {
+        console.error("[WidgetWindow] startDragging lỗi:", err);
+      }
+    }
+  };
+
+  // ── MOUSEUP: nếu gần như không di chuyển & nhanh -> coi là click thật ──
+  const handleMouseUp = async (e: React.MouseEvent) => {
+    if (!dragStartRef.current) return;
+    const dx = Math.abs(e.clientX - dragStartRef.current.x);
+    const dy = Math.abs(e.clientY - dragStartRef.current.y);
+    const dt = Date.now() - dragStartRef.current.time;
+    dragStartRef.current = null;
+
+    if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD && dt < CLICK_TIME_MAX) {
+      await handleReturnToDashboard();
+    } else {
+      // Vừa kéo xong -> báo Rust lưu vị trí + reposition bubble ngay (không chờ debounce 300ms)
+      try {
+        await invoke("reposition_bubble");
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -173,15 +208,11 @@ export default function WidgetWindow() {
     >
       <canvas
         ref={canvasRef}
-        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
         width={160}
         height={160}
-        style={{
-          width: 130,
-          height: 130,
-          background: "transparent",
-          cursor: "pointer",
-        }}
+        style={{ width: 130, height: 130, background: "transparent", cursor: "pointer" }}
       />
 
       {!isReady && (

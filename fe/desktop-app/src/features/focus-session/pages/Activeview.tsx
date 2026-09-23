@@ -22,6 +22,7 @@ const VIOLATION_LABEL_KEYS: Record<string, string> = {
   PHONE: "focusSession.activeView.violation_phone",
 };
 
+
 export function ActiveView() {
   const { session, isResumeConfirmPending } = useFocusStore();
   const [isResuming, setIsResuming] = useState(false);
@@ -116,6 +117,14 @@ function ActiveViewContent() {
       await emit("widget-active-state", { active: true });
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleResetWidgetPosition = async () => {
+    try {
+      await invoke("reset_widget_position");
+    } catch (err) {
+      console.error("[ActiveView] Lỗi reset vị trí widget:", err);
     }
   };
 
@@ -290,6 +299,20 @@ function ActiveViewContent() {
                 <small>{t("focusSession.activeView.minimize_sub")}</small>
               </span>
             </button>
+
+            <button
+              className="btn-minimize-widget"
+              onClick={handleResetWidgetPosition}
+              title={t("focusSession.activeView.reset_widget_position")}
+            >
+              <span className="action-button-icon primary">
+                <span className="material-symbols-outlined">restart_alt</span>
+              </span>
+              <span className="action-button-copy">
+                <strong>{t("focusSession.activeView.reset_widget_position")}</strong>
+                <small>{t("focusSession.activeView.reset_widget_position_sub")}</small>
+              </span>
+            </button>
           </>
         ) : (
           <>
@@ -319,6 +342,20 @@ function ActiveViewContent() {
               <span className="action-button-copy">
                 <strong>{t("focusSession.activeView.minimize")}</strong>
                 <small>{t("focusSession.activeView.minimize_sub")}</small>
+              </span>
+            </button>
+
+            <button
+              className="btn-minimize-widget"
+              onClick={handleResetWidgetPosition}
+              title={t("focusSession.activeView.reset_widget_position")}
+            >
+              <span className="action-button-icon primary">
+                <span className="material-symbols-outlined">restart_alt</span>
+              </span>
+              <span className="action-button-copy">
+                <strong>{t("focusSession.activeView.reset_widget_position")}</strong>
+                <small>{t("focusSession.activeView.reset_widget_position_sub")}</small>
               </span>
             </button>
           </>

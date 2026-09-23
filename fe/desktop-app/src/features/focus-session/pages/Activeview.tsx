@@ -22,6 +22,7 @@ const VIOLATION_LABEL_KEYS: Record<string, string> = {
   PHONE: "focusSession.activeView.violation_phone",
 };
 
+
 export function ActiveView() {
   const { session, isResumeConfirmPending } = useFocusStore();
   const [isResuming, setIsResuming] = useState(false);
@@ -116,6 +117,14 @@ function ActiveViewContent() {
       await emit("widget-active-state", { active: true });
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleResetWidgetPosition = async () => {
+    try {
+      await invoke("reset_widget_position");
+    } catch (err) {
+      console.error("[ActiveView] Lỗi reset vị trí widget:", err);
     }
   };
 
@@ -290,6 +299,8 @@ function ActiveViewContent() {
                 <small>{t("focusSession.activeView.minimize_sub")}</small>
               </span>
             </button>
+
+
           </>
         ) : (
           <>
@@ -321,6 +332,8 @@ function ActiveViewContent() {
                 <small>{t("focusSession.activeView.minimize_sub")}</small>
               </span>
             </button>
+
+
           </>
         )}
       </div>

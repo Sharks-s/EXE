@@ -27,7 +27,7 @@ a {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 24px 32px 32px;
+  padding: clamp(16px, 2.2vw, 32px);
   flex: 1;
 }
 
@@ -94,8 +94,8 @@ a {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-auto-rows: minmax(140px, auto);
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: clamp(14px, 2vw, 24px);
+  margin-bottom: clamp(14px, 2vw, 24px);
 }
 
 .stat-card,
@@ -105,6 +105,7 @@ a {
   background: #ffffff;
   border-radius: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  min-width: 0;
 }
 
 .stat-card {
@@ -401,12 +402,12 @@ a {
 
 .bottom-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(14px, 2vw, 24px);
 }
 
 .info-card {
-  padding: 24px;
+  padding: clamp(18px, 2vw, 24px);
 }
 
 .info-card h2 {
@@ -430,8 +431,13 @@ a {
   margin-bottom: 18px;
 }
 
+.session-review-header>div:first-child {
+  min-width: 0;
+}
+
 .session-review-header h2 {
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
 }
 
 .session-review-header p {
@@ -618,6 +624,7 @@ a {
 .history-preview-row {
   display: flex;
   align-items: center;
+  min-width: 0;
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
@@ -627,6 +634,7 @@ a {
 }
 
 .history-preview-row span {
+  min-width: 0;
   overflow: hidden;
   color: #1a1b25;
   font-size: 12px;
@@ -922,6 +930,12 @@ a {
   color: #464557;
   font-size: 12px;
   line-height: 16px;
+  gap: 10px;
+}
+
+.progress-row span {
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .progress-row strong {
@@ -962,6 +976,9 @@ a {
 }
 
 .goal-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
   padding: 12px;
   border: 1px solid #c7c4da;
   border-radius: 12px;
@@ -973,10 +990,13 @@ a {
 }
 
 .goal-item h3 {
+  overflow: hidden;
   color: #1a1b25;
   font-size: 12px;
   line-height: 16px;
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .goal-item p {
@@ -1018,16 +1038,21 @@ a {
 
 .violation-header {
   margin-bottom: 16px;
+  align-items: flex-start;
 }
 
 .violation-header h2 {
+  min-width: 0;
   margin-bottom: 0;
+  overflow-wrap: anywhere;
 }
 
 .violation-header span {
+  flex: 0 0 auto;
   color: #c5221f;
   font-size: 12px;
   font-weight: 700;
+  text-align: right;
 }
 
 .violation-list {
@@ -1048,6 +1073,7 @@ a {
 }
 
 .violation-item h3 {
+  overflow-wrap: anywhere;
   color: #1a1b25;
   font-size: 12px;
   font-weight: 700;
@@ -1077,8 +1103,16 @@ a {
 }
 
 .top-app-row {
+  min-width: 0;
   color: #464557;
   font-size: 12px;
+}
+
+.top-app-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .top-app-row+.top-app-row {
@@ -1093,7 +1127,7 @@ a {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1320px) {
   .bento-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1101,6 +1135,10 @@ a {
   .focus-chart-card,
   .heatmap-card {
     grid-column: span 2;
+  }
+
+  .bottom-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1115,6 +1153,10 @@ a {
   .bottom-grid {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .bottom-grid {
+    gap: 16px;
   }
 
   .time-tabs {
@@ -1154,6 +1196,39 @@ a {
   .focus-chart-card,
   .heatmap-card {
     grid-column: span 1;
+  }
+
+  .stat-card {
+    min-height: 120px;
+  }
+
+  .focus-chart-card,
+  .heatmap-card,
+  .info-card {
+    border-radius: 18px;
+  }
+
+  .card-header,
+  .heatmap-header,
+  .session-review-header,
+  .violation-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .best-day-badge,
+  .violation-header span {
+    align-self: flex-start;
+    text-align: left;
+  }
+
+  .history-launch-button {
+    padding: 18px;
+  }
+
+  .average-score {
+    width: 76px;
+    height: 64px;
   }
 
   .analytics-history-overlay {

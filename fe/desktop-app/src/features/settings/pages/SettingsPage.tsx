@@ -1,6 +1,9 @@
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import "./SettingsPage.css";
 import { useSettings } from "../hooks/useSettings";
+import type {
+  BooleanNotificationPreferenceKey,
+} from "@/features/notifications/utils/notificationPreferences";
 
 const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> = {
   INSPIRING: { icon: "emoji_objects", className: "ai-primary" },
@@ -12,6 +15,67 @@ const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> 
 };
 
 const DEFAULT_PERSONALITY_ICON = { icon: "smart_toy", className: "ai-primary" };
+
+type ToggleSwitchProps = {
+  enabled: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+};
+
+const NOTIFICATION_GROUPS: Array<{
+  title: string;
+  description: string;
+  keys: BooleanNotificationPreferenceKey[];
+  items: Array<{ key: BooleanNotificationPreferenceKey; label: string }>;
+}> = [
+  {
+    title: "Phi\u00ean t\u1eadp trung",
+    description: "C\u00e1c c\u1eadp nh\u1eadt khi phi\u00ean b\u1eaft \u0111\u1ea7u, k\u1ebft th\u00fac ho\u1eb7c d\u1eebng s\u1edbm.",
+    keys: ["sessionCompleted", "sessionAborted"],
+    items: [
+      { key: "sessionCompleted", label: "Ho\u00e0n th\u00e0nh phi\u00ean" },
+      { key: "sessionAborted", label: "Phi\u00ean b\u1ecb d\u1eebng s\u1edbm" },
+    ],
+  },
+  {
+    title: "Th\u00e0nh t\u00edch",
+    description: "Th\u00e0nh t\u1ef1u m\u1edbi v\u00e0 c\u00e1c m\u1ed1c streak \u0111\u00e1ng ch\u00fa \u00fd.",
+    keys: ["achievementUnlocked", "streakMilestone"],
+    items: [
+      { key: "achievementUnlocked", label: "M\u1edf kh\u00f3a th\u00e0nh t\u1ef1u" },
+      { key: "streakMilestone", label: "M\u1ed1c streak" },
+    ],
+  },
+  {
+    title: "T\u00e0i kho\u1ea3n",
+    description: "Gi\u1edbi h\u1ea1n g\u00f3i Free v\u00e0 tr\u1ea1ng th\u00e1i thanh to\u00e1n.",
+    keys: ["dailyLimitReached", "payments"],
+    items: [
+      { key: "dailyLimitReached", label: "Gi\u1edbi h\u1ea1n ng\u00e0y" },
+      { key: "payments", label: "Thanh to\u00e1n" },
+    ],
+  },
+];
+
+function ToggleSwitch({ disabled = false, enabled, onClick }: ToggleSwitchProps) {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClick();
+  };
+
+  return (
+    <button
+      type="button"
+      className={`toggle-switch ${enabled ? "toggle-switch-on" : ""}`}
+      onClick={handleClick}
+      aria-pressed={enabled}
+      disabled={disabled}
+    >
+      <span className="toggle-knob" />
+    </button>
+  );
+}
 
 export default function SettingsPage() {
   const {
@@ -39,6 +103,10 @@ export default function SettingsPage() {
     setWarningWindowEnabled,
     soundReminderEnabled,
     setSoundReminderEnabled,
+    notificationPreferences,
+    handleNotificationPreferenceChange,
+    handleNotificationPreferenceValueChange,
+    handleNotificationGroupChange,
     isPasswordModalOpen,
     setIsPasswordModalOpen,
     isDeleteModalOpen,
@@ -177,41 +245,170 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* ── Thông báo ── */}
+          {/* ── Phiên tập trung ── */}
           <section className="card grid-right">
             <div className="card-intro">
-              <h3>Thông báo</h3>
-              <p>Tùy chỉnh cách ứng dụng nhắc nhở bạn.</p>
+              <h3>{"Phi\u00ean t\u1eadp trung"}</h3>
+              <p>{"C\u00e0i \u0111\u1eb7t c\u1ea3nh b\u00e1o gi\u00e1m s\u00e1t AI trong l\u00fac b\u1ea1n \u0111ang h\u1ecdc."}</p>
             </div>
 
             <div className="toggle-list">
               <div className="toggle-row">
                 <div>
-                  <p>Hiện cửa sổ cảnh báo khi xao nhãng</p>
-                  <small>Bật cửa sổ Warning nổi lên khi phát hiện vi phạm.</small>
+                  <p>{"Hi\u1ec7n c\u1eeda s\u1ed5 c\u1ea3nh b\u00e1o"}</p>
+                  <small>{"B\u1eadt popup Warning khi AI ph\u00e1t hi\u1ec7n b\u1ea1n xao nh\u00e3ng."}</small>
                 </div>
-                <button
-                  type="button"
-                  className={`toggle-switch ${warningWindowEnabled ? "toggle-switch-on" : ""}`}
+                <ToggleSwitch
+                  enabled={warningWindowEnabled}
                   onClick={() => setWarningWindowEnabled((v) => !v)}
-                >
-                  <span className="toggle-knob" />
-                </button>
+                />
               </div>
 
               <div className="toggle-row">
                 <div>
-                  <p>Âm thanh nhắc nhở</p>
-                  <small>Phát âm thanh khi AI gửi cảnh báo.</small>
+                  <p>{"\u00c2m thanh nh\u1eafc nh\u1edf"}</p>
+                  <small>{"Ph\u00e1t \u00e2m thanh k\u00e8m theo c\u1ea3nh b\u00e1o AI."}</small>
                 </div>
-                <button
-                  type="button"
-                  className={`toggle-switch ${soundReminderEnabled ? "toggle-switch-on" : ""}`}
+                <ToggleSwitch
+                  enabled={soundReminderEnabled}
                   onClick={() => setSoundReminderEnabled((v) => !v)}
-                >
-                  <span className="toggle-knob" />
-                </button>
+                />
               </div>
+            </div>
+          </section>
+
+          {/* ── Thông báo ── */}
+          <section className="card grid-full">
+            <div className="card-intro">
+              <h3>{"Th\u00f4ng b\u00e1o"}</h3>
+              <p>{"Qu\u1ea3n l\u00fd c\u00e1c th\u00f4ng b\u00e1o hi\u1ec3n th\u1ecb trong h\u1ed9p th\u01b0 chu\u00f4ng."}</p>
+            </div>
+
+            <div className="notification-settings-layout">
+              <div className="notification-settings-main">
+                <div className="toggle-row notification-compact-row">
+                  <div>
+                    <p>{"Hi\u1ec3n th\u1ecb huy hi\u1ec7u ch\u01b0a \u0111\u1ecdc"}</p>
+                    <small>{"Hi\u1ec7n s\u1ed1 m\u00e0u \u0111\u1ecf tr\u00ean bi\u1ec3u t\u01b0\u1ee3ng chu\u00f4ng."}</small>
+                  </div>
+                  <ToggleSwitch
+                    enabled={notificationPreferences.showUnreadBadge}
+                    onClick={() => handleNotificationPreferenceChange("showUnreadBadge")}
+                  />
+                </div>
+
+                {NOTIFICATION_GROUPS.map((group) => {
+                  const groupEnabled = group.keys.every(
+                    (key) => notificationPreferences[key] === true,
+                  );
+
+                  return (
+                    <details className="notification-group" key={group.title} open>
+                      <summary className="notification-group-summary">
+                        <span className="material-symbols-outlined notification-group-chevron">
+                          expand_more
+                        </span>
+                        <span className="notification-group-copy">
+                          <strong>{group.title}</strong>
+                          <small>{group.description}</small>
+                        </span>
+                        <ToggleSwitch
+                          enabled={groupEnabled}
+                          onClick={() =>
+                            handleNotificationGroupChange(group.keys, !groupEnabled)
+                          }
+                        />
+                      </summary>
+
+                      <div className="notification-group-items">
+                        {group.items.map((item) => (
+                          <div className="notification-sub-row" key={item.key}>
+                            <span>{item.label}</span>
+                            <ToggleSwitch
+                              enabled={notificationPreferences[item.key] === true}
+                              onClick={() =>
+                                handleNotificationPreferenceChange(item.key)
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+
+              <aside className="notification-quiet-panel">
+                <p className="notification-settings-label">{"Ch\u1ebf \u0111\u1ed9 y\u00ean l\u1eb7ng"}</p>
+
+                <div className="toggle-row notification-compact-row">
+                  <div>
+                    <p>{"T\u1ea1m ho\u00e3n khi \u0111ang t\u1eadp trung"}</p>
+                    <small>{"Gom th\u00e0nh t\u00edch v\u00e0 streak \u0111\u1ec3 xem sau phi\u00ean."}</small>
+                  </div>
+                  <ToggleSwitch
+                    enabled={notificationPreferences.pauseDuringFocus}
+                    onClick={() =>
+                      handleNotificationPreferenceChange("pauseDuringFocus")
+                    }
+                  />
+                </div>
+
+                <div className="toggle-row notification-compact-row">
+                  <div>
+                    <p>{"Gi\u1edd y\u00ean l\u1eb7ng"}</p>
+                    <small>{"T\u1ea1m \u1ea9n nh\u1eafc nh\u1edf kh\u00f4ng quan tr\u1ecdng trong khung gi\u1edd n\u00e0y."}</small>
+                  </div>
+                  <ToggleSwitch
+                    enabled={notificationPreferences.quietHoursEnabled}
+                    onClick={() =>
+                      handleNotificationPreferenceChange("quietHoursEnabled")
+                    }
+                  />
+                </div>
+
+                <div className="quiet-time-row">
+                  <label>
+                    {"T\u1eeb"}
+                    <input
+                      type="time"
+                      value={notificationPreferences.quietHoursStart}
+                      disabled={!notificationPreferences.quietHoursEnabled}
+                      onChange={(event) =>
+                        handleNotificationPreferenceValueChange(
+                          "quietHoursStart",
+                          event.target.value,
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    {"\u0110\u1ebfn"}
+                    <input
+                      type="time"
+                      value={notificationPreferences.quietHoursEnd}
+                      disabled={!notificationPreferences.quietHoursEnabled}
+                      onChange={(event) =>
+                        handleNotificationPreferenceValueChange(
+                          "quietHoursEnd",
+                          event.target.value,
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="toggle-row notification-compact-row">
+                  <div>
+                    <p>{"T\u00f3m t\u1eaft cu\u1ed1i phi\u00ean"}</p>
+                    <small>{"G\u1ed9p c\u00e1c c\u1eadp nh\u1eadt nh\u1ecf th\u00e0nh m\u1ed9t b\u1ea3n t\u00f3m t\u1eaft."}</small>
+                  </div>
+                  <ToggleSwitch
+                    enabled={notificationPreferences.sessionDigest}
+                    onClick={() => handleNotificationPreferenceChange("sessionDigest")}
+                  />
+                </div>
+              </aside>
             </div>
           </section>
 

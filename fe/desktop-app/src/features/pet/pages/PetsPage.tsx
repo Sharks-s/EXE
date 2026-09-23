@@ -15,6 +15,7 @@ import { PetDetail } from "../components/PetDetail";
 import { RenamePetModal } from "../components/RenamePetModal";
 import { ShopPanel } from "../components/ShopPanel";
 
+
 type PetTab = "my-pets" | "shop";
 type FilterType = "all" | "equipped" | "premium" | "normal";
 type SortType = "level-desc" | "level-asc";

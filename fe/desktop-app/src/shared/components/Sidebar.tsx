@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore, type User } from "@/features/auth";
 import { profileApi, type DailyUsageResponse } from "@/features/profile";
 import { useFocusStore } from "@/features/focus-session";
+import { NotificationBell } from "@/features/notifications";
 import logoIcon from "@/assets/logo/MonkeyLogo.png";
 import { icons } from "./sidebarIcons";
 
@@ -352,6 +353,12 @@ export default function Sidebar({
         />
 
         <div className="my-2 border-t border-slate-300" />
+
+        <NotificationBell
+          collapsed={collapsed}
+          onNavigate={onNavigate}
+          isLocked={isLocked}
+        />
 
         <NavItem
           page="upgrade"

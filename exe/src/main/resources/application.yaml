@@ -518,6 +518,9 @@ app:
       - app-name: "TikTok"
         window-title-keyword: "tiktok"
         rule-type: BLACKLIST
+      - app-name: "Zalo"
+        window-title-keyword: "zalo"
+        rule-type: WHITELIST
       - app-name: "Facebook"
         window-title-keyword: "facebook"
         rule-type: BLACKLIST

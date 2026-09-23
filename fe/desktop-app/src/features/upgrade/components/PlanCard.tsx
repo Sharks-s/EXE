@@ -7,7 +7,7 @@ export interface PlanCardProps {
     onUpgradeClick: () => void;
 }
 
-export function PlanCard({ plan, isCurrentPlan, isProActive, onUpgradeClick }: PlanCardProps) {
+export function PlanCard({ plan, isProActive, onUpgradeClick }: PlanCardProps) {
     const isFreePlan = plan.id === "free";
     const isProPlan = plan.id === "pro";
 

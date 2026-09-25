@@ -14,6 +14,7 @@ import type { Page } from "@/shared/components/Sidebar";
 import { useTranslation } from "react-i18next";
 import { useFocusStore } from "../stores/focusStore";
 import { getBuddyMessage } from "../utils/buddyMessage";
+import { getPetExperienceProgress } from "@/features/pet/utils/petExperience";
 
 
 const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
@@ -80,6 +81,10 @@ export function SetupView({ onNavigate }: SetupViewProps) {
     () => Math.min((duration / MAX_DURATION_MINUTES) * 100, 100),
     [duration],
   );
+  const petExperienceProgress = useMemo(
+    () => (equippedPet ? getPetExperienceProgress(equippedPet) : 0),
+    [equippedPet],
+  );
   const buddyMessage = useMemo(
     () =>
       getBuddyMessage({
@@ -123,11 +128,34 @@ export function SetupView({ onNavigate }: SetupViewProps) {
       if (hourlyResult.status === "fulfilled") setHourly(hourlyResult.value);
       if (profileResult.status === "fulfilled") setUserProfile(profileResult.value);
       if (petsResult.status === "fulfilled") {
-        setEquippedPet(
+        const selectedPet =
           petsResult.value.find((pet) => pet.equipped) ??
           petsResult.value[0] ??
-          null,
-        );
+          null;
+
+        if (!selectedPet) {
+          setEquippedPet(null);
+          return;
+        }
+
+        try {
+          const petDetails = await petApi.getPetDetails(selectedPet.userPetId);
+          if (!cancelled) {
+            setEquippedPet({
+              ...selectedPet,
+              ...petDetails,
+              premium: selectedPet.premium,
+              equipped: selectedPet.equipped,
+            });
+          }
+        } catch {
+          if (!cancelled) {
+            setEquippedPet({
+              ...selectedPet,
+              experience: selectedPet.experience ?? 0,
+            });
+          }
+        }
       }
     };
 
@@ -386,7 +414,10 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                     <span>LVL {equippedPet?.level ?? 0}</span>
                   </div>
                   <div className="level-bar">
-                    <span />
+                    <span
+                      style={{ width: `${petExperienceProgress}%` }}
+                      title={`${equippedPet?.experience ?? 0} XP`}
+                    />
                   </div>
                 </div>
               </div>

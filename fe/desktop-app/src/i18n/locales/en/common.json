@@ -58,7 +58,8 @@
     "profile": "Profile",
     "upgrade": "Upgrade Pro",
     "logout": "Logout",
-    "songs": "Music"
+    "songs": "Music",
+    "feedback": "Feedback"
   },
   "focusSession": {
     "activeView": {

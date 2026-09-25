@@ -59,7 +59,8 @@
     "profile": "Hồ sơ cá nhân",
     "upgrade": "Nâng cấp Pro",
     "logout": "Đăng xuất",
-    "songs": "Thư viện nhạc"
+    "songs": "Thư viện nhạc",
+    "feedback": "Feedback"
   },
   "focusSession": {
     "activeView": {

@@ -1,6 +1,14 @@
 import { useTranslation } from "react-i18next";
 import type { UserPet } from "../types/pet.type";
+import { useLevelUpAnimation } from "../hooks/useLevelUpAnimation";
 import { formatPetCode, getPetEmoji, getPetTheme } from "../utils/pet.helpers";
+import {
+    MAX_PET_LEVEL,
+    XP_PER_PET_LEVEL,
+    canUpgradePet,
+    getPetExperience,
+    getPetExperienceProgress,
+} from "../utils/petExperience";
 import { PetAnimation } from "./PetAnimation";
 
 type PetDetailProps = {
@@ -19,12 +27,20 @@ export function PetDetail({
     onUpgrade,
 }: PetDetailProps) {
     const { t } = useTranslation("common");
+    const isLevelingUp = useLevelUpAnimation(
+        pet?.level,
+        1200,
+        pet?.userPetId,
+    );
 
     if (!pet) {
         return null;
     }
 
     const theme = getPetTheme(pet.code);
+    const experienceProgress = getPetExperienceProgress(pet);
+    const experience = getPetExperience(pet);
+    const canUpgrade = canUpgradePet(pet);
 
     return (
         <div
@@ -34,7 +50,9 @@ export function PetDetail({
                 if (event.target === event.currentTarget) onClose();
             }}
         >
-            <aside className="pet-detail pet-detail-horizontal">
+            <aside className={`pet-detail pet-detail-horizontal ${isLevelingUp ? "level-up" : ""}`}>
+                {isLevelingUp && <span className="level-up-burst detail-level-up-burst">LEVEL UP</span>}
+
                 <button className="close-detail" type="button" onClick={onClose}>
                     ×
                 </button>
@@ -55,14 +73,18 @@ export function PetDetail({
 
                     <div className="detail-level-box">
                         <div className="detail-level-header">
-                            <span>{t("common:pet.level_label")}</span>
-                            <strong>{pet.level} / 25</strong>
+                            <span>
+                                {t("common:pet.level", { level: pet.level })} / {MAX_PET_LEVEL}
+                            </span>
+                            <strong>
+                                {Math.min(experience, XP_PER_PET_LEVEL)} / {XP_PER_PET_LEVEL} XP
+                            </strong>
                         </div>
 
                         <div className="detail-level-line">
                             <div
                                 style={{
-                                    width: `${Math.min((pet.level / 25) * 100, 100)}%`,
+                                    width: `${experienceProgress}%`,
                                 }}
                             />
                         </div>
@@ -111,8 +133,15 @@ export function PetDetail({
 
                         <button
                             type="button"
-                            disabled={loading}
+                            disabled={loading || !canUpgrade}
                             onClick={onUpgrade}
+                            title={
+                                canUpgrade
+                                    ? t("common:pet.upgrade")
+                                    : t("common:pet.upgrade_locked", {
+                                        defaultValue: "Need 100 XP and below max level",
+                                    })
+                            }
                         >
                             ↗ {t("common:pet.upgrade")}
                         </button>

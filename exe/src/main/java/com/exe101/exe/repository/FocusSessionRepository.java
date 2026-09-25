@@ -33,6 +33,34 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
             Pageable pageable
     );
 
+    @Query("""
+            select s
+            from FocusSession s
+            left join fetch s.userPet
+            left join fetch s.personality
+            where s.user.id = :userId
+            order by s.startedAt desc
+            """)
+    List<FocusSession> findHistoryPageWithDetails(
+            @Param("userId") Long userId,
+            Pageable pageable
+    );
+
+    @Query("""
+            select s
+            from FocusSession s
+            left join fetch s.userPet
+            left join fetch s.personality
+            where s.user.id = :userId
+              and s.status = :status
+            order by s.startedAt desc
+            """)
+    List<FocusSession> findHistoryPageWithDetailsByStatus(
+            @Param("userId") Long userId,
+            @Param("status") SessionStatus status,
+            Pageable pageable
+    );
+
     List<FocusSession> findByUserIdAndStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(
             Long userId,
             Instant from,
@@ -51,6 +79,21 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
     long countByUserId(Long userId);
 
     long countByUserIdAndStatus(Long userId, SessionStatus status);
+
+    long countByStatus(SessionStatus status);
+
+    @Query("""
+            SELECT COALESCE(SUM(
+                CASE
+                    WHEN s.activeSeconds IS NOT NULL AND s.activeSeconds > 0 THEN s.activeSeconds / 60
+                    WHEN s.actualDuration IS NOT NULL THEN s.actualDuration
+                    ELSE COALESCE(s.plannedDuration, 0)
+                END
+            ), 0)
+            FROM FocusSession s
+            WHERE s.status = :status
+            """)
+    Long sumDurationByStatus(@Param("status") SessionStatus status);
 
     @Query("""
             SELECT COALESCE(SUM(

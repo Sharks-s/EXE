@@ -73,6 +73,7 @@ public class SecurityConfig {
                                 "/v3/api-docs.yaml",
                                 "/swagger-ui.html",
                                 "/subscriptions/plans",
+                                "/public/**",
                                 "/ai/**",
                                 "/payments/momo/ipn"
                         ).permitAll()

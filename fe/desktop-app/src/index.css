@@ -123,6 +123,13 @@
   input[type="radio"] {
     cursor: pointer;
   }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
 }
 
 body.camera-modal-open .sidebar-toggle-btn {

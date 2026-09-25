@@ -27,6 +27,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class UserPetServiceImpl implements UserPetService {
 
+    private static final int MAX_PET_LEVEL = 25;
+    private static final int XP_PER_LEVEL = 100;
+
     private final AppSeedProperties appSeedProperties;
     private final AppSettingService appSettingService;
     private final PetRepository petRepository;
@@ -105,6 +108,7 @@ public class UserPetServiceImpl implements UserPetService {
                             .code(pet.getCode())
                             .customName(userPet.getCustomName())
                             .level(userPet.getLevel())
+                            .experience(userPet.getExperience())
                             .imageUrl(pet.getImageUrl())
                             .premium(pet.isPremium())
                             .equipped(userPet.isEquipped())
@@ -127,6 +131,7 @@ public class UserPetServiceImpl implements UserPetService {
                 .code(pet.getCode())
                 .customName(userPet.getCustomName())
                 .level(userPet.getLevel())
+                .experience(userPet.getExperience())
                 .imageUrl(pet.getImageUrl())
                 .premium(pet.isPremium())
                 .equipped(userPet.isEquipped())
@@ -155,6 +160,7 @@ public class UserPetServiceImpl implements UserPetService {
                 .code(pet.getCode())
                 .customName(userPet.getCustomName())
                 .level(userPet.getLevel())
+                .experience(userPet.getExperience())
                 .imageUrl(pet.getImageUrl())
                 .premium(pet.isPremium())
                 .equipped(userPet.isEquipped())
@@ -211,6 +217,7 @@ public class UserPetServiceImpl implements UserPetService {
                 .code(pet.getCode())
                 .customName(userPet.getCustomName())
                 .level(userPet.getLevel())
+                .experience(userPet.getExperience())
                 .imageUrl(pet.getImageUrl())
                 .premium(pet.isPremium())
                 .equipped(userPet.isEquipped())
@@ -239,9 +246,48 @@ public class UserPetServiceImpl implements UserPetService {
                 .code(pet.getCode())
                 .customName(selectedUserPet.getCustomName())
                 .level(selectedUserPet.getLevel())
+                .experience(selectedUserPet.getExperience())
                 .imageUrl(pet.getImageUrl())
                 .premium(pet.isPremium())
                 .equipped(selectedUserPet.isEquipped())
+                .price(pet.getPrice())
+                .rarity(pet.getRarity())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public UserPetSummaryResponse upgradeUserPet(Long userPetId, Long userId) {
+        UserPet userPet = userPetRepository.findByIdWithPet(userPetId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_PET_NOT_FOUND));
+
+        if (!userPet.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.USER_PET_NOT_FOUND);
+        }
+
+        if (userPet.getLevel() >= MAX_PET_LEVEL) {
+            throw new BusinessException(ErrorCode.USER_PET_MAX_LEVEL_REACHED);
+        }
+
+        if (userPet.getExperience() < XP_PER_LEVEL) {
+            throw new BusinessException(ErrorCode.USER_PET_INSUFFICIENT_EXPERIENCE);
+        }
+
+        userPet.setLevel(userPet.getLevel() + 1);
+        userPet.setExperience(userPet.getExperience() - XP_PER_LEVEL);
+        userPetRepository.save(userPet);
+
+        Pet pet = userPet.getPet();
+
+        return UserPetSummaryResponse.builder()
+                .userPetId(userPet.getId())
+                .code(pet.getCode())
+                .customName(userPet.getCustomName())
+                .level(userPet.getLevel())
+                .experience(userPet.getExperience())
+                .imageUrl(pet.getImageUrl())
+                .premium(pet.isPremium())
+                .equipped(userPet.isEquipped())
                 .price(pet.getPrice())
                 .rarity(pet.getRarity())
                 .build();

@@ -4,6 +4,12 @@ import type {
     FocusSessionResponse,
 } from "../types/focus.types";
 import { useFocusStore } from "../stores/focusStore";
+import {
+    MAX_PET_LEVEL,
+    XP_PER_PET_LEVEL,
+    getPetExperience,
+    getPetExperienceProgress,
+} from "@/features/pet/utils/petExperience";
 import "./SessionSummaryPopup.css";
 
 interface SessionSummaryPopupProps {
@@ -24,8 +30,13 @@ export function SessionSummaryPopup({
     const { t } = useTranslation("common");
     const { currentPet } = useFocusStore();
     const isAborted = session.status === "ABORTED";
+    const summaryPet = completionResult?.userPet ?? currentPet;
     const sessionEarnedPoints =
         completionResult?.earnedPoints ?? session.accumulatedReward * 60;
+    const earnedExperience =
+        completionResult?.earnedExperience ??
+        Math.max(session.actualDuration ?? 0, 0) * 10 +
+        Math.max(session.accumulatedReward ?? 0, 0) * 60;
     const achievementPoints =
         completionResult?.unlockedAchievements.reduce(
             (total, achievement) => total + achievement.rewardPoints,
@@ -37,6 +48,10 @@ export function SessionSummaryPopup({
         Math.round((actualMinutes / Math.max(session.plannedDuration, 1)) * 100),
         100,
     );
+    const petExperience = summaryPet ? getPetExperience(summaryPet) : 0;
+    const petExperienceProgress = summaryPet
+        ? getPetExperienceProgress(summaryPet)
+        : 0;
     const violationCount = session.violations?.length ?? 0;
 
     const summaryStats = [
@@ -152,7 +167,7 @@ export function SessionSummaryPopup({
                             <div className="session-summary-xp text-center">
                                 <div className="session-summary-pet mx-auto mb-3 flex h-32 w-32 items-center justify-center rounded-[24px] bg-white shadow-[inset_0_0_0_1px_rgba(199,196,218,0.45),0_16px_36px_rgba(72,59,252,0.12)]">
                                     <img
-                                        src={`/pet/${currentPet?.code || 'MONKI'}/working/bot_0.png`}
+                                        src={`/pet/${summaryPet?.code || 'MONKI'}/working/bot_0.png`}
                                         alt=""
                                         className="session-summary-pet-img h-24 w-24 object-contain drop-shadow-md"
                                     />
@@ -170,6 +185,39 @@ export function SessionSummaryPopup({
                                         })
                                         : "Points"}
                                 </p>
+                            </div>
+
+                            <div className="session-summary-pet-exp rounded-2xl border border-violet-100 bg-violet-50/75 p-4 shadow-sm">
+                                <div className="mb-3 flex items-center justify-between gap-3">
+                                    <div>
+                                        <span className="block text-[11px] font-extrabold uppercase tracking-[0.14em] text-violet-500">
+                                            Pet EXP
+                                        </span>
+                                        <strong className="mt-1 block text-sm font-extrabold text-slate-900">
+                                            {summaryPet?.customName ?? "Pet"}
+                                        </strong>
+                                    </div>
+                                    <strong className="text-xl font-black text-violet-600">
+                                        +{earnedExperience} XP
+                                    </strong>
+                                </div>
+
+                                <div className="mb-2 flex items-center justify-between text-xs font-extrabold text-slate-500">
+                                    <span>
+                                        {t("common:pet.level", {
+                                            level: summaryPet?.level ?? 0,
+                                        })} / {MAX_PET_LEVEL}
+                                    </span>
+                                    <span>
+                                        {Math.min(petExperience, XP_PER_PET_LEVEL)} / {XP_PER_PET_LEVEL} XP
+                                    </span>
+                                </div>
+                                <div className="h-3 overflow-hidden rounded-full bg-white">
+                                    <div
+                                        className="h-full rounded-full bg-violet-500"
+                                        style={{ width: `${petExperienceProgress}%` }}
+                                    />
+                                </div>
                             </div>
 
                             {completionResult && (
@@ -191,6 +239,10 @@ export function SessionSummaryPopup({
                                                 <strong>+{achievementPoints}</strong>
                                             </div>
                                         )}
+                                        <div>
+                                            <span>Pet EXP</span>
+                                            <strong>+{earnedExperience}</strong>
+                                        </div>
                                     </div>
                                     <div className="session-summary-reward-line">
                                         <span>{t("focusSession.summary.streak_label")}</span>

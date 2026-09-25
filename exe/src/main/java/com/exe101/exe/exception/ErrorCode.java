@@ -96,6 +96,8 @@ public enum ErrorCode {
     USER_PET_NOT_FOUND("PET_005", HttpStatus.NOT_FOUND, "User pet not found"),
     PET_NOT_FOUND("PET_006", HttpStatus.NOT_FOUND, "Pet not found"),
     USER_PET_ALREADY_EXISTS("PET_007", HttpStatus.CONFLICT, "User already owns this pet"),
+    USER_PET_INSUFFICIENT_EXPERIENCE("PET_008", HttpStatus.BAD_REQUEST, "User pet needs at least 100 XP to level up"),
+    USER_PET_MAX_LEVEL_REACHED("PET_009", HttpStatus.BAD_REQUEST, "User pet has reached max level"),
 
     // ===== POINTS =====
     INVALID_POINT_AMOUNT("POINT_001", HttpStatus.BAD_REQUEST, "Point amount must be positive"),
@@ -118,6 +120,9 @@ public enum ErrorCode {
     // ===== APPRULE =====
     APP_RULE_NOT_FOUND("APPRULE_001", HttpStatus.NOT_FOUND, "App rule not found"),
     APP_RULE_ALREADY_EXISTS("APPRULE_002", HttpStatus.CONFLICT, "App rule already exists"),
+
+    // ===== USER FEEDBACK =====
+    USER_FEEDBACK_NOT_FOUND("FEEDBACK_001", HttpStatus.NOT_FOUND, "User feedback not found"),
 
     // ===== ADMIN =====
     INVALID_ADMIN_USER_STATUS("ADMIN_001", HttpStatus.BAD_REQUEST, "Invalid admin user status"),

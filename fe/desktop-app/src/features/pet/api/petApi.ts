@@ -5,10 +5,20 @@ import type { ShopPet, UserPet } from "../types/pet.type";
 const USER_PET_ENDPOINT = "/user-pets";
 const PET_ENDPOINT = "/pets";
 
+type UserPetDetails = Pick<
+  UserPet,
+  "userPetId" | "code" | "customName" | "level" | "experience" | "imageUrl"
+>;
+
 export const petApi = {
   getMyPets: () =>
     api
       .get<ApiResponse<UserPet[]>>(`${USER_PET_ENDPOINT}/me`)
+      .then((r) => r.data.data),
+
+  getPetDetails: (userPetId: number) =>
+    api
+      .get<ApiResponse<UserPetDetails>>(`${USER_PET_ENDPOINT}/${userPetId}`)
       .then((r) => r.data.data),
 
   equipPet: (userPetId: number) =>

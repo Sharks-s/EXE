@@ -104,6 +104,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       session: null,
       lastCompletedSession: session,
       lastCompletionResult: result,
+      currentPet: result.userPet ?? get().currentPet,
       botMessage: null,
       botActions: undefined,
       isBubbleVisible: false,

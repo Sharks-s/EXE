@@ -15,6 +15,7 @@ public class UserPetSummaryResponse {
     private String code;
     private String customName;
     private Integer level;
+    private Integer experience;
     private String imageUrl;
     private boolean premium;
     private boolean equipped;

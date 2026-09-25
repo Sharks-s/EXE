@@ -3,8 +3,52 @@ import { useTranslation } from "react-i18next";
 import { petApi } from "../api/petApi";
 import { handleApiError } from "@/utils/handleApiError";
 import type { UserPet } from "../types/pet.type";
+import {
+  XP_PER_PET_LEVEL,
+  canUpgradePet,
+  getPetExperience,
+} from "../utils/petExperience";
 
 const LOG_CONTEXT = "[useUserPets]";
+
+const withDefaultExperience = (pet: UserPet): UserPet => ({
+  ...pet,
+  experience: pet.experience ?? 0,
+});
+
+const hydratePetExperience = async (pets: UserPet[]) => {
+  const detailsResults = await Promise.allSettled(
+    pets.map((pet) => petApi.getPetDetails(pet.userPetId)),
+  );
+
+  return pets.map((pet, index) => {
+    const detailsResult = detailsResults[index];
+    if (detailsResult?.status !== "fulfilled") {
+      return withDefaultExperience(pet);
+    }
+
+    return {
+      ...pet,
+      ...detailsResult.value,
+      premium: pet.premium,
+      equipped: pet.equipped,
+    };
+  });
+};
+
+const mergeUpgradedPet = (pet: UserPet, updatedPet: UserPet): UserPet => {
+  const fallbackExperience = Math.max(
+    getPetExperience(pet) - XP_PER_PET_LEVEL,
+    0,
+  );
+
+  return {
+    ...pet,
+    ...updatedPet,
+    level: updatedPet.level ?? pet.level + 1,
+    experience: updatedPet.experience ?? fallbackExperience,
+  };
+};
 
 export function useUserPets() {
   const { t } = useTranslation(["businessErrors", "common"]);
@@ -19,7 +63,8 @@ export function useUserPets() {
       setLoading(true);
       setError("");
       const data = await petApi.getMyPets();
-      setPets(data);
+      const petsWithExperience = await hydratePetExperience(data);
+      setPets(petsWithExperience);
     } catch (err) {
       const msg = handleApiError(err, {
         context: LOG_CONTEXT,
@@ -60,7 +105,11 @@ export function useUserPets() {
           equipped: pet.userPetId === updatedPet.userPetId,
         }))
       );
-      setSelectedPet({ ...updatedPet, equipped: true });
+      setSelectedPet((prev) => ({
+        ...(pets.find((pet) => pet.userPetId === updatedPet.userPetId) ?? prev ?? updatedPet),
+        ...updatedPet,
+        equipped: true,
+      }));
     } catch (err) {
       handleApiError(err, {
         context: LOG_CONTEXT,
@@ -94,12 +143,21 @@ export function useUserPets() {
   };
 
   const handleUpgrade = async (userPetId: number) => {
+    const targetPet = pets.find((pet) => pet.userPetId === userPetId);
+    if (!targetPet || !canUpgradePet(targetPet)) return;
+
     try {
       setActionLoadingId(userPetId);
       const updatedPet = await petApi.upgradePet(userPetId);
 
-      setPets((prev) => prev.map((pet) => (pet.userPetId === userPetId ? { ...pet, ...updatedPet } : pet)));
-      setSelectedPet((prev) => (prev?.userPetId === userPetId ? { ...prev, ...updatedPet } : prev));
+      setPets((prev) =>
+        prev.map((pet) =>
+          pet.userPetId === userPetId ? mergeUpgradedPet(pet, updatedPet) : pet,
+        ),
+      );
+      setSelectedPet((prev) =>
+        prev?.userPetId === userPetId ? mergeUpgradedPet(prev, updatedPet) : prev,
+      );
     } catch (err) {
       handleApiError(err, {
         context: LOG_CONTEXT,

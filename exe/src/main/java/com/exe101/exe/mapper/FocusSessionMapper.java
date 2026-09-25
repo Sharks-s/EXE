@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,7 +28,11 @@ public interface FocusSessionMapper {
     default List<ViolationResponse> sortViolations(Set<Violation> violations) {
         if (violations == null) return List.of();
         return violations.stream()
-                .sorted(Comparator.comparing(Violation::getOccurredAt).reversed())
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(
+                        Violation::getOccurredAt,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ).reversed())
                 .map(this::toViolationResponse)
                 .collect(Collectors.toList());
     }

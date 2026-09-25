@@ -11,6 +11,7 @@ import {
   SongLibraryView,
   SongPlayerProvider,
 } from "@/features/song";
+import { FeedbackPage } from "@/features/feedback";
 import Sidebar, { type Page } from "@/shared/components/Sidebar";
 import { toast } from "@/shared/store/toastStore";
 
@@ -125,6 +126,7 @@ export default function MainWindow() {
           {currentPage === "upgrade" && <UpgradePage />}
           {currentPage === "pet" && <Pet />}
           {currentPage === "songs" && <SongLibraryView />}
+          {currentPage === "feedback" && <FeedbackPage />}
         </main>
 
       </div>

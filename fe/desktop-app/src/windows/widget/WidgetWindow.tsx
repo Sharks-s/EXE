@@ -6,7 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 const ANIMATION_SPEED_FPS = 10;
 const DRAG_THRESHOLD = 4; // px
-const CLICK_TIME_MAX = 250; // ms
+const CLICK_TIME_MAX = 500; // ms
 
 const ACTION_FRAME_COUNTS: Record<string, number> = {
   sleep: 10,

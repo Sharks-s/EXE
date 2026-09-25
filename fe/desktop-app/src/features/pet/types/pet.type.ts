@@ -3,6 +3,10 @@ export type UserPet = {
   code: string;
   customName: string;
   level: number;
+  experience: number;
+  nextLevelExperience?: number | null;
+  experienceToNextLevel?: number | null;
+  maxExperience?: number | null;
   imageUrl: string;
   premium: boolean;
   equipped: boolean;

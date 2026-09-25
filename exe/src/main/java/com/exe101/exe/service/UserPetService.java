@@ -16,4 +16,5 @@ public interface UserPetService {
     UserPetSummaryResponse renameUserPet(Long userPetId, Long userId, String customName);
     UserPetSummaryResponse addPetFromStore(Long petId, Long userId);
     UserPetSummaryResponse equipUserPet(Long userPetId, Long userId);
+    UserPetSummaryResponse upgradeUserPet(Long userPetId, Long userId);
 }

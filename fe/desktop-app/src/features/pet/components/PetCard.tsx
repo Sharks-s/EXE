@@ -1,6 +1,13 @@
 import { useTranslation } from "react-i18next";
 import type { UserPet } from "../types/pet.type";
+import { useLevelUpAnimation } from "../hooks/useLevelUpAnimation";
 import { formatPetCode, getPetEmoji, getPetTheme } from "../utils/pet.helpers";
+import {
+    XP_PER_PET_LEVEL,
+    canUpgradePet,
+    getPetExperience,
+    getPetExperienceProgress,
+} from "../utils/petExperience";
 
 type PetCardProps = {
     pet: UserPet;
@@ -24,6 +31,10 @@ export function PetCard({
     const { t } = useTranslation("common");
 
     const theme = getPetTheme(pet.code);
+    const experienceProgress = getPetExperienceProgress(pet);
+    const canUpgrade = canUpgradePet(pet);
+    const experience = getPetExperience(pet);
+    const isLevelingUp = useLevelUpAnimation(pet.level, 1200, pet.userPetId);
 
     return (
         <article
@@ -31,9 +42,12 @@ export function PetCard({
                 "pet-card",
                 pet.equipped ? "equipped" : "",
                 selected ? "selected" : "",
+                isLevelingUp ? "level-up" : "",
             ].join(" ")}
             onClick={onSelect}
         >
+            {isLevelingUp && <span className="level-up-burst">LEVEL UP</span>}
+
             <div className={`pet-card-cover ${theme}`}>
                 {pet.premium && (
                     <span className="premium-badge">
@@ -64,10 +78,14 @@ export function PetCard({
                 <h3>{pet.customName}</h3>
                 <p>{formatPetCode(pet.code)}</p>
 
-                <div className="level-line">
+                <div
+                    className="level-line"
+                    aria-label={`Experience ${Math.round(experienceProgress)}%`}
+                    title={`${Math.min(experience, XP_PER_PET_LEVEL)} / ${XP_PER_PET_LEVEL} XP`}
+                >
                     <div
                         style={{
-                            width: `${Math.min(pet.level * 4, 100)}%`,
+                            width: `${experienceProgress}%`,
                         }}
                     />
                 </div>
@@ -110,13 +128,19 @@ export function PetCard({
                     <button
                         type="button"
                         className="icon-btn purple-icon"
-                        disabled={loading}
+                        disabled={loading || !canUpgrade}
                         onClick={(event) => {
                             event.stopPropagation();
                             onUpgrade();
                         }}
                         aria-label={t("common:pet.upgrade")}
-                        title={t("common:pet.upgrade")}
+                        title={
+                            canUpgrade
+                                ? t("common:pet.upgrade")
+                                : t("common:pet.upgrade_locked", {
+                                    defaultValue: "Cần 100 XP và chưa đạt cấp tối đa",
+                                })
+                        }
                     >
                         ↗
                     </button>

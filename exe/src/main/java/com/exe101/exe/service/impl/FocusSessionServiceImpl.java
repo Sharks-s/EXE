@@ -58,6 +58,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private final AchievementService achievementService;
     private final NotificationService notificationService;
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final int EXP_PER_STUDY_MINUTE = 10;
 
 
     private static final Set<ViolationType> NON_PENALTY_TYPES = Set.of(
@@ -230,11 +231,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             session.setStatus(SessionStatus.COMPLETED);
         }
 
-        if (session.getAccumulatedReward() > 0 && session.getUserPet() != null) {
-            UserPet pet = session.getUserPet();
-            pet.setExperience(pet.getExperience() + session.getAccumulatedReward() * 60);
-            userPetRepository.save(pet);
-        }
+        addExperienceToSessionPet(session, actualMinutes);
 
         FocusSession savedSession = focusSessionRepository.save(session);
         if (isAborted) {
@@ -287,6 +284,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.setStatus(SessionStatus.COMPLETED);
 
         FocusSession savedSession = focusSessionRepository.save(session);
+        int earnedExperience = addExperienceToSessionPet(savedSession, savedSession.getActualDuration());
         int earnedPoints = calculateSessionRewardPointsWithDailyCap(userId, savedSession, now);
         if (earnedPoints > 0) {
             pointService.creditWallet(
@@ -307,6 +305,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         return new SessionCompleteResponse(
                 earnedPoints,
                 wallet.currentPoints(),
+                earnedExperience,
+                toUserPetSessionResponse(savedSession.getUserPet()),
                 unlocked,
                 new StreakResponse(currentStreak, newStreakMilestone)
         );
@@ -563,20 +563,24 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         int safeSize = Math.min(Math.max(size, 1), 50);
         PageRequest pageRequest = PageRequest.of(safePage, safeSize);
 
-        Page<FocusSession> sessionPage = status == null
-                ? focusSessionRepository.findByUserIdOrderByStartedAtDesc(userId, pageRequest)
-                : focusSessionRepository.findByUserIdAndStatusOrderByStartedAtDesc(userId, status, pageRequest);
+        List<FocusSession> sessions = status == null
+                ? focusSessionRepository.findHistoryPageWithDetails(userId, pageRequest)
+                : focusSessionRepository.findHistoryPageWithDetailsByStatus(userId, status, pageRequest);
+        long totalItems = status == null
+                ? focusSessionRepository.countByUserId(userId)
+                : focusSessionRepository.countByUserIdAndStatus(userId, status);
 
-        List<FocusSessionResponse> items = sessionPage.getContent().stream()
+        List<FocusSessionResponse> items = sessions.stream()
                 .map(focusSessionMapper::toResponse)
                 .toList();
+        int totalPages = (int) Math.ceil((double) totalItems / safeSize);
 
         return new PagedResponse<>(
                 items,
-                sessionPage.getNumber(),
-                sessionPage.getTotalElements(),
-                sessionPage.getTotalPages(),
-                sessionPage.hasNext()
+                safePage,
+                totalItems,
+                totalPages,
+                (long) (safePage + 1) * safeSize < totalItems
         );
     }
 
@@ -839,6 +843,47 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 : safeInt(session.getActualDuration()) * 60;
         int rewardableSeconds = Math.min(activeSeconds, remainingDailyCreditableSeconds(userId, session, completedAt));
         return rewardPointsForMinutes(rewardableSeconds / 60);
+    }
+
+    private int calculateStudyExperience(int actualMinutes) {
+        if (actualMinutes <= 0) {
+            return 0;
+        }
+        return actualMinutes * EXP_PER_STUDY_MINUTE;
+    }
+
+    private int addExperienceToSessionPet(FocusSession session, int actualMinutes) {
+        if (session.getUserPet() == null) {
+            return 0;
+        }
+
+        UserPet pet = session.getUserPet();
+        int studyExp = calculateStudyExperience(actualMinutes);
+        int breakBonusExp = safeInt(session.getAccumulatedReward()) > 0
+                ? safeInt(session.getAccumulatedReward()) * 60
+                : 0;
+        int totalExp = studyExp + breakBonusExp;
+        if (totalExp > 0) {
+            pet.setExperience(pet.getExperience() + totalExp);
+            userPetRepository.save(pet);
+        }
+        return totalExp;
+    }
+
+    private UserPetSessionResponse toUserPetSessionResponse(UserPet userPet) {
+        if (userPet == null) {
+            return null;
+        }
+
+        Pet pet = userPet.getPet();
+        return UserPetSessionResponse.builder()
+                .userPetId(userPet.getId())
+                .code(pet.getCode())
+                .customName(userPet.getCustomName())
+                .level(userPet.getLevel())
+                .experience(userPet.getExperience())
+                .imageUrl(pet.getImageUrl())
+                .build();
     }
 
     private int rewardPointsForMinutes(int actualMinutes) {

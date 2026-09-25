@@ -76,4 +76,16 @@ public class UserPetController {
         return ApiResponse.success(response);
     }
 
+    @PutMapping("/{userPetId}/upgrade")
+    public ApiResponse<UserPetSummaryResponse> upgrade(
+            @PathVariable Long userPetId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UserPetSummaryResponse response = userPetService.upgradeUserPet(
+                userPetId,
+                userDetails.getId()
+        );
+        return ApiResponse.success(response);
+    }
+
 }

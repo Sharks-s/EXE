@@ -117,6 +117,8 @@ export interface UnlockedAchievementSummary {
 export interface FocusSessionCompleteResult {
   earnedPoints: number;
   currentPoints: number;
+  earnedExperience: number;
+  userPet: UserPetDetails | null;
   unlockedAchievements: UnlockedAchievementSummary[];
   streak: {
     current: number;

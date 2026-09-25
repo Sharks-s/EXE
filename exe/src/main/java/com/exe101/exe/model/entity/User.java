@@ -28,7 +28,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"identities", "userRoles", "refreshTokens", "userSetting", "focusSessions", "subscriptions", "appRules", "userPets"})
+@ToString(exclude = {"identities", "userRoles", "refreshTokens", "userSetting", "focusSessions", "subscriptions", "appRules", "userPets", "feedbacks"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
 
@@ -146,6 +146,10 @@ public class User {
     @Builder.Default
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UserPet> userPets = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserFeedback> feedbacks = new HashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personality_id", foreignKey = @ForeignKey(name = "fk_users_personality"))

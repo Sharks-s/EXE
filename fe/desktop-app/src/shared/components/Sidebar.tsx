@@ -15,7 +15,8 @@ export type Page =
   | "pet"
   | "profile"
   | "upgrade"
-  | "songs";
+  | "songs"
+  | "feedback";
 
 interface SidebarProps {
   currentPage: Page;
@@ -346,6 +347,16 @@ export default function Sidebar({
           page="songs"
           label={t("sidebar.songs", { defaultValue: "Music" })}
           icon={icons.songs}
+          currentPage={currentPage}
+          onNavigate={onNavigate}
+          collapsed={collapsed}
+          disabled={isLocked}
+        />
+
+        <NavItem
+          page="feedback"
+          label={t("sidebar.feedback", { defaultValue: "Feedback" })}
+          icon={icons.feedback}
           currentPage={currentPage}
           onNavigate={onNavigate}
           collapsed={collapsed}

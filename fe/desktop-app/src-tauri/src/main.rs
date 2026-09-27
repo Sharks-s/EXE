@@ -9,6 +9,7 @@ use std::path::Path;
 use tauri::path::BaseDirectory;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use tauri_plugin_shell::ShellExt;
 
 
 // Struct định nghĩa dữ liệu trả về cho Frontend dễ đọc
@@ -149,10 +150,16 @@ fn scan_system_sounds_folder(app_handle: tauri::AppHandle) -> Result<Vec<Scanned
     scan_folder_for_audio(&resource_path)
 }
 
+use tauri_plugin_shell::process::{CommandChild, CommandEvent};
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+
+struct SidecarState(Mutex<Option<CommandChild>>);
+
 fn main() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             toggle_windows_to_session,
             get_active_window_info,
@@ -165,6 +172,73 @@ fn main() {
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
+
+            // Tự động chạy Python bot local khi app khởi động
+            println!("[Sidecar] Đang khởi chạy focusbuddy-bot...");
+            match app_handle.shell().sidecar("focusbuddy-bot") {
+                Ok(sidecar) => match sidecar.spawn() {
+                    Ok((mut rx, child)) => {
+                        let pid = child.pid();
+                        println!("[Sidecar] Spawn focusbuddy-bot thành công! PID = {}", pid);
+
+                        // Giữ child sống suốt vòng đời app trong App State
+                        app.manage(SidecarState(Mutex::new(Some(child))));
+
+                        // Lắng nghe stdout/stderr/terminated từ bot để in ra terminal dev
+                        tauri::async_runtime::spawn(async move {
+                            while let Some(event) = rx.recv().await {
+                                match event {
+                                    CommandEvent::Stdout(bytes) => {
+                                        print!("[Sidecar stdout] {}", String::from_utf8_lossy(&bytes));
+                                    }
+                                    CommandEvent::Stderr(bytes) => {
+                                        eprint!("[Sidecar stderr] {}", String::from_utf8_lossy(&bytes));
+                                    }
+                                    CommandEvent::Error(err) => {
+                                        eprintln!("[Sidecar error] {}", err);
+                                    }
+                                    CommandEvent::Terminated(payload) => {
+                                        eprintln!(
+                                            "[Sidecar terminated] Process kết thúc với exit code: {:?}",
+                                            payload.code
+                                        );
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        eprintln!("[Sidecar Error] Lỗi khi spawn focusbuddy-bot: {}", e);
+                    }
+                },
+                Err(e) => {
+                    eprintln!("[Sidecar Error] Lỗi cấu hình sidecar focusbuddy-bot: {}", e);
+                }
+            }
+
+            // Cấu hình menu cho System Tray
+            let quit_item = MenuItemBuilder::with_id("quit", "Exit").build(app)?;
+            let tray_menu = MenuBuilder::new(app).items(&[&quit_item]).build()?;
+
+            if let Some(tray) = app.tray_by_id("main") {
+                let _ = tray.set_menu(Some(tray_menu));
+                let _ = tray.set_show_menu_on_left_click(true);
+                tray.on_menu_event(|app, event| {
+                    if event.id().as_ref() == "quit" {
+                        if let Some(sidecar_state) = app.try_state::<SidecarState>() {
+                            if let Ok(mut guard) = sidecar_state.0.lock() {
+                                if let Some(child) = guard.take() {
+                                    let _ = child.kill();
+                                    println!("[Sidecar] Đã dọn dẹp (kill) process sidecar khi bấm Exit ở tray.");
+                                }
+                            }
+                        }
+                        app.exit(0);
+                    }
+                });
+            }
+
             if let Some(widget_window) = app_handle.get_webview_window("widget") {
                 let last_move = Arc::new(Mutex::new(Instant::now()));
 
@@ -193,8 +267,21 @@ fn main() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app_handle, event| {
+        if let tauri::RunEvent::ExitRequested { .. } = &event {
+            if let Some(sidecar_state) = app_handle.try_state::<SidecarState>() {
+                if let Ok(mut guard) = sidecar_state.0.lock() {
+                    if let Some(child) = guard.take() {
+                        let _ = child.kill();
+                        println!("[Sidecar] Đã dọn dẹp (kill) process sidecar khi thoát app.");
+                    }
+                }
+            }
+        }
+    });
 }
 
 

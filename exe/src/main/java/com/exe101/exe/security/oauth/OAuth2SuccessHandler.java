@@ -63,7 +63,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 cookieUtil.createRefreshCookie(result.getRefreshToken()).toString()
         );
 
-        String redirectUrl = oauth2Properties.getFrontendRedirectUrl()
+        String redirectUrl = oauth2Properties.getDesktopRedirectUrl()
                 + "?oauth_success=true&isNewUser=" + result.isNewUser();
 
         // 7. Redirect về luồng xử lý của Frontend (Sau này làm Deep Link hoặc Web tĩnh trung gian)

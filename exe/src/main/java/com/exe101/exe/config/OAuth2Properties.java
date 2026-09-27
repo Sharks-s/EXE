@@ -15,6 +15,6 @@ import org.springframework.validation.annotation.Validated;
 public class OAuth2Properties {
 
     @NotBlank
-    private String frontendRedirectUrl;
+    private String desktopRedirectUrl;
 
 }

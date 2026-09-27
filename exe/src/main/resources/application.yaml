@@ -96,7 +96,7 @@ app:
 
   security:
     oauth2:
-      frontend-redirect-url: ${FRONTEND_REDIRECT_URL:http://localhost:1420/}
+      frontend-redirect-url: ${DESKTOP_REDIRECT_URL:http://localhost:1420/}
     jwt:
       access-secret: ${JWT_ACCESS_SECRET}
       refresh-secret: ${JWT_REFRESH_SECRET}

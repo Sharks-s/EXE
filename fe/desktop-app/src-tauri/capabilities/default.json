@@ -22,6 +22,16 @@
     "store:allow-set",
     "store:allow-save",
     "store:allow-delete",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "shell:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/focusbuddy-bot",
+          "sidecar": true
+        }
+      ]
+    }
   ]
 }

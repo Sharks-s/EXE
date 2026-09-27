@@ -77,7 +77,7 @@
     "trayIcon": {
       "iconPath": "icons/32x32.png",
       "iconAsTemplate": false,
-      "menuOnLeftClick": false,
+      "menuOnLeftClick": true,
       "tooltip": "FocusBuddy"
     },
     "security": {
@@ -102,6 +102,9 @@
     ],
     "resources": [
       "resources/system-sounds/*"
+    ],
+    "externalBin": [
+      "binaries/focusbuddy-bot"
     ],
     "windows": {
       "webviewInstallMode": {

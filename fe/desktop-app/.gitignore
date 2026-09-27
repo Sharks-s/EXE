@@ -46,4 +46,11 @@ src-tauri/bin/
 # Temporary files & caches
 .eslintcache
 .stylelintcache
-.vite
+.vite 
+
+# Python bot build artifacts
+python-bot/build/
+python-bot/dist/
+
+# Tauri sidecar binaries
+src-tauri/binaries/*.exe

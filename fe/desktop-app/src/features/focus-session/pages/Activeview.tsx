@@ -120,13 +120,13 @@ function ActiveViewContent() {
     }
   };
 
-  const handleResetWidgetPosition = async () => {
-    try {
-      await invoke("reset_widget_position");
-    } catch (err) {
-      console.error("[ActiveView] Lỗi reset vị trí widget:", err);
-    }
-  };
+  // const handleResetWidgetPosition = async () => {
+  //   try {
+  //     await invoke("reset_widget_position");
+  //   } catch (err) {
+  //     console.error("[ActiveView] Lỗi reset vị trí widget:", err);
+  //   }
+  // };
 
   return (
     <div

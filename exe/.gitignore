@@ -47,4 +47,11 @@ application-local.yml
 
 # --- OS temporary files ---
 .DS_Store
-Thumbs.db
+Thumbs.db 
+
+# --- FocusBuddy Desktop / Python Bot ---
+desktop-app/python-bot/build/
+desktop-app/python-bot/dist/
+
+# --- Tauri Sidecar ---
+desktop-app/src-tauri/binaries/*.exe

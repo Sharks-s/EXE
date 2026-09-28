@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final AuthService authService;
     private final CookieUtil cookieUtil;
     private final OAuth2Properties oauth2Properties;
+    private final OAuthCodeStore codeStore;
 
     @Override
     public void onAuthenticationSuccess(
@@ -34,17 +36,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             Authentication authentication
     ) throws IOException {
 
-        // 1. Ép kiểu về OAuth2User chung để bốc mảng Attributes gốc của nhà mạng
         OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
         Map<String, Object> attributes = oauth2User.getAttributes();
 
-        // 2. Tạm thời dự án mới chạy Google, ấn định luôn Provider là GOOGLE
         AuthProvider provider = AuthProvider.GOOGLE;
-
-        // 3. ĐƯA FACTORY VÀO TRẬN: Bốc đúng bộ dịch GoogleOAuth2UserInfo để chuẩn hóa dữ liệu
         OAuth2UserInfo userInfo = OAuth2UserInfoFactory.get(provider, attributes);
 
-        // 4. Đóng gói dữ liệu sạch sẽ vào Record Payload để ném xuống Service xử lý DB
         OAuthUserPayload payload = new OAuthUserPayload(
                 userInfo.getProviderId(),
                 userInfo.getEmail(),
@@ -54,19 +51,30 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         log.info("OAuth2 login successful for email: {}", payload.email());
 
-        // 5. Gọi Service tạo tài khoản ngầm hoặc map tài khoản cũ, nhận về Access/Refresh Token
         OAuthLoginResult result = authService.processOAuthLogin(provider, payload);
 
-        // 6. Đút Refresh Token vào HttpOnly Cookie gửi về cho Client (Tauri sẽ tự ôm lấy)
+        Integer port = OAuthStateUtil.extractPort(request.getParameter("state"));
+
+        if (port != null) {
+            // Luồng Tauri: login diễn ra ở browser hệ thống -> KHÔNG set cookie ở đây.
+            // Trả one-time code, webview sẽ gọi POST /auth/oauth/exchange để lấy token + cookie.
+            String code = codeStore.issue(result.getRefreshToken());
+            String url = UriComponentsBuilder.newInstance()
+                    .scheme("http").host("localhost").port(port).path("/")
+                    .queryParam("oauth_success", "true")
+                    .queryParam("code", code)
+                    .queryParam("isNewUser", result.isNewUser())
+                    .build().toUriString();
+            response.sendRedirect(url);
+            return;
+        }
+
+        // Fallback (không có port): giữ hành vi cũ
         response.addHeader(
                 HttpHeaders.SET_COOKIE,
                 cookieUtil.createRefreshCookie(result.getRefreshToken()).toString()
         );
-
-        String redirectUrl = oauth2Properties.getDesktopRedirectUrl()
-                + "?oauth_success=true&isNewUser=" + result.isNewUser();
-
-        // 7. Redirect về luồng xử lý của Frontend (Sau này làm Deep Link hoặc Web tĩnh trung gian)
-        response.sendRedirect(redirectUrl);
+        response.sendRedirect(oauth2Properties.getDesktopRedirectUrl()
+                + "?oauth_success=true&isNewUser=" + result.isNewUser());
     }
 }

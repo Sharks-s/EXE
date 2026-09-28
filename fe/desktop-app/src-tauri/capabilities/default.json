@@ -24,6 +24,8 @@
     "store:allow-delete",
     "dialog:allow-open",
     "shell:default",
+    "oauth:allow-start",
+    "oauth:allow-cancel",
     {
       "identifier": "shell:allow-execute",
       "allow": [

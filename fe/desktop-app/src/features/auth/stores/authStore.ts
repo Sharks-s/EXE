@@ -7,6 +7,7 @@ import {
   registerInitService,
   verifyOtpService,
   completeRegisterService,
+  oauthExchangeService,
 } from "../services/auth.service";
 import { authSession } from "../services/auth.session";
 import type {
@@ -41,6 +42,8 @@ interface AuthState {
 
   // Computed
   isAuthenticated: () => boolean;
+
+  loginWithOAuth: (code: string) => Promise<void>;
 }
 
 // ── Sync ngôn ngữ bất đồng bộ & an toàn 
@@ -135,6 +138,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await logoutService();
     } finally {
       set({ user: null, error: null, isLoading: false });
+    }
+  },
+
+  loginWithOAuth: async (code) => {
+    set({ isLoading: true, error: null });
+    try {
+      const user = await oauthExchangeService(code);
+      await syncLanguageFromUser(user);
+      set({ user });
+    } catch (err: unknown) {
+      set({ error: err instanceof Error ? err.message : "OAUTH_EXCHANGE_FAILED" });
+      throw err;
+    } finally {
+      set({ isLoading: false });
     }
   },
 

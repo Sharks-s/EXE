@@ -80,6 +80,8 @@ app:
       - ${FRONTEND_URL:http://localhost:5173}
       - ${DESKTOP_APP_URL:http://localhost:1420}
       - ${WEB_APP_URL:http://localhost:3000}
+      - http://tauri.localhost
+      - https://tauri.localhost
     allowed-methods:
       - GET
       - POST

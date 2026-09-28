@@ -2,6 +2,7 @@ package com.exe101.exe.security;
 
 import com.exe101.exe.security.oauth.OAuth2FailureHandler;
 import com.exe101.exe.security.oauth.OAuth2SuccessHandler;
+import com.exe101.exe.security.oauth.TauriAwareAuthorizationRequestResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -101,22 +102,26 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Hàm tạo Custom Resolver thêm prompt=select_account
     private OAuth2AuthorizationRequestResolver customAuthorizationRequestResolver() {
-        DefaultOAuth2AuthorizationRequestResolver defaultResolver =
-                new DefaultOAuth2AuthorizationRequestResolver(
-                        this.clientRegistrationRepository,
-                        "/oauth2/authorization"
-                );
-
-        defaultResolver.setAuthorizationRequestCustomizer(customizer -> {
-            customizer.additionalParameters(params -> {
-                params.put("prompt", "select_account");
-            });
-        });
-
-        return defaultResolver;
+        return new TauriAwareAuthorizationRequestResolver(
+                this.clientRegistrationRepository, "/oauth2/authorization");
     }
+//    // Hàm tạo Custom Resolver thêm prompt=select_account
+//    private OAuth2AuthorizationRequestResolver customAuthorizationRequestResolver() {
+//        DefaultOAuth2AuthorizationRequestResolver defaultResolver =
+//                new DefaultOAuth2AuthorizationRequestResolver(
+//                        this.clientRegistrationRepository,
+//                        "/oauth2/authorization"
+//                );
+//
+//        defaultResolver.setAuthorizationRequestCustomizer(customizer -> {
+//            customizer.additionalParameters(params -> {
+//                params.put("prompt", "select_account");
+//            });
+//        });
+//
+//        return defaultResolver;
+//    }
 
     @Bean
     public AuthenticationManager authenticationManager(

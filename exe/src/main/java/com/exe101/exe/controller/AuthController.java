@@ -2,7 +2,10 @@ package com.exe101.exe.controller;
 
 import com.exe101.exe.dto.request.*;
 import com.exe101.exe.dto.response.*;
+import com.exe101.exe.exception.BusinessException;
+import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.security.CookieUtil;
+import com.exe101.exe.security.oauth.OAuthCodeStore;
 import com.exe101.exe.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -19,6 +22,7 @@ import org.springframework.http.HttpHeaders;
 public class AuthController {
     private final AuthService authService;
     private final CookieUtil cookieUtil;
+    private final OAuthCodeStore oAuthCodeStore;
 
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
@@ -105,5 +109,20 @@ public class AuthController {
     ) {
         authService.resetPassword(request);
         return ApiResponse.success(null);
+    }
+
+    @PostMapping("/oauth/exchange")
+    public ApiResponse<ExchangeResponse> oauthExchange(
+            @Valid @RequestBody OAuthExchangeRequest request,
+            HttpServletResponse response
+    ) {
+        String refreshToken = oAuthCodeStore.consume(request.code())
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_EXPIRED));
+
+        ExchangeResponse res = authService.exchangeRefreshForAccess(refreshToken);
+
+        response.addHeader(HttpHeaders.SET_COOKIE,
+                cookieUtil.createRefreshCookie(refreshToken).toString());
+        return ApiResponse.success(res);
     }
 }

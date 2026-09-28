@@ -1,11 +1,12 @@
 package com.exe101.exe.security.oauth;
 
+import com.exe101.exe.config.OAuth2Properties;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -15,10 +16,10 @@ import java.io.IOException;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class OAuth2FailureHandler implements AuthenticationFailureHandler {
 
-    @Value("${app.oauth2.redirect-uri:http://localhost:1420/}")
-    private String redirectUri;
+    private final OAuth2Properties oauth2Properties;
 
     @Override
     public void onAuthenticationFailure(
@@ -27,7 +28,7 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
             AuthenticationException exception
     ) throws IOException {
 
-        String errorCode = ErrorCode.OAUTH2_LOGIN_FAILED.getDefaultMessage();
+        String errorCode = ErrorCode.OAUTH2_LOGIN_FAILED.getCode();
 
         Throwable cause = exception.getCause();
         if (cause instanceof BusinessException be) {
@@ -36,12 +37,15 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
 
         log.warn("OAuth2 login failed: {}", errorCode);
 
-        String targetUrl = UriComponentsBuilder
-                .fromUriString(redirectUri)
-                .queryParam("oauth_error", errorCode)
-                .build()
-                .toUriString();
+        Integer port = OAuthStateUtil.extractPort(request.getParameter("state"));
 
-        response.sendRedirect(targetUrl);
+        UriComponentsBuilder builder = UriComponentsBuilder.newInstance();
+        if (port != null) {
+            builder.scheme("http").host("localhost").port(port).path("/");
+        } else {
+            builder = UriComponentsBuilder.fromUriString(oauth2Properties.getDesktopRedirectUrl());
+        }
+
+        response.sendRedirect(builder.queryParam("oauth_error", errorCode).build().toUriString());
     }
 }

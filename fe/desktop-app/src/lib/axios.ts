@@ -72,7 +72,8 @@ api.interceptors.response.use(
       status === 401 &&
       !hasToken &&
       canRefresh &&
-      !originalRequest.url?.includes("/auth/exchange")
+      !originalRequest.url?.includes("/auth/exchange") &&
+      !originalRequest.url?.includes("/auth/oauth/exchange")
     ) {
       try {
         // Import động để tránh circular dependency

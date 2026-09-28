@@ -61,4 +61,9 @@ export const authApi = {
 
   resetPassword: (data: ResetPasswordRequest) =>
     api.post<ApiResponse<null>>("/auth/password/reset", data).then((r) => r.data),
+
+  oauthExchange: (code: string) =>
+    api
+      .post<ApiResponse<ExchangeResponse>>("/auth/oauth/exchange", { code })
+      .then((r) => r.data.data),
 };

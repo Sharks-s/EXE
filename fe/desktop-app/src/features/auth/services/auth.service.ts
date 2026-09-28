@@ -86,3 +86,11 @@ export async function logoutService(): Promise<void> {
     await authSession.markLoggedOut();
   }
 }
+
+
+export async function oauthExchangeService(code: string): Promise<User> {
+  const res = await authApi.oauthExchange(code);
+  authStorage.setAccessToken(res.accessToken);
+  await authSession.markLoggedIn();
+  return res.user;
+}

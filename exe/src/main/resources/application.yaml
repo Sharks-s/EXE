@@ -125,7 +125,7 @@ app:
   cookie:
     secure: ${COOKIE_SECURE:false}
     refresh-max-age: 2592000
-    same-site: Lax
+    same-site: ${COOKIE_SAME_SITE:Lax}
 
   seed:
     default-pet-code: "MONKI"

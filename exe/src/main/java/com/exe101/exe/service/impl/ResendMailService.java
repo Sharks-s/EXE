@@ -4,26 +4,31 @@ import com.exe101.exe.config.MailProperties;
 import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.exception.ExternalServiceException;
 import com.exe101.exe.service.MailService;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
-import org.springframework.mail.MailException;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
-import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 @Service
 @Profile("!mock-mail")
 @RequiredArgsConstructor
 @Slf4j
-public class SmtpMailService implements MailService {
+public class ResendMailService implements MailService {
 
-    private final JavaMailSender mailSender;
+    private static final String RESEND_EMAILS_PATH = "/emails";
+    private static final List<String> PERSONAL_EMAIL_DOMAINS = List.of(
+            "gmail.com",
+            "googlemail.com",
+            "yahoo.com",
+            "outlook.com",
+            "hotmail.com",
+            "live.com"
+    );
+
     private final MailProperties mailProperties;
 
     @Override
@@ -49,29 +54,85 @@ public class SmtpMailService implements MailService {
     }
 
     private void sendOtp(String toEmail, String subject, String title, String messageText, String otp) {
+        validateMailConfig();
+        String recipientEmail = resolveRecipient(toEmail);
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
-            if (mailProperties.getFrom() != null && !mailProperties.getFrom().isBlank()) {
-                String fromName = mailProperties.getFromName();
-                if (fromName != null && !fromName.isBlank()) {
-                    helper.setFrom(new InternetAddress(mailProperties.getFrom(), fromName));
-                } else {
-                    helper.setFrom(mailProperties.getFrom());
-                }
-            }
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(buildOtpEmailHtml(title, messageText, otp), true);
-            mailSender.send(message);
-            log.info("OTP email sent to {}", toEmail);
-        } catch (MailException | MessagingException | UnsupportedEncodingException ex) {
+            RestClient.builder()
+                    .baseUrl(mailProperties.getBaseUrl())
+                    .defaultHeader("Authorization", "Bearer " + mailProperties.getApiKey())
+                    .build()
+                    .post()
+                    .uri(RESEND_EMAILS_PATH)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new ResendEmailRequest(
+                            buildFromAddress(),
+                            List.of(recipientEmail),
+                            subject,
+                            buildOtpEmailHtml(title, messageText, otp, toEmail)
+                    ))
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("OTP email sent to {}{}", recipientEmail, recipientEmail.equals(toEmail) ? "" : " for " + toEmail);
+        } catch (Exception ex) {
             log.warn("Failed to send OTP email to {}", toEmail, ex);
             throw new ExternalServiceException(ErrorCode.INTERNAL_ERROR, "Failed to send OTP email", ex);
         }
     }
 
-    private String buildOtpEmailHtml(String title, String messageText, String otp) {
+    private void validateMailConfig() {
+        if (isBlank(mailProperties.getApiKey())) {
+            throw new ExternalServiceException(ErrorCode.INTERNAL_ERROR, "Missing RESEND_API_KEY");
+        }
+        if (isBlank(mailProperties.getFrom())) {
+            throw new ExternalServiceException(ErrorCode.INTERNAL_ERROR, "Missing MAIL_FROM");
+        }
+        if (usesPersonalEmailDomain(mailProperties.getFrom())) {
+            throw new ExternalServiceException(
+                    ErrorCode.INTERNAL_ERROR,
+                    "MAIL_FROM must be onboarding@resend.dev or an address from a verified Resend domain"
+            );
+        }
+    }
+
+    private String buildFromAddress() {
+        if (isBlank(mailProperties.getFromName())) {
+            return mailProperties.getFrom();
+        }
+        return "%s <%s>".formatted(mailProperties.getFromName(), mailProperties.getFrom());
+    }
+
+    private String resolveRecipient(String toEmail) {
+        if (isBlank(mailProperties.getTestRecipient())) {
+            return toEmail;
+        }
+        return mailProperties.getTestRecipient();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private boolean usesPersonalEmailDomain(String email) {
+        int atIndex = email.lastIndexOf('@');
+        if (atIndex < 0 || atIndex == email.length() - 1) {
+            return false;
+        }
+        String domain = email.substring(atIndex + 1).toLowerCase();
+        return PERSONAL_EMAIL_DOMAINS.contains(domain);
+    }
+
+    private String buildOtpEmailHtml(String title, String messageText, String otp, String originalRecipient) {
+        String testRecipientNotice = isBlank(mailProperties.getTestRecipient())
+                ? ""
+                : """
+                          <tr>
+                            <td style="padding:0 32px 14px;">
+                              <p style="margin:0;text-align:center;font-size:13px;line-height:20px;color:#9ca3af;">Test mode original recipient: %s</p>
+                            </td>
+                          </tr>
+                """.formatted(originalRecipient);
+
         return """
                 <!doctype html>
                 <html lang="en">
@@ -112,6 +173,7 @@ public class SmtpMailService implements MailService {
                               <p style="margin:0;text-align:center;font-size:14px;line-height:22px;color:#6b7280;">This code expires in 5 minutes. If you did not request it, you can ignore this email.</p>
                             </td>
                           </tr>
+                          %s
                           <tr>
                             <td style="background:#f9fafb;padding:18px 32px;text-align:center;font-size:12px;line-height:18px;color:#9ca3af;">
                               Focus Buddy security email
@@ -123,6 +185,14 @@ public class SmtpMailService implements MailService {
                   </table>
                 </body>
                 </html>
-                """.formatted(title, messageText, otp);
+                """.formatted(title, messageText, otp, testRecipientNotice);
+    }
+
+    private record ResendEmailRequest(
+            String from,
+            List<String> to,
+            String subject,
+            String html
+    ) {
     }
 }

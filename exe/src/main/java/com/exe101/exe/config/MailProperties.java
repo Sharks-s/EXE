@@ -12,4 +12,7 @@ import org.springframework.context.annotation.Configuration;
 public class MailProperties {
     private String from;
     private String fromName;
+    private String apiKey;
+    private String baseUrl;
+    private String testRecipient;
 }

@@ -300,7 +300,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public VerifyRegisterResponse verifyOtp(VerifyRegisterRequest request) {
-        OtpRedis otp = otpService.verifyOtp(
+        OtpData otp = otpService.verifyOtp(
                 request.verifyId(),
                 request.otp(),
                 request.type()

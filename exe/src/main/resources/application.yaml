@@ -39,22 +39,6 @@ spring:
             user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
             user-name-attribute: sub
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      ssl:
-        enabled: ${REDIS_SSL_ENABLED:true}
-      timeout: 3s
-      connect-timeout: 3s
-      lettuce:
-        pool:
-          max-active: 16
-          max-idle: 8
-          min-idle: 2
-          max-wait: 1s
-
 server:
   port: ${PORT:8080}
 

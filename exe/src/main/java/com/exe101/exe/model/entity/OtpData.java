@@ -2,7 +2,12 @@ package com.exe101.exe.model.entity;
 
 import com.exe101.exe.model.enums.OtpStatus;
 import com.exe101.exe.model.enums.OtpType;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -13,18 +18,14 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"code", "codeHash"})
-public class OtpRedis implements Serializable {
+public class OtpData implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private String email;
     private Long userId;
     private OtpType type;
-
-    // Plaintext OTP — chỉ tồn tại trong bộ nhớ lúc generate/gửi mail, KHÔNG persist xuống Redis.
     private String code;
-
-    // Giá trị thực sự lưu trong Redis, dùng để verify qua PasswordEncoder.matches()
     private String codeHash;
 
     @Builder.Default

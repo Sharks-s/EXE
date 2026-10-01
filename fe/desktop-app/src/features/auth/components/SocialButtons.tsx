@@ -6,6 +6,17 @@ import { useAuthStore } from "../stores/authStore";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 const OAUTH_TIMEOUT_MS = 2 * 60 * 1000;
+const OAUTH_SUCCESS_RESPONSE = `<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Focus Buddy</title>
+</head>
+<body>
+  Đăng nhập thành công! Bạn có thể đóng tab này và quay lại ứng dụng.
+</body>
+</html>`;
 
 const SocialButtons: React.FC = () => {
     const loginWithOAuth = useAuthStore((s) => s.loginWithOAuth);
@@ -44,8 +55,7 @@ const SocialButtons: React.FC = () => {
         try {
             // 1. Dựng server tạm trên port ngẫu nhiên
             port = await start({
-                response:
-                    "Đăng nhập thành công! Bạn có thể đóng tab này và quay lại ứng dụng.",
+                response: OAUTH_SUCCESS_RESPONSE,
             });
 
             // 2. Chờ BE redirect về http://localhost:{port}/?oauth_success=...

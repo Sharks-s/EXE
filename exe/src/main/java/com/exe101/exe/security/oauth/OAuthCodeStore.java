@@ -11,9 +11,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Lưu one-time code -> refreshToken trong bộ nhớ. TTL 60s, dùng một lần.
- * Lưu ý: chỉ đúng khi chạy 1 instance. Nhiều instance thì đổi sang Redis
- * (đã có RegisterSessionStore dùng Redis, có thể làm tương tự).
+ * Stores one-time code -> refreshToken in memory. TTL is 60 seconds and each code is single-use.
+ * This is intended for a single running backend instance.
  */
 @Component
 public class OAuthCodeStore {
@@ -34,7 +33,6 @@ public class OAuthCodeStore {
         return code;
     }
 
-    /** Lấy và xóa ngay. Trả empty nếu không tồn tại hoặc hết hạn. */
     public Optional<String> consume(String code) {
         if (code == null) return Optional.empty();
         Entry entry = store.remove(code);

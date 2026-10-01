@@ -3,7 +3,7 @@ package com.exe101.exe.service.impl;
 import com.exe101.exe.config.OtpProperties;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
-import com.exe101.exe.model.entity.OtpRedis;
+import com.exe101.exe.model.entity.OtpData;
 import com.exe101.exe.model.enums.OtpStatus;
 import com.exe101.exe.model.enums.OtpType;
 import com.exe101.exe.repository.OtpStore;
@@ -53,9 +53,9 @@ class OtpServiceImplTest {
 
         String verifyId = otpService.generateOtp(1L, "user@example.com", OtpType.RESET_PASSWORD);
 
-        ArgumentCaptor<OtpRedis> otpCaptor = ArgumentCaptor.forClass(OtpRedis.class);
+        ArgumentCaptor<OtpData> otpCaptor = ArgumentCaptor.forClass(OtpData.class);
         verify(otpStore).saveOtp(eq(verifyId), otpCaptor.capture(), any());
-        OtpRedis savedOtp = otpCaptor.getValue();
+        OtpData savedOtp = otpCaptor.getValue();
 
         assertEquals(1L, savedOtp.getUserId());
         assertEquals("user@example.com", savedOtp.getEmail());
@@ -70,7 +70,7 @@ class OtpServiceImplTest {
 
     @Test
     void verifyOtpRejectsMismatchedType() {
-        OtpRedis otp = OtpRedis.builder()
+        OtpData otp = OtpData.builder()
                 .userId(1L)
                 .email("user@example.com")
                 .type(OtpType.REGISTER)
@@ -92,7 +92,7 @@ class OtpServiceImplTest {
 
     @Test
     void verifyOtpConsumesMatchingType() {
-        OtpRedis otp = OtpRedis.builder()
+        OtpData otp = OtpData.builder()
                 .userId(1L)
                 .email("user@example.com")
                 .type(OtpType.REGISTER)
@@ -104,7 +104,7 @@ class OtpServiceImplTest {
         when(otpStore.matchesCode(otp, "123456")).thenReturn(true);
         when(otpStore.consumeOtp("verify-id")).thenReturn(true);
 
-        OtpRedis result = otpService.verifyOtp("verify-id", "123456", OtpType.REGISTER);
+        OtpData result = otpService.verifyOtp("verify-id", "123456", OtpType.REGISTER);
 
         assertEquals(otp, result);
         verify(otpStore).consumeOtp("verify-id");

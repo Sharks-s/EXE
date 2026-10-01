@@ -3,7 +3,7 @@ package com.exe101.exe.service.impl;
 import com.exe101.exe.config.OtpProperties;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
-import com.exe101.exe.model.entity.OtpRedis;
+import com.exe101.exe.model.entity.OtpData;
 import com.exe101.exe.model.enums.OtpStatus;
 import com.exe101.exe.model.enums.OtpType;
 import com.exe101.exe.repository.OtpStore;
@@ -41,7 +41,7 @@ public class OtpServiceImpl implements OtpService {
         Duration ttl = Duration.ofMinutes(otpProperties.getExpireMinutes());
 
         otpStore.saveOtp(verifyId,
-                OtpRedis.builder()
+                OtpData.builder()
                         .userId(userId)
                         .email(email)
                         .type(type)
@@ -61,9 +61,9 @@ public class OtpServiceImpl implements OtpService {
     }
 
     @Override
-    public OtpRedis verifyOtp(String verifyId, String otpInput, OtpType type) {
+    public OtpData verifyOtp(String verifyId, String otpInput, OtpType type) {
 
-        OtpRedis otp = otpStore.getOtp(verifyId)
+        OtpData otp = otpStore.getOtp(verifyId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.OTP_NOT_FOUND));
 
         if (otp.getExpiredAt().isBefore(Instant.now())) {
@@ -84,8 +84,6 @@ public class OtpServiceImpl implements OtpService {
         }
 
         if (!otpStore.matchesCode(otp, otpInput)) {
-            // recordFailedAttempt tự kiểm tra BLOCKED + tăng attempts + tự set BLOCKED nếu vượt ngưỡng,
-            // tất cả trong 1 lệnh Lua atomic
             long attempts = otpStore.recordFailedAttempt(verifyId, otpProperties.getMaxAttempts());
 
             if (attempts >= otpProperties.getMaxAttempts()) {
@@ -95,9 +93,6 @@ public class OtpServiceImpl implements OtpService {
             throw new BusinessException(ErrorCode.INVALID_OTP);
         }
 
-        // Atomic consume: chỉ 1 trong nhiều request đồng thời được phép thắng.
-        // Nếu request này thua (request khác đã consume trước), trả lỗi thay vì tiếp tục xử lý
-        // (tránh tạo 2 session/activate account 2 lần khi user double-submit).
         boolean consumed = otpStore.consumeOtp(verifyId);
         if (!consumed) {
             throw new BusinessException(ErrorCode.OTP_ALREADY_USED);

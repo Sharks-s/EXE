@@ -4,7 +4,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 // TODO: sửa đường dẫn import cho đúng với project của bạn
 import { useAuthStore } from "../stores/authStore";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "https://focusbuddy-api-lw5a.onrender.com";
 const OAUTH_TIMEOUT_MS = 2 * 60 * 1000;
 const OAUTH_SUCCESS_RESPONSE = `<!doctype html>
 <html lang="vi">

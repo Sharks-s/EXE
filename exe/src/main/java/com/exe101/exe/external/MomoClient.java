@@ -19,6 +19,9 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+import java.util.Objects;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -40,7 +43,12 @@ public class MomoClient {
             throw new MomoAmbiguousResultException("Timeout hoặc mất kết nối tới MoMo", e);
         } catch (HttpStatusCodeException e) {
             log.error("[Momo] HTTP error {} khi tạo payment: {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new BusinessException(ErrorCode.MOMO_REQUEST_FAILED);
+            throw new BusinessException(ErrorCode.MOMO_REQUEST_FAILED, Map.of(
+                    "httpStatus", e.getStatusCode().value(),
+                    "momoBody", e.getResponseBodyAsString(),
+                    "orderId", Objects.toString(request.orderId(), ""),
+                    "requestId", Objects.toString(request.requestId(), "")
+            ));
         }
 
         if (result == null || result.resultCode() == null) {
@@ -50,7 +58,12 @@ public class MomoClient {
 
         if (result.resultCode() != 0) {
             log.error("[Momo] Create payment failed rõ ràng: {}", result);
-            throw new BusinessException(ErrorCode.MOMO_REQUEST_FAILED);
+            throw new BusinessException(ErrorCode.MOMO_REQUEST_FAILED, Map.of(
+                    "momoResultCode", result.resultCode(),
+                    "momoMessage", Objects.toString(result.message(), ""),
+                    "orderId", Objects.toString(result.orderId(), ""),
+                    "requestId", Objects.toString(result.requestId(), "")
+            ));
         }
 
         return result;

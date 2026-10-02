@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Auth, authSession, useAuthStore } from "@/features/auth";
+import { Auth, authSession, authStorage, useAuthStore } from "@/features/auth";
 import { Dashboard, focusApi, useFocusStore } from "@/features/focus-session";
 import { AnalyticsPage } from "@/features/analytics";
 import { SettingsPage } from "@/features/settings";
@@ -14,6 +14,7 @@ import {
 import { FeedbackPage } from "@/features/feedback";
 import Sidebar, { type Page } from "@/shared/components/Sidebar";
 import { toast } from "@/shared/store/toastStore";
+import { tauriStore } from "@/lib/tauriStore";
 
 
 export default function MainWindow() {
@@ -72,7 +73,11 @@ export default function MainWindow() {
 
   // Lắng nghe event session expired từ axios interceptor
   useEffect(() => {
-    const handleSessionExpired = () => {
+    const handleSessionExpired = async () => {
+      authStorage.clear();
+      await authSession.markLoggedOut();
+      await tauriStore.delete("active_session");
+      useFocusStore.getState().clearSession();
       useAuthStore.setState({ user: null });
     };
 

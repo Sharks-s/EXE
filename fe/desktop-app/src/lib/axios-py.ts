@@ -1,7 +1,7 @@
 // lib/axios-py.ts
 import axios from "axios";
 
-const PY_BOT_BASE = import.meta.env.VITE_PY_BOT_BASE ?? "http://localhost:8000";
+const PY_BOT_BASE = import.meta.env.VITE_PY_BOT_BASE ?? "http://127.0.0.1:8000"
 
 // Instance cô lập dành riêng cho Python Bot local
 export const pyApi = axios.create({

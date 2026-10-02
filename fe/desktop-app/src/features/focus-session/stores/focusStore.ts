@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import type { FocusSessionResponse, FocusState } from "../types/focus.types";
 import { focusApi } from "../api/focus.api";
+import { tauriStore } from "@/lib/tauriStore";
 
 export const useFocusStore = create<FocusState>((set, get) => ({
   // ── STATE ────────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
 
       let nextViolationCount = state.violationCount;
       if (isEnded) {
+        tauriStore.delete("active_session").catch(() => {});
         nextViolationCount = state.violationCount;
       } else if (serverViolationCount !== undefined) {
         // Nếu API trả về số đếm chính xác trực tiếp từ DB -> Tin tưởng BE tuyệt đối
@@ -99,7 +101,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
     });
   },
 
-  completeSession: (session, result) =>
+  completeSession: (session, result) => {
+    tauriStore.delete("active_session").catch(() => {});
     set({
       session: null,
       lastCompletedSession: session,
@@ -109,7 +112,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       botActions: undefined,
       isBubbleVisible: false,
       isClosing: false,
-    }),
+    });
+  },
 
   addToViolatingCache: (appOrTitle) => {
     const currentCache = get().violatingCache;
@@ -118,7 +122,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
     set({ violatingCache: newCache });
   },
 
-  clearSession: () =>
+  clearSession: () => {
+    tauriStore.delete("active_session").catch(() => {});
     set({
       session: null,
       lastCompletionResult: null,
@@ -133,7 +138,8 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       isResumeConfirmPending: false,
       aiMessages: [],
       violatingCache: new Set<string>(),
-    }),
+    });
+  },
 
   dismissSummary: () =>
     set({ lastCompletedSession: null, lastCompletionResult: null }),

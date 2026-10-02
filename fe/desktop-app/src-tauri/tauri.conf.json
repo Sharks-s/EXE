@@ -25,7 +25,8 @@
         "center": true,
         "decorations": true,
         "transparent": false,
-        "skipTaskbar": false
+        "skipTaskbar": false,
+        "devtools": true
       },
       {
         "label": "widget",
@@ -40,7 +41,8 @@
         "resizable": false,
         "maximizable": false,
         "minimizable": false,
-        "shadow": false
+        "shadow": false,
+        "devtools": true
       },
       {
         "label": "warning",
@@ -56,7 +58,8 @@
         "maximizable": false,
         "minimizable": false,
         "skipTaskbar": true,
-        "shadow": false
+        "shadow": false,
+        "devtools": true
       },
       {
         "label": "widget-bubble",
@@ -71,7 +74,8 @@
         "resizable": false,
         "maximizable": false,
         "minimizable": false,
-        "shadow": false
+        "shadow": false,
+        "devtools": true
       }
     ],
     "trayIcon": {

@@ -71,7 +71,7 @@ app:
       access-secret: ${JWT_ACCESS_SECRET}
       refresh-secret: ${JWT_REFRESH_SECRET}
       refresh-hash-secret: ${JWT_HASH_REFRESH_SECRET:kP8mX3vQzR5tW1bB9nF7jK4sC0dE2gH6YuUoLI1A=}
-      access-expiration-ms: 900000
+      access-expiration-ms: 86400000
       refresh-expiration-ms: 2592000000
 
   cloudinary:

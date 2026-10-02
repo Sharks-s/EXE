@@ -155,6 +155,59 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder};
 
 struct SidecarState(Mutex<Option<CommandChild>>);
 
+#[cfg(windows)]
+fn kill_windows_process_tree(pid: u32) {
+    let output = std::process::Command::new("taskkill")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            println!("[Sidecar] Killed sidecar process tree with taskkill. PID = {}", pid);
+        }
+        Ok(output) => {
+            eprintln!(
+                "[Sidecar] taskkill failed for PID {}: {}",
+                pid,
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        Err(err) => {
+            eprintln!("[Sidecar] Failed to run taskkill for PID {}: {}", pid, err);
+        }
+    }
+}
+
+#[cfg(windows)]
+fn kill_lingering_sidecars() {
+    for image_name in [
+        "focusbuddy-bot.exe",
+        "focusbuddy-bot-x86_64-pc-windows-msvc.exe",
+        "focus-bot.exe",
+    ] {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/IM", image_name, "/T", "/F"])
+            .output();
+    }
+}
+
+fn cleanup_sidecar(app_handle: &tauri::AppHandle, reason: &str) {
+    if let Some(sidecar_state) = app_handle.try_state::<SidecarState>() {
+        if let Ok(mut guard) = sidecar_state.0.lock() {
+            if let Some(child) = guard.take() {
+                let pid = child.pid();
+
+                #[cfg(windows)]
+                kill_windows_process_tree(pid);
+
+                let _ = child.kill();
+
+                println!("[Sidecar] Cleaned up sidecar on {}. PID = {}", reason, pid);
+            }
+        }
+    }
+}
+
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -177,6 +230,9 @@ fn main() {
 
             // Tự động chạy Python bot local khi app khởi động
             println!("[Sidecar] Đang khởi chạy focusbuddy-bot...");
+            #[cfg(windows)]
+            kill_lingering_sidecars();
+
             match app_handle.shell().sidecar("focusbuddy-bot") {
                 Ok(sidecar) => match sidecar.spawn() {
                     Ok((mut rx, child)) => {
@@ -220,23 +276,25 @@ fn main() {
             }
 
             // Cấu hình menu cho System Tray
+            let devtools_item = MenuItemBuilder::with_id("open_devtools", "Open DevTools").build(app)?;
             let quit_item = MenuItemBuilder::with_id("quit", "Exit").build(app)?;
-            let tray_menu = MenuBuilder::new(app).items(&[&quit_item]).build()?;
+            let tray_menu = MenuBuilder::new(app).items(&[&devtools_item, &quit_item]).build()?;
 
             if let Some(tray) = app.tray_by_id("main") {
                 let _ = tray.set_menu(Some(tray_menu));
                 let _ = tray.set_show_menu_on_left_click(true);
                 tray.on_menu_event(|app, event| {
-                    if event.id().as_ref() == "quit" {
-                        if let Some(sidecar_state) = app.try_state::<SidecarState>() {
-                            if let Ok(mut guard) = sidecar_state.0.lock() {
-                                if let Some(child) = guard.take() {
-                                    let _ = child.kill();
-                                    println!("[Sidecar] Đã dọn dẹp (kill) process sidecar khi bấm Exit ở tray.");
-                                }
+                    match event.id().as_ref() {
+                        "open_devtools" => {
+                            if let Some(main_window) = app.get_webview_window("main") {
+                                main_window.open_devtools();
                             }
                         }
-                        app.exit(0);
+                        "quit" => {
+                            cleanup_sidecar(app, "tray exit");
+                            app.exit(0);
+                        }
+                        _ => {}
                     }
                 });
             }
@@ -274,14 +332,7 @@ fn main() {
 
     app.run(|app_handle, event| {
         if let tauri::RunEvent::ExitRequested { .. } = &event {
-            if let Some(sidecar_state) = app_handle.try_state::<SidecarState>() {
-                if let Ok(mut guard) = sidecar_state.0.lock() {
-                    if let Some(child) = guard.take() {
-                        let _ = child.kill();
-                        println!("[Sidecar] Đã dọn dẹp (kill) process sidecar khi thoát app.");
-                    }
-                }
-            }
+            cleanup_sidecar(app_handle, "app exit");
         }
     });
 }

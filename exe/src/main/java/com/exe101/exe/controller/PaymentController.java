@@ -13,10 +13,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -68,6 +70,32 @@ public class PaymentController {
         }
     }
 
+    @GetMapping(value = "/momo/redirect", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> handleMomoRedirect(@RequestParam Map<String, String> params) {
+        boolean success = "0".equals(params.get("resultCode"));
+        String title = success ? "Payment successful" : "Payment result received";
+        String message = success
+                ? "Your payment was processed. You can close this window and return to FocusBuddy."
+                : "MoMo has redirected back to FocusBuddy. You can close this window and check the app.";
+        String html = """
+                <!doctype html>
+                <html lang=\"en\">
+                <head>
+                  <meta charset=\"utf-8\">
+                  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+                  <title>%s</title>
+                  <style>
+                    body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: Arial, sans-serif; background: #f8fafc; color: #0f172a; }
+                    main { width: min(420px, calc(100vw - 32px)); padding: 28px; border: 1px solid #e2e8f0; border-radius: 18px; background: white; box-shadow: 0 24px 60px rgba(15, 23, 42, .12); }
+                    h1 { margin: 0 0 10px; font-size: 24px; }
+                    p { margin: 0; color: #475569; line-height: 1.6; }
+                  </style>
+                </head>
+                <body><main><h1>%s</h1><p>%s</p></main></body>
+                </html>
+                """.formatted(title, title, message);
+        return ResponseEntity.ok(html);
+    }
     @GetMapping("/{orderCode}/status")
     public ApiResponse<TransactionStatusResponse> getTransactionStatus(
             @PathVariable String orderCode,

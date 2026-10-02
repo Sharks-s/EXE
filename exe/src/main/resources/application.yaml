@@ -537,9 +537,9 @@ app:
     access-key: ${MOMO_ACCESS_KEY:F8BBA842ECF85}
     secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX08PD3vg6EkVlz}
     endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
-    redirect-url: ${MOMO_REDIRECT_URL:http://localhost:5173/payment/result}
+    query-endpoint: ${MOMO_QUERY_ENDPOINT:https://payment.momo.vn/v2/gateway/api/query}
+    redirect-url: ${MOMO_REDIRECT_URL:https://focusbuddy-api-lw5a.onrender.com/payments/momo/redirect}
     ipn-url: ${MOMO_IPN_URL:https://focusbuddy-api-lw5a.onrender.com/payments/momo/ipn}
     request-type: ${MOMO_REQUEST_TYPE:payWithMethod}
     partner-name: ${MOMO_PARTNER_NAME:Focus Buddy}
     store-id: ${MOMO_STORE_ID:FocusBuddyStore}
-

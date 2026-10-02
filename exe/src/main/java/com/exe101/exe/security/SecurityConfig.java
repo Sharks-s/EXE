@@ -76,7 +76,8 @@ public class SecurityConfig {
                                 "/subscriptions/plans",
                                 "/public/**",
                                 "/ai/**",
-                                "/payments/momo/ipn"
+                                "/payments/momo/ipn",
+                                "/payments/momo/redirect"
                         ).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

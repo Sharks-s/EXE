@@ -4,11 +4,15 @@
 
 .session-summary-modal {
   width: min(820px, calc(100vw - 32px)) !important;
+  display: flex;
+  flex-direction: column;
   max-height: min(760px, calc(100dvh - 32px));
   border-radius: clamp(18px, 2.4vmin, 26px);
 }
 
 .session-summary-layout {
+  flex: 1 1 auto;
+  height: 100%;
   max-height: inherit;
   align-items: stretch;
   min-height: 0;
@@ -25,10 +29,14 @@
 
 .session-summary-side-scroll {
   display: grid;
+  flex: 1 1 auto;
   gap: 14px;
+  max-height: 100%;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 4px 12px 0;
+  overscroll-behavior: contain;
+  padding: 0 8px 12px 0;
+  scrollbar-gutter: stable;
 }
 
 .session-summary-main {
@@ -37,6 +45,7 @@
 
 .session-summary-side {
   padding: 24px 28px 22px !important;
+  overflow: hidden;
 }
 
 .session-summary-title {
@@ -295,6 +304,7 @@
 @media (max-height: 680px) and (min-width: 768px) {
   .session-summary-modal {
     width: min(700px, calc(100vw - 16px));
+    max-height: calc(100dvh - 16px);
   }
 
   .session-summary-layout {
@@ -336,6 +346,13 @@
   .session-summary-xp p:nth-of-type(2) {
     margin-top: 0 !important;
     font-size: 30px !important;
+  }
+
+  .session-summary-pet-exp,
+  .session-summary-rewards,
+  .session-summary-progress,
+  .session-summary-violations {
+    padding: 12px !important;
   }
 }
 

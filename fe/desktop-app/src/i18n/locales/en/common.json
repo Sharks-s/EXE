@@ -159,6 +159,12 @@
       },
       "daily_limit_message": "You have exceeded your daily usage limit."
     },
+    "upgradeNudge": {
+      "title": "Daily limit reached",
+      "description": "Free plan includes 60 focus minutes per day. Upgrade Pro to continue with unlimited focus time.",
+      "later": "Later",
+      "upgrade": "Upgrade Pro"
+    },
     "summary": {
       "title_aborted": "Session ended early",
       "title_completed": "Great job, you completed the session! 🎉",
@@ -218,7 +224,8 @@
       "starting_session": "Starting session...",
       "ready_button": "Ready, let's start",
       "incomplete_button": "Complete all steps above",
-      "start_error": "Unable to create focus session, please try again."
+      "start_error": "Unable to create focus session, please try again.",
+      "daily_limit_error": "Daily usage limit exceeded. Upgrade Pro to keep focusing."
     },
     "breakPrompt": {
       "title": "25-MINUTE SESSION UP! ⏰",

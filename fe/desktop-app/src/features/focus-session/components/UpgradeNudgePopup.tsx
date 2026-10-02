@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Page } from "@/shared/components/Sidebar";
 
 type UpgradeNudgePopupProps = {
@@ -9,6 +10,8 @@ export function UpgradeNudgePopup({
   onClose,
   onNavigate,
 }: UpgradeNudgePopupProps) {
+  const { t } = useTranslation("common");
+
   const handleUpgrade = () => {
     onClose();
     onNavigate?.("upgrade");
@@ -34,27 +37,26 @@ export function UpgradeNudgePopup({
           id="upgrade-nudge-title"
           className="m-0 text-xl font-extrabold text-slate-900"
         >
-          Daily limit reached
+          {t("focusSession.upgradeNudge.title")}
         </h2>
         <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
-          Free plan includes 60 focus minutes per day. Upgrade Pro to continue
-          with unlimited focus time.
+          {t("focusSession.upgradeNudge.description")}
         </p>
 
         <div className="mt-6 flex gap-3">
           <button
             type="button"
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-500 transition hover:bg-slate-50"
+            className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
             onClick={onClose}
           >
-            Later
+            {t("focusSession.upgradeNudge.later")}
           </button>
           <button
             type="button"
-            className="flex-1 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition hover:shadow-blue-500/30"
+            className="flex-1 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 hover:from-blue-600 hover:to-cyan-500 hover:shadow-xl hover:shadow-blue-500/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
             onClick={handleUpgrade}
           >
-            Upgrade Pro
+            {t("focusSession.upgradeNudge.upgrade")}
           </button>
         </div>
       </div>

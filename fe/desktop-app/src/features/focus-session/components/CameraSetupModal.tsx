@@ -97,7 +97,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
       console.error("[Start Focus Error]:", err);
       if (isDailyLimitExceededError(err)) {
         useFocusStore.getState().showUpgradeNudge();
-        setSubmitError("Daily usage limit exceeded. Upgrade Pro to keep focusing.");
+        setSubmitError(t("focusSession.cameraSetup.daily_limit_error"));
       } else {
         setSubmitError(err.message || t("focusSession.cameraSetup.start_error"));
       }

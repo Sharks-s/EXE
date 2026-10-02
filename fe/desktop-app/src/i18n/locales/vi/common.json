@@ -160,6 +160,12 @@
       },
       "daily_limit_message": "Bạn đã vượt quá giới hạn sử dụng trong ngày."
     },
+    "upgradeNudge": {
+      "title": "Đã đạt giới hạn hôm nay",
+      "description": "Gói miễn phí bao gồm 60 phút tập trung mỗi ngày. Nâng cấp Pro để tiếp tục với thời gian tập trung không giới hạn.",
+      "later": "Để sau",
+      "upgrade": "Nâng cấp Pro"
+    },
     "summary": {
       "title_aborted": "Phiên học kết thúc sớm",
       "title_completed": "Tuyệt vời, bạn đã hoàn thành phiên học! 🎉",
@@ -219,7 +225,8 @@
       "starting_session": "Đang khởi động phiên...",
       "ready_button": "Sẵn sàng, bắt đầu",
       "incomplete_button": "Hoàn thành các bước trên",
-      "start_error": "Không thể tạo phiên làm việc, thử lại nhé."
+      "start_error": "Không thể tạo phiên làm việc, thử lại nhé.",
+      "daily_limit_error": "Bạn đã dùng hết thời gian miễn phí hôm nay. Nâng cấp Pro để tiếp tục tập trung."
     },
     "breakPrompt": {
       "title": "HẾT PHIÊN 25 PHÚT! ⏰",

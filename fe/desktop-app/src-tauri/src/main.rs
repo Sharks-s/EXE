@@ -155,13 +155,25 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder};
 
 struct SidecarState(Mutex<Option<CommandChild>>);
 
+static SIDECAR_CLEANED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+/// Chạy taskkill ẩn (không bật cửa sổ console trong bản release).
+#[cfg(windows)]
+fn run_taskkill(args: &[&str]) -> std::io::Result<std::process::Output> {
+    use std::os::windows::process::CommandExt;
+    std::process::Command::new("taskkill")
+        .args(args)
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+}
+
 #[cfg(windows)]
 fn kill_windows_process_tree(pid: u32) {
-    let output = std::process::Command::new("taskkill")
-        .args(["/PID", &pid.to_string(), "/T", "/F"])
-        .output();
-
-    match output {
+    let pid_str = pid.to_string();
+    match run_taskkill(&["/PID", &pid_str, "/T", "/F"]) {
         Ok(output) if output.status.success() => {
             println!("[Sidecar] Killed sidecar process tree with taskkill. PID = {}", pid);
         }
@@ -185,13 +197,71 @@ fn kill_lingering_sidecars() {
         "focusbuddy-bot-x86_64-pc-windows-msvc.exe",
         "focus-bot.exe",
     ] {
-        let _ = std::process::Command::new("taskkill")
-            .args(["/IM", image_name, "/T", "/F"])
-            .output();
+        let _ = run_taskkill(&["/IM", image_name, "/T", "/F"]);
     }
 }
 
+/// Gắn sidecar vào một Job Object có cờ KILL_ON_JOB_CLOSE.
+/// Handle của job được giữ mở đến khi process FocusBuddy kết thúc; lúc đó Windows
+/// tự kill toàn bộ process trong job (kể cả process con do PyInstaller tạo ra),
+/// kể cả khi app bị crash hoặc bị End task trong Task Manager.
+#[cfg(windows)]
+fn bind_sidecar_to_app_lifetime(pid: u32) {
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::JobObjects::{
+        AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
+        SetInformationJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    };
+    use windows_sys::Win32::System::Threading::{
+        OpenProcess, PROCESS_SET_QUOTA, PROCESS_TERMINATE,
+    };
+
+    unsafe {
+        let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+        if job.is_null() {
+            eprintln!("[Sidecar] CreateJobObjectW failed");
+            return;
+        }
+
+        let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+        info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        let ok = SetInformationJobObject(
+            job,
+            JobObjectExtendedLimitInformation,
+            &info as *const _ as *const std::ffi::c_void,
+            std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+        );
+        if ok == 0 {
+            eprintln!("[Sidecar] SetInformationJobObject failed");
+            CloseHandle(job);
+            return;
+        }
+
+        let process = OpenProcess(PROCESS_SET_QUOTA | PROCESS_TERMINATE, 0, pid);
+        if process.is_null() {
+            eprintln!("[Sidecar] OpenProcess failed for PID {}", pid);
+            CloseHandle(job);
+            return;
+        }
+
+        if AssignProcessToJobObject(job, process) == 0 {
+            eprintln!("[Sidecar] AssignProcessToJobObject failed for PID {}", pid);
+            CloseHandle(job);
+        } else {
+            println!("[Sidecar] Bound sidecar PID {} to app lifetime (job object)", pid);
+            // Cố ý KHÔNG đóng `job`: handle phải sống đến khi app thoát.
+        }
+        CloseHandle(process);
+    }
+}
+
+/// Tắt focusbuddy-bot. Gọi trước khi app thoát ở mọi đường thoát.
 fn cleanup_sidecar(app_handle: &tauri::AppHandle, reason: &str) {
+    if SIDECAR_CLEANED.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+
     if let Some(sidecar_state) = app_handle.try_state::<SidecarState>() {
         if let Ok(mut guard) = sidecar_state.0.lock() {
             if let Some(child) = guard.take() {
@@ -206,6 +276,16 @@ fn cleanup_sidecar(app_handle: &tauri::AppHandle, reason: &str) {
             }
         }
     }
+
+    // Fallback: dọn mọi process bot còn sót (VD: process con của PyInstaller onefile)
+    #[cfg(windows)]
+    kill_lingering_sidecars();
+}
+
+/// Thoát hẳn app: tắt bot trước, sau đó mới exit.
+fn shutdown_app(app_handle: &tauri::AppHandle, reason: &str) {
+    cleanup_sidecar(app_handle, reason);
+    app_handle.exit(0);
 }
 
 fn main() {
@@ -238,6 +318,9 @@ fn main() {
                     Ok((mut rx, child)) => {
                         let pid = child.pid();
                         println!("[Sidecar] Spawn focusbuddy-bot thành công! PID = {}", pid);
+
+                        #[cfg(windows)]
+                        bind_sidecar_to_app_lifetime(pid);
 
                         // Giữ child sống suốt vòng đời app trong App State
                         app.manage(SidecarState(Mutex::new(Some(child))));
@@ -291,8 +374,7 @@ fn main() {
                             }
                         }
                         "quit" => {
-                            cleanup_sidecar(app, "tray exit");
-                            app.exit(0);
+                            shutdown_app(app, "tray exit");
                         }
                         _ => {}
                     }
@@ -330,10 +412,20 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    app.run(|app_handle, event| {
-        if let tauri::RunEvent::ExitRequested { .. } = &event {
+    app.run(|app_handle, event| match &event {
+        // Cửa sổ main bị đóng hẳn (sau khi FE xử lý close guard xong) -> thoát toàn bộ app.
+        // Nếu không, các cửa sổ ẩn (widget, warning, bubble) giữ app và bot tiếp tục chạy.
+        tauri::RunEvent::WindowEvent {
+            label,
+            event: tauri::WindowEvent::Destroyed,
+            ..
+        } if label == "main" => {
+            shutdown_app(app_handle, "main window closed");
+        }
+        tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit => {
             cleanup_sidecar(app_handle, "app exit");
         }
+        _ => {}
     });
 }
 

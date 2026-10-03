@@ -698,7 +698,9 @@
     "billing_waiting_desc": "Please complete the payment on the browser just opened.",
     "billing_success_aria": "Payment result",
     "billing_success_title": "🎉 Pro upgrade successful!",
-    "billing_success_desc": "You now have unlimited usage."
+    "billing_success_desc": "You now have unlimited usage.",
+    "billing_close": "Close",
+    "billing_success_btn": "Awesome!"
   },
   "profile": {
     "header_title": "User Profile",

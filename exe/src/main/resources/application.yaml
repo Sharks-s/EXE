@@ -121,7 +121,7 @@ app:
         description: "Unlimited focus time for 1 month."
         plan: "PRO"
         billing-cycle: "MONTHLY"
-        price-vnd: 2000
+        price-vnd: 49000
         duration-days: 30
         unlimited-usage: true
         active: true

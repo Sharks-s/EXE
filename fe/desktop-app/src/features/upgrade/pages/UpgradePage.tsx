@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useCurrentPlan } from "../hooks/useCurrentPlan";
 import { useUpgradePayment } from "../hooks/useUpgradePayment";
 import { PlanCard } from "../components/PlanCard";
@@ -7,7 +8,7 @@ import { FaqItemComponent } from "../components/FaqItemComponent";
 import type { BillingOption, FaqItem, Plan } from "../types/subscription.types";
 import "./UpgradePage.css";
 
-const plans: Plan[] = [
+const getPlans = (t: any): Plan[] => [
   {
     id: "free",
     name: "Free",
@@ -16,34 +17,22 @@ const plans: Plan[] = [
     yearlyOldPrice: "",
     yearlyPrice: "",
     yearlyPeriod: "",
-    tagline: "Dành cho người mới bắt đầu",
-    features: [
-      "Tối đa 60 phút sử dụng mỗi ngày",
-      "Theo dõi tập trung cơ bản",
-      "Dashboard phân tích đơn giản",
-      "AI assistant mặc định",
-    ],
-    buttonLabel: "Gói hiện tại",
+    tagline: t("upgrade.plan_free_tagline"),
+    features: t("upgrade.plan_free_features", { returnObjects: true }),
+    buttonLabel: t("upgrade.plan_free_btn"),
     highlight: false,
   },
   {
     id: "pro",
     name: "Pro",
     price: "49.000đ",
-    period: "/ tháng",
+    period: t("upgrade.period_month"),
     yearlyOldPrice: "599.000đ",
     yearlyPrice: "399.000đ",
-    yearlyPeriod: "/ năm",
-    tagline: "Dành cho người muốn tập trung nghiêm túc",
-    features: [
-      "Không giới hạn thời gian sử dụng",
-      "AI assistant đa personality",
-      "Dashboard phân tích nâng cao",
-      "Chiến lược tập trung cá nhân hóa",
-      "Theo dõi hành vi nâng cao",
-      "Ưu tiên cập nhật và tính năng premium",
-    ],
-    buttonLabel: "Nâng cấp Pro",
+    yearlyPeriod: t("upgrade.period_year"),
+    tagline: t("upgrade.plan_pro_tagline"),
+    features: t("upgrade.plan_pro_features", { returnObjects: true }),
+    buttonLabel: t("upgrade.plan_pro_btn"),
     highlight: true,
   },
 ];
@@ -51,6 +40,7 @@ const plans: Plan[] = [
 const faqItems: FaqItem[] = [];
 
 export default function UpgradePage() {
+  const { t } = useTranslation("common");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [selectedBilling, setSelectedBilling] =
     useState<BillingOption | null>(null);
@@ -59,7 +49,9 @@ export default function UpgradePage() {
   const { paymentState, isUpgrading, startUpgrade, resetPayment } =
     useUpgradePayment(() => setIsProActive(true));
 
-  const currentPlanLabel = isProActive ? "Bạn đang là Pro" : "Bạn đang là Free";
+  const plans = useMemo(() => getPlans(t), [t]);
+
+  const currentPlanLabel = isProActive ? t("upgrade.current_plan_pro") : t("upgrade.current_plan_free");
 
   const handleUpgradeClick = (plan: Plan) => {
     if (plan.id !== "pro") return;
@@ -81,9 +73,9 @@ export default function UpgradePage() {
             <span className="app-page-title-icon">
               <span className="material-symbols-outlined">workspace_premium</span>
             </span>
-            <h1>Nâng cấp Focus Buddy</h1>
+            <h1>{t("upgrade.header_title")}</h1>
           </div>
-          <p>Mở khóa các tính năng nâng cao để tối ưu hiệu suất tập trung.</p>
+          <p>{t("upgrade.header_subtitle")}</p>
         </div>
 
         <div className="current-plan-badge app-page-actions">
@@ -115,13 +107,13 @@ export default function UpgradePage() {
         )}
 
         <p className="pricing-note">
-          Tất cả giá chưa bao gồm VAT · Thanh toán theo chu kỳ đã chọn · Không tự động gia hạn
+          {t("upgrade.pricing_note")}
         </p>
 
         <section className="faq-section">
           <div className="faq-header">
-            <h2>Câu hỏi thường gặp</h2>
-            <p>Vẫn còn thắc mắc? Liên hệ pinkydeng168@gmail.com(Lê Bọi Nhi)</p>
+            <h2>{t("upgrade.faq_title")}</h2>
+            <p>{t("upgrade.faq_contact")}</p>
           </div>
 
           <div className="faq-list">

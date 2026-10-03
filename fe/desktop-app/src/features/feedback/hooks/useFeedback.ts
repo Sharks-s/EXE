@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "@/shared/store/toastStore";
 import { handleApiError } from "@/utils/handleApiError";
+import i18n from "@/i18n";
 import { feedbackApi } from "../api/feedback.api";
 import type {
   CreateUserFeedbackRequest,
@@ -47,7 +48,7 @@ export function useFeedback() {
       handleApiError(err, {
         context: "[useFeedback]",
         action: "Failed to load user feedbacks",
-        fallbackMessage: "Chưa tải được danh sách feedback.",
+        fallbackMessage: i18n.t("common:feedback.messages.load_failed"),
         dedupeKey: "feedback-load",
       });
     } finally {
@@ -76,12 +77,12 @@ export function useFeedback() {
       });
       setFeedbacks((current) => [created, ...current]);
       setForm(INITIAL_FORM);
-      toast.success("Đã gửi feedback. Cảm ơn bạn đã góp ý!");
+      toast.success(i18n.t("common:feedback.messages.submit_success"));
     } catch (err) {
       handleApiError(err, {
         context: "[useFeedback]",
         action: "Failed to submit user feedback",
-        fallbackMessage: "Chưa gửi được feedback, vui lòng thử lại.",
+        fallbackMessage: i18n.t("common:feedback.messages.submit_failed"),
       });
     } finally {
       setIsSubmitting(false);

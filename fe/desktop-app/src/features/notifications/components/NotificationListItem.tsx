@@ -1,8 +1,9 @@
+import type { TFunction } from "i18next";
 import type { NotificationItem } from "../types/notification.types";
 import {
   formatNotificationTime,
+  getNotificationTypeLabel,
   normalizeNotificationText,
-  notificationTypeLabel,
   notificationTypeTone,
 } from "../utils/notificationDisplay";
 
@@ -10,9 +11,9 @@ type NotificationListItemProps = {
   item: NotificationItem;
   onDelete: (id: number) => void;
   onOpen: (item: NotificationItem) => void;
+  language?: string;
+  t: TFunction<"common">;
 };
-
-const DELETE_TITLE = "X\u00f3a th\u00f4ng b\u00e1o";
 
 function TrashIcon() {
   return (
@@ -37,6 +38,8 @@ export function NotificationListItem({
   item,
   onDelete,
   onOpen,
+  language,
+  t,
 }: NotificationListItemProps) {
   return (
     <div
@@ -52,24 +55,24 @@ export function NotificationListItem({
               "bg-slate-50 text-slate-600 border-slate-100"
             }`}
           >
-            {notificationTypeLabel[item.type] ?? item.type.replace(/_/g, " ")}
+            {getNotificationTypeLabel(item.type, t)}
           </span>
           {!item.read && <span className="h-2 w-2 rounded-full bg-blue-500" />}
         </div>
         <p className="m-0 mt-2 text-sm font-extrabold text-slate-800">
-          {normalizeNotificationText(item.title)}
+          {normalizeNotificationText(item.title, t)}
         </p>
         <p className="m-0 mt-1 text-xs leading-5 font-semibold text-slate-500">
-          {normalizeNotificationText(item.message)}
+          {normalizeNotificationText(item.message, t)}
         </p>
         <p className="m-0 mt-2 text-[11px] font-bold text-slate-400">
-          {formatNotificationTime(item.createdAt)}
+          {formatNotificationTime(item.createdAt, language)}
         </p>
       </button>
 
       <button
         onClick={() => onDelete(item.id)}
-        title={DELETE_TITLE}
+        title={t("notifications.delete_title")}
         className="mt-1 h-7 w-7 shrink-0 rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 flex items-center justify-center"
       >
         <TrashIcon />

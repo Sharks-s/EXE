@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Achievement } from "@/features/achievements";
 import type { Gender } from "../types/profile.types";
 import { formatMinutes, mockProfileExtras, useProfilePage } from "../hooks/useProfilePage";
@@ -31,6 +32,7 @@ export default function ProfilePage() {
     handleAvatarChange,
     handleProfileSubmit,
   } = useProfilePage();
+  const { t } = useTranslation("common");
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
   const completedAchievements = useMemo(
@@ -55,7 +57,7 @@ export default function ProfilePage() {
       <main className="main-content">
         <header className="mobile-header">
           <span className="material-symbols-outlined mobile-menu-icon">menu</span>
-          <h1>Hồ sơ người dùng</h1>
+          <h1>{t("profile.header_title")}</h1>
           <div className="mobile-header-spacer" />
         </header>
 
@@ -66,9 +68,9 @@ export default function ProfilePage() {
                 <span className="app-page-title-icon">
                   <span className="material-symbols-outlined">manage_accounts</span>
                 </span>
-                <h1>Hồ sơ người dùng</h1>
+                <h1>{t("profile.header_title")}</h1>
               </div>
-              <p>Quản lý hồ sơ và hiệu suất học tập của bạn.</p>
+              <p>{t("profile.header_subtitle")}</p>
             </div>
           </header>
 
@@ -79,10 +81,10 @@ export default function ProfilePage() {
               className="avatar-wrapper"
               type="button"
               onClick={handleAvatarClick}
-              title="Cập nhật ảnh đại diện"
+              title={t("profile.update_avatar")}
             >
               <div className="avatar-frame">
-                <img src={display.avatarUrl} alt="Ảnh đại diện" />
+                <img src={display.avatarUrl} alt={t("profile.avatar_alt")} />
               </div>
               <div className="avatar-overlay">
                 <span className="material-symbols-outlined">
@@ -101,7 +103,7 @@ export default function ProfilePage() {
 
             <div className="hero-info">
               <div className="profile-heading">
-                <h2>{isLoading ? "Đang tải..." : display.name}</h2>
+                <h2>{isLoading ? t("profile.loading") : display.name}</h2>
                 <div className="badge-group">
                   <span className={`badge ${display.isPremium ? "badge-premium" : "badge-expert"}`}>
                     {display.planLabel}
@@ -120,32 +122,32 @@ export default function ProfilePage() {
                 <strong>
                   {yearSummary?.currentStreakDays ?? mockProfileExtras.currentStreakDays}
                 </strong>
-                <span>Ngày liên tục</span>
+                <span>{t("profile.stat_streak_days")}</span>
               </article>
               <article className="mini-stat-card">
                 <span className="material-symbols-outlined icon-fill stat-blue">
                   check_circle
                 </span>
                 <strong>{yearSummary?.totalSessions ?? 0}</strong>
-                <span>Phiên tập trung</span>
+                <span>{t("profile.stat_sessions")}</span>
               </article>
               <article className="mini-stat-card">
                 <span className="material-symbols-outlined icon-fill stat-green">
                   timer
                 </span>
                 <strong>{formatMinutes(yearSummary?.totalFocusMinutes)}</strong>
-                <span>Tổng thời gian</span>
+                <span>{t("profile.stat_total_time")}</span>
               </article>
             </div>
           </section>
 
           <section className="card profile-card grid-left">
             <div className="card-header">
-              <h3>Thông tin cá nhân</h3>
+              <h3>{t("profile.personal_info_title")}</h3>
               <button
                 className="icon-button"
                 type="button"
-                title="Chỉnh sửa hồ sơ"
+                title={t("profile.edit_profile")}
                 onClick={openProfileModal}
               >
                 <span className="material-symbols-outlined">edit</span>
@@ -156,7 +158,7 @@ export default function ProfilePage() {
               <div className="info-row">
                 <span className="material-symbols-outlined info-icon">person</span>
                 <div>
-                  <small>Tên hiển thị</small>
+                  <small>{t("profile.display_name")}</small>
                   <p>{display.name}</p>
                 </div>
               </div>
@@ -170,41 +172,41 @@ export default function ProfilePage() {
               <div className="info-row">
                 <span className="material-symbols-outlined info-icon">smartphone</span>
                 <div>
-                  <small>Số điện thoại</small>
+                  <small>{t("profile.phone")}</small>
                   <p>{display.phone}</p>
                 </div>
               </div>
               <div className="info-row">
                 <span className="material-symbols-outlined info-icon">cake</span>
                 <div>
-                  <small>Ngày sinh</small>
+                  <small>{t("profile.dob")}</small>
                   <p>{display.dob}</p>
                 </div>
               </div>
               <div className="info-row">
                 <span className="material-symbols-outlined info-icon">location_on</span>
                 <div>
-                  <small>Địa chỉ</small>
+                  <small>{t("profile.address")}</small>
                   <p>{display.address}</p>
                 </div>
               </div>
             </div>
 
             <button className="secondary-button" type="button" onClick={openProfileModal}>
-              Cập nhật hồ sơ
+              {t("profile.update_profile_btn")}
             </button>
           </section>
 
           <section className="card achievement-progress-card grid-right">
             <div className="card-header">
-              <h3>Thành tựu</h3>
+              <h3>{t("profile.achievements_title")}</h3>
             </div>
 
             {achievements.length > 0 ? (
               <div className="achievement-board">
                 <section className="achievement-frame">
                   <div className="achievement-frame-header">
-                    <h4>Đã hoàn thành</h4>
+                    <h4>{t("profile.achievements_completed")}</h4>
                     <span>{completedAchievements.length}</span>
                   </div>
                   <div className="achievement-icon-grid">
@@ -224,14 +226,14 @@ export default function ProfilePage() {
                         </button>
                       ))
                     ) : (
-                      <div className="achievement-frame-empty">Chưa có</div>
+                      <div className="achievement-frame-empty">{t("profile.achievements_empty")}</div>
                     )}
                   </div>
                 </section>
 
                 <section className="achievement-frame">
                   <div className="achievement-frame-header">
-                    <h4>Chưa hoàn thành</h4>
+                    <h4>{t("profile.achievements_incomplete")}</h4>
                     <span>{incompleteAchievements.length}</span>
                   </div>
                   <div className="achievement-icon-grid">
@@ -251,7 +253,7 @@ export default function ProfilePage() {
                         </button>
                       ))
                     ) : (
-                      <div className="achievement-frame-empty">Không còn thành tựu đang chờ</div>
+                      <div className="achievement-frame-empty">{t("profile.achievements_no_pending")}</div>
                     )}
                   </div>
                 </section>
@@ -271,14 +273,14 @@ export default function ProfilePage() {
                         <span>{selectedAchievement.rarity}</span>
                       </div>
                       <p>
-                        {selectedAchievement.description || "Chưa có mô tả cho thành tựu này."}
+                        {selectedAchievement.description || t("profile.achievement_no_desc")}
                       </p>
                       <small className="achievement-detail-status">
                         {selectedAchievement.status === "UNLOCKED"
-                          ? "Đã hoàn thành"
+                          ? t("profile.achievements_completed")
                           : selectedAchievement.status === "IN_PROGRESS"
-                            ? "Đang tiến hành"
-                            : "Đang khóa"}
+                            ? t("profile.achievement_in_progress")
+                            : t("profile.achievement_locked")}
                       </small>
                       {selectedAchievement.status !== "LOCKED" && (
                         <>
@@ -298,7 +300,7 @@ export default function ProfilePage() {
                 )}
               </div>
             ) : (
-              <div className="achievement-empty">Chưa có dữ liệu thành tựu.</div>
+              <div className="achievement-empty">{t("profile.achievements_no_data")}</div>
             )}
           </section>
         </div>
@@ -311,7 +313,7 @@ export default function ProfilePage() {
         <div className={`modal-card ${isProfileModalOpen ? "modal-card-open" : ""}`}>
           <div className="modal-header">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-              <h3>Cập nhật hồ sơ</h3>
+              <h3>{t("profile.update_profile_btn")}</h3>
               <button className="icon-button" type="button" onClick={closeProfileModal}>
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -321,7 +323,7 @@ export default function ProfilePage() {
           <div className="modal-body">
             <form className="password-form profile-form" onSubmit={handleProfileSubmit}>
               <label>
-                Tên hiển thị
+                {t("profile.display_name")}
                 <input
                   type="text"
                   value={profileForm.fullName}
@@ -335,7 +337,7 @@ export default function ProfilePage() {
                 />
               </label>
               <label>
-                Số điện thoại
+                {t("profile.phone")}
                 <input
                   type="tel"
                   value={profileForm.phoneNumber}
@@ -348,7 +350,7 @@ export default function ProfilePage() {
                 />
               </label>
               <label>
-                Giới tính
+                {t("profile.gender")}
                 <select
                   value={profileForm.gender}
                   onChange={(event) =>
@@ -358,13 +360,13 @@ export default function ProfilePage() {
                     }))
                   }
                 >
-                  <option value="MALE">Nam</option>
-                  <option value="FEMALE">Nữ</option>
-                  <option value="OTHER">Khác</option>
+                  <option value="MALE">{t("profile.gender_male")}</option>
+                  <option value="FEMALE">{t("profile.gender_female")}</option>
+                  <option value="OTHER">{t("profile.gender_other")}</option>
                 </select>
               </label>
               <label>
-                Ngày sinh
+                {t("profile.dob")}
                 <input
                   type="date"
                   value={profileForm.dateOfBirth}
@@ -377,7 +379,7 @@ export default function ProfilePage() {
                 />
               </label>
               <label>
-                Địa chỉ
+                {t("profile.address")}
                 <input
                   type="text"
                   value={profileForm.addressLine}
@@ -392,7 +394,7 @@ export default function ProfilePage() {
                 />
               </label>
               <label>
-                Tỉnh/thành
+                {t("profile.province")}
                 <select
                   value={profileForm.provinceCode}
                   onChange={(event) =>
@@ -404,7 +406,7 @@ export default function ProfilePage() {
                   }
                   required
                 >
-                  <option value="">Chọn tỉnh/thành</option>
+                  <option value="">{t("profile.province_placeholder")}</option>
                   {provinces.map((province) => (
                     <option key={province.code} value={province.code}>
                       {province.name}
@@ -413,7 +415,7 @@ export default function ProfilePage() {
                 </select>
               </label>
               <label>
-                Phường/xã
+                {t("profile.ward")}
                 <select
                   value={profileForm.wardCode}
                   onChange={(event) =>
@@ -426,7 +428,7 @@ export default function ProfilePage() {
                   required
                 >
                   <option value="">
-                    {isLoadingWards ? "Đang tải..." : "Chọn phường/xã"}
+                    {isLoadingWards ? t("profile.loading") : t("profile.ward_placeholder")}
                   </option>
                   {wards.map((ward) => (
                     <option key={ward.code} value={ward.code}>
@@ -437,10 +439,10 @@ export default function ProfilePage() {
               </label>
               <div className="modal-actions">
                 <button className="ghost-button" type="button" onClick={closeProfileModal}>
-                  Hủy
+                  {t("profile.btn_cancel")}
                 </button>
                 <button className="primary-button" type="submit" disabled={isSavingProfile}>
-                  {isSavingProfile ? "Đang lưu..." : "Lưu thay đổi"}
+                  {isSavingProfile ? t("profile.btn_saving") : t("profile.btn_save")}
                 </button>
               </div>
             </form>

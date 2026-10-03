@@ -1,57 +1,55 @@
-import {
+﻿import {
   useMemo,
   useState,
   type CSSProperties,
   type FormEvent,
   type PointerEvent,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { useFeedback } from "../hooks/useFeedback";
-import {
-  feedbackStatusLabel,
-  feedbackTypeLabel,
-  type UserFeedbackType,
-} from "../types/feedback.types";
+import type { UserFeedbackStatus, UserFeedbackType } from "../types/feedback.types";
 import "./FeedbackPage.css";
 
 const FEEDBACK_TYPES: Array<{
   type: UserFeedbackType;
   icon: string;
-  description: string;
+  descriptionKey: string;
 }> = [
   {
     type: "GENERAL",
     icon: "chat_bubble",
-    description: "Chia sẻ cảm nhận hoặc góp ý chung.",
+    descriptionKey: "feedback.types.GENERAL.description",
   },
   {
     type: "BUG",
     icon: "bug_report",
-    description: "Báo lỗi khi app hoạt động sai.",
+    descriptionKey: "feedback.types.BUG.description",
   },
   {
     type: "FEATURE_REQUEST",
     icon: "add_circle",
-    description: "Đề xuất thứ bạn muốn có thêm.",
+    descriptionKey: "feedback.types.FEATURE_REQUEST.description",
   },
   {
     type: "UI_UX",
     icon: "palette",
-    description: "Góp ý giao diện và trải nghiệm.",
+    descriptionKey: "feedback.types.UI_UX.description",
   },
   {
     type: "PAYMENT",
     icon: "payments",
-    description: "Vấn đề gói Pro hoặc thanh toán.",
+    descriptionKey: "feedback.types.PAYMENT.description",
   },
 ];
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat("vi-VN", {
+const formatDate = (value: string, language?: string) =>
+  new Intl.DateTimeFormat(language?.startsWith("en") ? "en-US" : "vi-VN", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
 
 export default function FeedbackPage() {
+  const { i18n, t } = useTranslation("common");
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const {
     canSubmit,
@@ -97,6 +95,12 @@ export default function FeedbackPage() {
   const handleRatingClick = (event: PointerEvent<HTMLDivElement>) => {
     setRating(getRatingFromPointer(event));
   };
+
+  const getTypeLabel = (type: UserFeedbackType) =>
+    t(`feedback.types.${type}.label`);
+  const getStatusLabel = (status: UserFeedbackStatus) =>
+    t(`feedback.status.${status}`);
+
   const statusCounts = useMemo(
     () =>
       feedbacks.reduce(
@@ -119,7 +123,7 @@ export default function FeedbackPage() {
       <main className="main-content">
         <header className="mobile-header">
           <span className="material-symbols-outlined mobile-menu-icon">menu</span>
-          <h1>User Feedback</h1>
+          <h1>{t("feedback.title")}</h1>
           <div className="mobile-header-spacer" />
         </header>
 
@@ -130,37 +134,31 @@ export default function FeedbackPage() {
                 <span className="app-page-title-icon">
                   <span className="material-symbols-outlined">rate_review</span>
                 </span>
-                <h1>User Feedback</h1>
+                <h1>{t("feedback.title")}</h1>
               </div>
-              <p>
-                Gửi góp ý, báo lỗi hoặc đề xuất tính năng để cải thiện
-                FocusBuddy.
-              </p>
+              <p>{t("feedback.subtitle")}</p>
             </div>
           </header>
 
           <section className="feedback-summary-card grid-full">
             <div className="feedback-summary-copy">
-              <span className="feedback-kicker">Trung tâm phản hồi</span>
-              <h2>Giúp FocusBuddy tốt hơn sau mỗi phiên học</h2>
-              <p>
-                Mỗi phản hồi đều được lưu lại để đội ngũ theo dõi, phân loại và
-                xử lý đúng vấn đề bạn gặp phải.
-              </p>
+              <span className="feedback-kicker">{t("feedback.summary.kicker")}</span>
+              <h2>{t("feedback.summary.title")}</h2>
+              <p>{t("feedback.summary.description")}</p>
             </div>
 
-            <div className="feedback-summary-stats" aria-label="Tổng quan feedback">
+            <div className="feedback-summary-stats" aria-label={t("feedback.summary.aria")}>
               <div>
                 <strong>{feedbacks.length}</strong>
-                <span>Đã gửi</span>
+                <span>{t("feedback.summary.sent")}</span>
               </div>
               <div>
                 <strong>{statusCounts.REVIEWING}</strong>
-                <span>Đang xem xét</span>
+                <span>{t("feedback.summary.reviewing")}</span>
               </div>
               <div>
                 <strong>{statusCounts.RESOLVED}</strong>
-                <span>Đã xử lý</span>
+                <span>{t("feedback.summary.resolved")}</span>
               </div>
             </div>
           </section>
@@ -171,8 +169,8 @@ export default function FeedbackPage() {
                 <span className="material-symbols-outlined">edit_square</span>
               </span>
               <div>
-                <h2>Gửi feedback mới</h2>
-                <p>Mô tả rõ vấn đề để tụi mình xử lý nhanh hơn.</p>
+                <h2>{t("feedback.compose.title")}</h2>
+                <p>{t("feedback.compose.description")}</p>
               </div>
             </div>
 
@@ -181,8 +179,8 @@ export default function FeedbackPage() {
                 {selectedType?.icon ?? "chat_bubble"}
               </span>
               <div>
-                <strong>{feedbackTypeLabel[form.type]}</strong>
-                <p>{selectedType?.description}</p>
+                <strong>{getTypeLabel(form.type)}</strong>
+                <p>{selectedType ? t(selectedType.descriptionKey) : ""}</p>
               </div>
             </div>
 
@@ -201,19 +199,19 @@ export default function FeedbackPage() {
                       {item.icon}
                     </span>
                     <span>
-                      <strong>{feedbackTypeLabel[item.type]}</strong>
-                      <small>{item.description}</small>
+                      <strong>{getTypeLabel(item.type)}</strong>
+                      <small>{t(item.descriptionKey)}</small>
                     </span>
                   </button>
                 ))}
               </div>
 
               <label className="feedback-field">
-                <span>Tiêu đề</span>
+                <span>{t("feedback.form.title_label")}</span>
                 <input
                   type="text"
                   maxLength={titleMaxLength}
-                  placeholder="Ví dụ: Cần thêm thông báo khi kết thúc phiên"
+                  placeholder={t("feedback.form.title_placeholder")}
                   value={form.title}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -225,11 +223,11 @@ export default function FeedbackPage() {
               </label>
 
               <label className="feedback-field">
-                <span>Nội dung</span>
+                <span>{t("feedback.form.content_label")}</span>
                 <textarea
                   maxLength={contentMaxLength}
                   rows={9}
-                  placeholder="Nhập chi tiết feedback của bạn..."
+                  placeholder={t("feedback.form.content_placeholder")}
                   value={form.content}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -242,18 +240,22 @@ export default function FeedbackPage() {
 
               <div className="feedback-rating-row">
                 <div>
-                  <strong>Mức hài lòng</strong>
+                  <strong>{t("feedback.form.rating_label")}</strong>
                   <small>
                     {displayRating
-                      ? `${displayRating.toLocaleString("vi-VN")}/5 điểm`
-                      : "Không bắt buộc, nhưng rất hữu ích."}
+                      ? t("feedback.form.rating_value", {
+                          rating: displayRating.toLocaleString(
+                            i18n.language?.startsWith("en") ? "en-US" : "vi-VN",
+                          ),
+                        })
+                      : t("feedback.form.rating_hint")}
                   </small>
                 </div>
                 <div className="feedback-rating-control" style={ratingStyle}>
                   <div
                     className="feedback-rating-stars"
                     role="radiogroup"
-                    aria-label="Mức hài lòng"
+                    aria-label={t("feedback.form.rating_label")}
                     onPointerMove={handleRatingMove}
                     onPointerLeave={() => setHoverRating(null)}
                     onPointerDown={handleRatingClick}
@@ -292,7 +294,7 @@ export default function FeedbackPage() {
                       className="feedback-rating-clear"
                       onClick={() => setRating(null)}
                     >
-                      Bỏ đánh giá
+                      {t("feedback.form.clear_rating")}
                     </button>
                   )}
                 </div>
@@ -300,9 +302,17 @@ export default function FeedbackPage() {
 
               <div className="feedback-form-actions">
                 <div className="feedback-counter">
-                  <span>{form.title.trim().length}/{titleMaxLength} tiêu đề</span>
                   <span>
-                    {form.content.trim().length}/{contentMaxLength} nội dung
+                    {t("feedback.form.title_counter", {
+                      count: form.title.trim().length,
+                      max: titleMaxLength,
+                    })}
+                  </span>
+                  <span>
+                    {t("feedback.form.content_counter", {
+                      count: form.content.trim().length,
+                      max: contentMaxLength,
+                    })}
                   </span>
                 </div>
                 <button
@@ -310,7 +320,7 @@ export default function FeedbackPage() {
                   type="submit"
                   disabled={!canSubmit || isSubmitting}
                 >
-                  {isSubmitting ? "Đang gửi..." : "Gửi feedback"}
+                  {isSubmitting ? t("feedback.form.submitting") : t("feedback.form.submit")}
                 </button>
               </div>
             </form>
@@ -322,13 +332,13 @@ export default function FeedbackPage() {
                 <span className="material-symbols-outlined">history</span>
               </span>
               <div>
-                <h2>Lịch sử feedback</h2>
-                <p>Theo dõi các góp ý bạn đã gửi.</p>
+                <h2>{t("feedback.history.title")}</h2>
+                <p>{t("feedback.history.description")}</p>
               </div>
               <button
                 className="icon-button feedback-refresh-button"
                 type="button"
-                title="Tải lại"
+                title={t("feedback.history.refresh")}
                 onClick={() => void loadFeedbacks()}
                 disabled={isLoading}
               >
@@ -346,7 +356,7 @@ export default function FeedbackPage() {
                     className={`feedback-status-tile status-${status.toLowerCase()}`}
                   >
                     <strong>{statusCounts[status]}</strong>
-                    <span>{feedbackStatusLabel[status]}</span>
+                    <span>{getStatusLabel(status)}</span>
                   </div>
                 ),
               )}
@@ -356,21 +366,21 @@ export default function FeedbackPage() {
               {isLoading && feedbacks.length === 0 ? (
                 <div className="feedback-empty">
                   <span className="material-symbols-outlined">sync</span>
-                  <p>Đang tải feedback...</p>
+                  <p>{t("feedback.history.loading")}</p>
                 </div>
               ) : feedbacks.length === 0 ? (
                 <div className="feedback-empty">
                   <span className="material-symbols-outlined">rate_review</span>
-                  <p>Bạn chưa gửi feedback nào.</p>
+                  <p>{t("feedback.history.empty")}</p>
                 </div>
               ) : (
                 feedbacks.map((item) => (
                   <article className="feedback-item" key={item.id}>
                     <div className="feedback-item-header">
                       <span className={`feedback-status status-${item.status.toLowerCase()}`}>
-                        {feedbackStatusLabel[item.status]}
+                        {getStatusLabel(item.status)}
                       </span>
-                      <small>{formatDate(item.createdAt)}</small>
+                      <small>{formatDate(item.createdAt, i18n.language)}</small>
                     </div>
                     <h4>{item.title}</h4>
                     <p>{item.content}</p>
@@ -379,18 +389,18 @@ export default function FeedbackPage() {
                         <span className="material-symbols-outlined">
                           {FEEDBACK_TYPES.find((type) => type.type === item.type)?.icon}
                         </span>
-                        {feedbackTypeLabel[item.type]}
+                        {getTypeLabel(item.type)}
                       </span>
                       {item.rating && (
                         <span>
                           <span className="material-symbols-outlined icon-fill">star</span>
-                          {item.rating}/5 điểm
+                          {t("feedback.form.rating_value", { rating: item.rating })}
                         </span>
                       )}
                     </div>
                     {item.adminReply && (
                       <div className="feedback-admin-reply">
-                        <strong>Phản hồi từ admin</strong>
+                        <strong>{t("feedback.history.admin_reply")}</strong>
                         <p>{item.adminReply}</p>
                       </div>
                     )}
@@ -404,3 +414,4 @@ export default function FeedbackPage() {
     </div>
   );
 }
+

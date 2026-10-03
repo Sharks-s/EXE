@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useAuthStore, type User } from "@/features/auth";
 import { profileApi, type DailyUsageResponse } from "@/features/profile";
@@ -40,9 +41,9 @@ const createFallbackDailyUsage = (user: User | null): DailyUsageResponse => {
   };
 };
 
-const formatUsageMinutes = (minutes: number | null) => {
+const formatUsageMinutes = (minutes: number | null, t: TFunction<"common">) => {
   const safeMinutes = Math.max(Math.round(minutes ?? 0), 0);
-  return `${safeMinutes} phút`;
+  return t("sidebar.minutes", { count: safeMinutes });
 };
 
 function DailyUsageCard({
@@ -52,8 +53,10 @@ function DailyUsageCard({
   usage: DailyUsageResponse;
   collapsed: boolean;
 }) {
+  const { t } = useTranslation("common");
+
   if (usage.unlimited) {
-    const label = "Pro unlimited";
+    const label = t("sidebar.pro_unlimited");
 
     return (
       <div
@@ -87,13 +90,15 @@ function DailyUsageCard({
           `}
         >
           <p className="m-0 text-[11px] leading-none font-bold text-emerald-500 whitespace-nowrap">
-            Pro unlimited
+            {t("sidebar.pro_unlimited")}
           </p>
           <strong className="block mt-1 text-sm leading-none font-extrabold whitespace-nowrap">
-            Unlimited
+            {t("sidebar.unlimited")}
           </strong>
           <p className="m-0 mt-1 text-[10px] leading-none font-bold text-emerald-500 whitespace-nowrap">
-            Used {formatUsageMinutes(usage.dailyUsedMinute)} today
+            {t("sidebar.used_today", {
+              minutes: formatUsageMinutes(usage.dailyUsedMinute, t),
+            })}
           </p>
         </div>
       </div>
@@ -107,7 +112,9 @@ function DailyUsageCard({
     dailyLimitMinute > 0
       ? Math.min((usage.dailyUsedMinute / dailyLimitMinute) * 100, 100)
       : 0;
-  const label = `Còn lại ${formatUsageMinutes(usage.remainingMinute)} hôm nay`;
+  const label = t("sidebar.remaining_today", {
+    minutes: formatUsageMinutes(remainingMinute, t),
+  });
 
   return (
     <div
@@ -143,10 +150,10 @@ function DailyUsageCard({
       >
         <div className="flex items-center justify-between gap-2">
           <p className="m-0 text-[11px] leading-none font-bold text-blue-400 whitespace-nowrap">
-            Còn lại
+            {t("sidebar.remaining")}
           </p>
           <strong className="text-sm leading-none font-extrabold whitespace-nowrap">
-            {formatUsageMinutes(remainingMinute)}
+            {formatUsageMinutes(remainingMinute, t)}
           </strong>
         </div>
 
@@ -158,8 +165,10 @@ function DailyUsageCard({
         </div>
 
         <p className="m-0 mt-1 text-[10px] leading-none font-bold text-blue-400 whitespace-nowrap">
-          Đã dùng {formatUsageMinutes(usage.dailyUsedMinute)} /{" "}
-          {formatUsageMinutes(dailyLimitMinute)}
+          {t("sidebar.used_of_limit", {
+            used: formatUsageMinutes(usage.dailyUsedMinute, t),
+            limit: formatUsageMinutes(dailyLimitMinute, t),
+          })}
         </p>
       </div>
     </div>
@@ -185,6 +194,7 @@ function NavItem({
   variant?: "default" | "upgrade";
   disabled?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const isActive = currentPage === page;
 
   // Sửa căn chỉnh padding và flexbox tại đây
@@ -209,7 +219,7 @@ function NavItem({
         collapsed
           ? label
           : disabled
-            ? "Đang trong phiên tập trung hãy kết thúc phiên trước"
+            ? t("sidebar.locked_tooltip")
             : undefined
       }
       className={`${baseClasses} ${variantClasses}`}
@@ -309,7 +319,7 @@ export default function Sidebar({
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         <NavItem
           page="dashboard"
-          label={t("sidebar.dashboard", { defaultValue: "Dashboard" })}
+          label={t("sidebar.dashboard", { defaultValue: "Bảng điều khiển" })}
           icon={icons.dashboard}
           currentPage={currentPage}
           onNavigate={onNavigate}
@@ -317,7 +327,7 @@ export default function Sidebar({
         />
         <NavItem
           page="analytics"
-          label={t("sidebar.analytics", { defaultValue: "Analytics" })}
+          label={t("sidebar.analytics", { defaultValue: "Thống kê" })}
           icon={icons.analytics}
           currentPage={currentPage}
           onNavigate={onNavigate}
@@ -326,7 +336,7 @@ export default function Sidebar({
         />
         <NavItem
           page="settings"
-          label={t("sidebar.settings", { defaultValue: "Settings" })}
+          label={t("sidebar.settings", { defaultValue: "Cài đặt" })}
           icon={icons.settings}
           currentPage={currentPage}
           onNavigate={onNavigate}
@@ -335,7 +345,7 @@ export default function Sidebar({
         />
         <NavItem
           page="pet"
-          label={t("sidebar.pet", { defaultValue: "Buddy" })}
+          label={t("sidebar.pet", { defaultValue: "Bạn đồng hành" })}
           icon={icons.pet}
           currentPage={currentPage}
           onNavigate={onNavigate}
@@ -345,7 +355,7 @@ export default function Sidebar({
 
         <NavItem
           page="songs"
-          label={t("sidebar.songs", { defaultValue: "Music" })}
+          label={t("sidebar.songs", { defaultValue: "Âm nhạc" })}
           icon={icons.songs}
           currentPage={currentPage}
           onNavigate={onNavigate}
@@ -355,7 +365,7 @@ export default function Sidebar({
 
         <NavItem
           page="feedback"
-          label={t("sidebar.feedback", { defaultValue: "Feedback" })}
+          label={t("sidebar.feedback", { defaultValue: "Góp ý" })}
           icon={icons.feedback}
           currentPage={currentPage}
           onNavigate={onNavigate}
@@ -373,7 +383,7 @@ export default function Sidebar({
 
         <NavItem
           page="upgrade"
-          label={t("sidebar.upgrade", { defaultValue: "Upgrade" })}
+          label={t("sidebar.upgrade", { defaultValue: "Nâng cấp Pro" })}
           icon={icons.upgrade}
           currentPage={currentPage}
           onNavigate={onNavigate}
@@ -390,7 +400,7 @@ export default function Sidebar({
         <NavItem
           page="profile"
           label={
-            user?.fullName ?? t("sidebar.profile", { defaultValue: "Profile" })
+            user?.fullName ?? t("sidebar.profile", { defaultValue: "Hồ sơ" })
           }
           icon={icons.profile}
           currentPage={currentPage}

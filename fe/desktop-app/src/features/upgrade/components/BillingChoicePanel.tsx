@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { BillingOption, PaymentState } from "../types/subscription.types";
 
 export interface BillingChoicePanelProps {
@@ -15,29 +16,30 @@ export function BillingChoicePanel({
     paymentState,
     onConfirm,
 }: BillingChoicePanelProps) {
+    const { t } = useTranslation("common");
     const isMonthly = selectedBilling === "monthly";
     const isWaiting = paymentState === "waiting";
     const isSuccess = paymentState === "success";
 
     if (isSuccess) {
         return (
-            <section className="billing-choice-panel" aria-label="Kết quả thanh toán">
+            <section className="billing-choice-panel" aria-label={t("upgrade.billing_success_aria")}>
                 <div className="payment-success-panel">
-                    <p>🎉 Nâng cấp Pro thành công!</p>
-                    <p className="hint">Bạn đã được sử dụng không giới hạn.</p>
+                    <p>{t("upgrade.billing_success_title")}</p>
+                    <p className="hint">{t("upgrade.billing_success_desc")}</p>
                 </div>
             </section>
         );
     }
 
     return (
-        <section className="billing-choice-panel" aria-label="Chọn chu kỳ thanh toán">
+        <section className="billing-choice-panel" aria-label={t("upgrade.billing_choice_aria")}>
             <div className="billing-choice-header">
                 <div>
-                    <span>Pro plan</span>
-                    <h2>Chọn chu kỳ thanh toán</h2>
+                    <span>{t("upgrade.billing_plan_title")}</span>
+                    <h2>{t("upgrade.billing_choice_title")}</h2>
                 </div>
-                <p>{isMonthly ? "49.000đ / tháng" : "399.000đ / năm"}</p>
+                <p>{isMonthly ? t("upgrade.billing_price_monthly") : t("upgrade.billing_price_yearly")}</p>
             </div>
 
             <div className="billing-options">
@@ -49,8 +51,8 @@ export function BillingChoicePanel({
                 >
                     <span className="billing-radio" />
                     <span className="billing-option-copy">
-                        <strong>Theo tháng</strong>
-                        <small>49.000đ / tháng · linh hoạt, dễ bắt đầu</small>
+                        <strong>{t("upgrade.billing_monthly")}</strong>
+                        <small>{t("upgrade.billing_monthly_desc")}</small>
                     </span>
                 </button>
 
@@ -62,18 +64,18 @@ export function BillingChoicePanel({
                 >
                     <span className="billing-radio" />
                     <span className="billing-option-copy">
-                        <strong>Theo năm</strong>
-                        <small>399.000đ / năm · tiết kiệm 200.000đ</small>
+                        <strong>{t("upgrade.billing_yearly")}</strong>
+                        <small>{t("upgrade.billing_yearly_desc")}</small>
                     </span>
-                    <span className="billing-save-badge">Tiết kiệm</span>
+                    <span className="billing-save-badge">{t("upgrade.billing_save_badge")}</span>
                 </button>
             </div>
 
             {isWaiting ? (
                 <div className="payment-waiting-panel">
-                    <p>Đang chờ xác nhận thanh toán qua SePay...</p>
+                    <p>{t("upgrade.billing_waiting_title")}</p>
                     <p className="hint">
-                        Vui lòng hoàn tất thanh toán trên trình duyệt vừa mở.
+                        {t("upgrade.billing_waiting_desc")}
                     </p>
                 </div>
             ) : (
@@ -84,8 +86,8 @@ export function BillingChoicePanel({
                     disabled={isSubmitting}
                 >
                     {isSubmitting
-                        ? "Đang khởi tạo thanh toán..."
-                        : `Tiếp tục với ${isMonthly ? "gói tháng" : "gói năm"}`}
+                        ? t("upgrade.billing_submitting")
+                        : (isMonthly ? t("upgrade.billing_confirm_btn_monthly") : t("upgrade.billing_confirm_btn_yearly"))}
                 </button>
             )}
         </section>

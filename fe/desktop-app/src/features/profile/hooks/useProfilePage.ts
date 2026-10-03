@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { analyticsApi, type AnalyticsSummary } from "@/features/analytics";
 import { achievementsApi, type Achievement } from "@/features/achievements";
 import { toast } from "@/shared/store/toastStore";
@@ -32,29 +33,29 @@ export type ProfileFormState = {
 
 export const formatMinutes = (minutes?: number) => `${Math.max(Math.round(minutes ?? 0), 0)} phút`;
 
-const formatDate = (value?: string | null) => {
-    if (!value) return "Chưa cập nhật";
+const formatDate = (value: string | null | undefined, t: any, lang: string) => {
+    if (!value) return t("profile.not_updated");
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
-    return new Intl.DateTimeFormat("vi-VN").format(date);
+    return new Intl.DateTimeFormat(lang).format(date);
 };
 
-const formatAddress = (profile: UserSummary | null) => {
+const formatAddress = (profile: UserSummary | null, t: any) => {
     const parts = [profile?.addressLine, profile?.wardName, profile?.provinceName].filter(Boolean);
-    return parts.length ? parts.join(", ") : "Chưa cập nhật";
+    return parts.length ? parts.join(", ") : t("profile.not_updated");
 };
 
-const formatJoinedLabel = (value?: string | null) => {
-    if (!value) return mockProfileExtras.joinedLabel;
+const formatJoinedLabel = (value: string | null | undefined, t: any, lang: string) => {
+    if (!value) return t("profile.joined_from", { date: "" });
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return mockProfileExtras.joinedLabel;
+    if (Number.isNaN(date.getTime())) return t("profile.joined_from", { date: "" });
 
-    const label = new Intl.DateTimeFormat("vi-VN", {
+    const label = new Intl.DateTimeFormat(lang, {
         month: "long",
         year: "numeric",
     }).format(date);
 
-    return `Tham gia từ ${label}`;
+    return t("profile.joined_from", { date: label });
 };
 
 const toProfileForm = (profile: UserSummary | null): ProfileFormState => ({
@@ -68,6 +69,8 @@ const toProfileForm = (profile: UserSummary | null): ProfileFormState => ({
 });
 
 export function useProfilePage() {
+    const { t, i18n } = useTranslation("common");
+    const lang = i18n.language === "vi" ? "vi-VN" : "en-US";
     const avatarInputRef = useRef<HTMLInputElement | null>(null);
     const [profile, setProfile] = useState<UserSummary | null>(null);
     const [isProActive, setIsProActive] = useState(false);
@@ -173,18 +176,18 @@ export function useProfilePage() {
 
     const display = useMemo(() => {
         return {
-            name: profile?.fullName?.trim() || "Chưa cập nhật",
-            email: profile?.email || "Chưa cập nhật",
-            phone: profile?.phoneNumber || "Chưa cập nhật",
-            dob: formatDate(profile?.dateOfBirth ?? profile?.dob),
-            address: formatAddress(profile),
+            name: profile?.fullName?.trim() || t("profile.not_updated"),
+            email: profile?.email || t("profile.not_updated"),
+            phone: profile?.phoneNumber || t("profile.not_updated"),
+            dob: formatDate(profile?.dateOfBirth ?? profile?.dob, t, lang),
+            address: formatAddress(profile, t),
             avatarUrl: profile?.avatarUrl || fallbackAvatar,
-            meta: `${formatJoinedLabel(profile?.createdAt)} • ${profile?.provinceName ?? mockProfileExtras.location
+            meta: `${formatJoinedLabel(profile?.createdAt, t, lang)} • ${profile?.provinceName ?? mockProfileExtras.location
                 }`,
             isPremium: isProActive,
             planLabel: isProActive ? "Pro" : "Free",
         };
-    }, [profile, isProActive]);
+    }, [profile, isProActive, t, lang]);
 
     const openProfileModal = () => {
         setProfileForm(toProfileForm(profile));

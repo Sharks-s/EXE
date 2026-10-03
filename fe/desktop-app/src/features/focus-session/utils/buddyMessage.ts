@@ -10,63 +10,51 @@ const hashText = (value: string) =>
   value.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
 
 const pickMessage = (messages: string[], seed: string) => {
+  if (!messages || messages.length === 0) return "";
   return messages[Math.abs(hashText(seed)) % messages.length];
 };
 
-export const getBuddyMessage = ({
-  petName,
-  personalityCode,
-  focusGoal,
-  durationMinutes,
-  todayFocusMinutes,
-}: BuddyMessageParams) => {
+export const getBuddyMessage = (
+  {
+    petName,
+    personalityCode,
+    focusGoal,
+    durationMinutes,
+    todayFocusMinutes,
+  }: BuddyMessageParams,
+  t: any
+) => {
   if (!petName) {
-    return "Trang bị một thú cưng để có bạn đồng hành trong phiên tập trung.";
+    return t("dashboard.buddy_messages.no_pet");
   }
 
   const normalizedPersonality = (personalityCode || "INSPIRING").toUpperCase();
   const dailySeed = new Date().toISOString().slice(0, 10);
   const seed = `${dailySeed}-${normalizedPersonality}-${petName}-${focusGoal}-${durationMinutes}`;
+  
   const todayFocusText =
     todayFocusMinutes && todayFocusMinutes > 0
-      ? ` Hôm nay bạn đã có ${Math.round(todayFocusMinutes)} phút tập trung rồi.`
+      ? t("dashboard.buddy_messages.today_focus", { minutes: Math.round(todayFocusMinutes) })
       : "";
 
-  const messagesByPersonality: Record<string, string[]> = {
-    SWEET: [
-      `${petName} sẽ ở đây cổ vũ bạn nhé. Bắt đầu ${durationMinutes} phút cho ${focusGoal} thật êm nào.${todayFocusText}`,
-      `${petName} tin bạn làm được. Cứ đi từng bước nhỏ với ${focusGoal} thôi.`,
-      `Nhẹ nhàng vào việc nào, ${petName} đang canh giữ sự tập trung cho bạn.`,
-    ],
-    STRICT: [
-      `${petName} đã sẵn sàng. ${durationMinutes} phút tới chỉ dành cho ${focusGoal}, không lan man.`,
-      `Vào chế độ tập trung. ${petName} sẽ nhắc bạn giữ đúng cam kết với ${focusGoal}.`,
-      `Mục tiêu đã rõ: ${focusGoal}. Bắt đầu ngay, hoàn thành trước rồi nghỉ sau.`,
-    ],
-    MEAN: [
-      `${petName} đang nhìn đấy. Đừng để ${focusGoal} lại bị trì hoãn thêm nữa.`,
-      `${durationMinutes} phút không quá dài đâu. ${petName} mong bạn đừng làm nó khó hơn cần thiết.`,
-      `Nếu đã chọn ${focusGoal} thì làm tới nơi tới chốn. ${petName} sẽ để mắt tới bạn.`,
-    ],
-    CALM: [
-      `${petName} ở bên bạn. Hít thở một nhịp, rồi bắt đầu ${focusGoal} thật chậm và chắc.`,
-      `Cứ giữ nhịp ổn định. ${petName} sẽ đồng hành trong ${durationMinutes} phút tiếp theo.`,
-      `Không cần vội. Chỉ cần quay lại với ${focusGoal}, từng phút một.`,
-    ],
-    FRIEND: [
-      `${petName} vào team với bạn hôm nay. Mình cùng xử lý ${focusGoal} nhé.`,
-      `Có ${petName} ngồi cạnh rồi. Làm ${durationMinutes} phút, xong mình nghỉ một chút.`,
-      `${focusGoal} nghe có vẻ ổn đó. ${petName} sẽ đi cùng bạn đến hết phiên.`,
-    ],
-    INSPIRING: [
-      `${petName} đang sẵn sàng đồng hành. Biến ${durationMinutes} phút này thành một bước tiến thật đẹp nào.`,
-      `Hôm nay bắt đầu bằng ${focusGoal}. ${petName} tin đây sẽ là một phiên đáng giá.`,
-      `Một phiên tập trung tốt có thể đổi cả ngày. ${petName} sẽ đi cùng bạn.`,
-    ],
-  };
+  const messages = t(`dashboard.buddy_messages.${normalizedPersonality}`, {
+    returnObjects: true,
+    petName,
+    focusGoal,
+    durationMinutes,
+    todayFocusText,
+  }) as string[];
+
+  const defaultMessages = t(`dashboard.buddy_messages.INSPIRING`, {
+    returnObjects: true,
+    petName,
+    focusGoal,
+    durationMinutes,
+    todayFocusText,
+  }) as string[];
 
   return pickMessage(
-    messagesByPersonality[normalizedPersonality] ?? messagesByPersonality.INSPIRING,
-    seed,
+    Array.isArray(messages) ? messages : defaultMessages,
+    seed
   );
 };

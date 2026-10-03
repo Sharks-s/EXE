@@ -8,6 +8,10 @@
     "verify_title": "Xác thực OTP",
     "verify_subtitle": "Chúng tôi đã gửi mã 6 số đến",
     "set_password_title": "Đặt mật khẩu",
+    "forgot_title": "Đặt lại mật khẩu",
+    "forgot_subtitle": "Nhập email của bạn và chúng tôi sẽ gửi OTP cho bạn",
+    "new_password_title": "Mật khẩu mới",
+    "new_password_subtitle": "Hãy nhập mật khẩu mới của bạn",
     "set_password_subtitle": "Gần xong rồi! Đặt mật khẩu cho tài khoản của bạn",
     "email_placeholder": "Email",
     "password_placeholder": "Mật khẩu",
@@ -17,6 +21,8 @@
     "btn_register": "Đăng ký",
     "btn_verify": "Xác thực",
     "btn_complete": "Hoàn tất",
+    "btn_send_otp": "Gửi OTP",
+    "btn_reset_password": "Đặt lại mật khẩu",
     "btn_resend": "Gửi lại OTP",
     "btn_back": "Quay lại",
     "signing_in": "Đang đăng nhập...",
@@ -24,6 +30,7 @@
     "verifying": "Đang xác thực...",
     "completing": "Đang thiết lập...",
     "expires_in": "Hết hạn sau",
+    "resetting": "Đang đặt lại...",
     "toggle_signin_title": "Chào mừng trở lại",
     "toggle_signin_subtitle": "Đăng nhập để tiếp tục hành trình của bạn",
     "toggle_signup_title": "Xin chào bạn!",
@@ -50,6 +57,40 @@
       "sweet": "Ngọt Ngào",
       "strict": "Tổng Tài",
       "mean": "Mỏ Hỗn"
+    },
+    "buddy_messages": {
+      "no_pet": "Trang bị một thú cưng để có bạn đồng hành trong phiên tập trung.",
+      "today_focus": " Hôm nay bạn đã có {{minutes}} phút tập trung rồi.",
+      "SWEET": [
+        "{{petName}} sẽ ở đây cổ vũ bạn nhé. Bắt đầu {{durationMinutes}} phút cho {{focusGoal}} thật êm nào.{{todayFocusText}}",
+        "{{petName}} tin bạn làm được. Cứ đi từng bước nhỏ với {{focusGoal}} thôi.",
+        "Nhẹ nhàng vào việc nào, {{petName}} đang canh giữ sự tập trung cho bạn."
+      ],
+      "STRICT": [
+        "{{petName}} đã sẵn sàng. {{durationMinutes}} phút tới chỉ dành cho {{focusGoal}}, không lan man.",
+        "Vào chế độ tập trung. {{petName}} sẽ nhắc bạn giữ đúng cam kết với {{focusGoal}}.",
+        "Mục tiêu đã rõ: {{focusGoal}}. Bắt đầu ngay, hoàn thành trước rồi nghỉ sau."
+      ],
+      "MEAN": [
+        "{{petName}} đang nhìn đấy. Đừng để {{focusGoal}} lại bị trì hoãn thêm nữa.",
+        "{{durationMinutes}} phút không quá dài đâu. {{petName}} mong bạn đừng làm nó khó hơn cần thiết.",
+        "Nếu đã chọn {{focusGoal}} thì làm tới nơi tới chốn. {{petName}} sẽ để mắt tới bạn."
+      ],
+      "CALM": [
+        "{{petName}} ở bên bạn. Hít thở một nhịp, rồi bắt đầu {{focusGoal}} thật chậm và chắc.",
+        "Cứ giữ nhịp ổn định. {{petName}} sẽ đồng hành trong {{durationMinutes}} phút tiếp theo.",
+        "Không cần vội. Chỉ cần quay lại với {{focusGoal}}, từng phút một."
+      ],
+      "FRIEND": [
+        "{{petName}} vào team với bạn hôm nay. Mình cùng xử lý {{focusGoal}} nhé.",
+        "Có {{petName}} ngồi cạnh rồi. Làm {{durationMinutes}} phút, xong mình nghỉ một chút.",
+        "{{focusGoal}} nghe có vẻ ổn đó. {{petName}} sẽ đi cùng bạn đến hết phiên."
+      ],
+      "INSPIRING": [
+        "{{petName}} đang sẵn sàng đồng hành. Biến {{durationMinutes}} phút này thành một bước tiến thật đẹp nào.",
+        "Hôm nay bắt đầu bằng {{focusGoal}}. {{petName}} tin đây sẽ là một phiên đáng giá.",
+        "Một phiên tập trung tốt có thể đổi cả ngày. {{petName}} sẽ đi cùng bạn."
+      ]
     }
   },
   "sidebar": {
@@ -59,8 +100,161 @@
     "profile": "Hồ sơ cá nhân",
     "upgrade": "Nâng cấp Pro",
     "logout": "Đăng xuất",
-    "songs": "Thư viện nhạc",
-    "feedback": "Feedback"
+    "pet": "Bạn đồng hành",
+    "songs": "Âm nhạc",
+    "feedback": "Feedback",
+    "minutes": "{{count}} phút",
+    "pro_unlimited": "Pro không giới hạn",
+    "unlimited": "Không giới hạn",
+    "used_today": "Đã dùng {{minutes}} hôm nay",
+    "remaining": "Còn lại",
+    "remaining_today": "Còn lại {{minutes}} hôm nay",
+    "used_of_limit": "Đã dùng {{used}} / {{limit}}",
+    "locked_tooltip": "Đang trong phiên tập trung, hãy kết thúc phiên trước."
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "unread": "{{count}} chưa đọc",
+    "all_read": "Tất cả đã đọc",
+    "mark_all_read": "Đọc tất cả",
+    "loading": "Đang tải...",
+    "empty": "Chưa có thông báo",
+    "delete_title": "Xóa thông báo",
+    "types": {
+      "SESSION_COMPLETED": "Hoàn thành phiên",
+      "ACHIEVEMENT_UNLOCKED": "Thành tựu mới",
+      "STREAK_MILESTONE": "Mốc streak",
+      "SESSION_ABORTED": "Phiên dừng sớm",
+      "DAILY_LIMIT_REACHED": "Giới hạn ngày",
+      "PAYMENT_SUCCESS": "Thanh toán thành công",
+      "PAYMENT_FAILED": "Thanh toán thất bại"
+    },
+    "titles": {
+      "daily_limit": "Đã đạt giới hạn hôm nay",
+      "session_aborted": "Phiên tập trung đã dừng sớm",
+      "session_completed": "Hoàn thành phiên tập trung",
+      "streak": "Đạt mốc streak mới",
+      "achievement": "Mở khóa thành tựu mới",
+      "payment_failed": "Thanh toán thất bại",
+      "payment_success": "Thanh toán thành công"
+    },
+    "messages": {
+      "daily_limit": "Bạn đã dùng hết thời gian miễn phí hôm nay. Nâng cấp Pro để tiếp tục tập trung.",
+      "session_aborted": "Phiên của bạn đã kết thúc sớm sau {{minutes}} phút.",
+      "session_completed": "Bạn đã hoàn thành {{minutes}} phút và nhận {{points}} điểm.",
+      "streak": "Bạn đang giữ streak {{days}} ngày liên tiếp.",
+      "achievement": "Bạn vừa mở khóa {{achievementName}} và nhận {{points}} điểm.",
+      "payment_failed": "Giao dịch {{orderCode}} không thành công. Vui lòng thử lại.",
+      "payment_success": "Gói {{planName}} đã được kích hoạt thành công."
+    },
+    "plans": {
+      "pro_monthly": "Pro tháng",
+      "pro_yearly": "Pro năm"
+    }
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "subtitle": "Quản lý cấu hình AI, bảo mật và tùy chọn ứng dụng.",
+    "actions": {
+      "add": "+ Thêm",
+      "adding": "Đang thêm...",
+      "cancel": "Hủy",
+      "change": "Thay đổi",
+      "delete_account": "Xóa tài khoản",
+      "deleting": "Đang xóa...",
+      "logout": "Đăng xuất",
+      "revoke": "Thu hồi",
+      "save_changes": "Lưu thay đổi",
+      "saving": "Đang lưu..."
+    },
+    "ai": {
+      "title": "Cấu hình AI đồng hành",
+      "description": "Chọn phong cách tương tác và cách AI xưng hô với bạn.",
+      "active": "ĐANG CHỌN",
+      "premium": "PREMIUM",
+      "self_label": "AI xưng là",
+      "self_placeholder": "tôi",
+      "user_label": "AI gọi bạn là",
+      "user_placeholder": "bạn"
+    },
+    "language": {
+      "title": "Ngôn ngữ",
+      "description": "Chọn ngôn ngữ hiển thị cho ứng dụng.",
+      "vi": "Tiếng Việt"
+    },
+    "focus": {
+      "title": "Phiên tập trung",
+      "description": "Cài đặt cảnh báo giám sát AI trong lúc bạn đang học.",
+      "warning_window": "Hiện cửa sổ cảnh báo",
+      "warning_window_desc": "Bật popup Warning khi AI phát hiện bạn xao nhãng.",
+      "sound_reminder": "Âm thanh nhắc nhở",
+      "sound_reminder_desc": "Phát âm thanh kèm theo cảnh báo AI."
+    },
+    "notifications": {
+      "title": "Thông báo",
+      "description": "Quản lý các thông báo hiển thị trong hộp thư chuông.",
+      "unread_badge": "Hiển thị huy hiệu chưa đọc",
+      "unread_badge_desc": "Hiện số màu đỏ trên biểu tượng chuông.",
+      "quiet_mode": "Chế độ yên lặng",
+      "pause_during_focus": "Tạm hoãn khi đang tập trung",
+      "pause_during_focus_desc": "Gom thành tích và streak để xem sau phiên.",
+      "quiet_hours": "Giờ yên lặng",
+      "quiet_hours_desc": "Tạm ẩn nhắc nhở không quan trọng trong khung giờ này.",
+      "from": "Từ",
+      "to": "Đến",
+      "session_digest": "Tóm tắt cuối phiên",
+      "session_digest_desc": "Gộp các cập nhật nhỏ thành một bản tóm tắt.",
+      "groups": {
+        "focus": {
+          "title": "Phiên tập trung",
+          "description": "Các cập nhật khi phiên bắt đầu, kết thúc hoặc dừng sớm."
+        },
+        "achievements": {
+          "title": "Thành tích",
+          "description": "Thành tựu mới và các mốc streak đáng chú ý."
+        },
+        "account": {
+          "title": "Tài khoản",
+          "description": "Giới hạn gói Free và trạng thái thanh toán."
+        }
+      },
+      "items": {
+        "session_completed": "Hoàn thành phiên",
+        "session_aborted": "Phiên bị dừng sớm",
+        "achievement_unlocked": "Mở khóa thành tựu",
+        "streak_milestone": "Mốc streak",
+        "daily_limit": "Giới hạn ngày",
+        "payments": "Thanh toán"
+      }
+    },
+    "app_list": {
+      "title": "Danh sách ứng dụng",
+      "description": "Quản lý các ứng dụng luôn được phép hoặc luôn bị chặn.",
+      "whitelist": "Whitelist",
+      "blacklist": "Blacklist",
+      "whitelist_placeholder": "Thêm từ khóa app luôn cho phép...",
+      "blacklist_placeholder": "Thêm từ khóa app luôn chặn...",
+      "empty": "Chưa có từ khóa nào."
+    },
+    "security": {
+      "title": "Bảo mật & Tài khoản",
+      "password": "Mật khẩu",
+      "password_updated_unknown": "Cập nhật lần cuối: chưa rõ"
+    },
+    "password_modal": {
+      "title": "Đổi mật khẩu",
+      "current_password": "Mật khẩu hiện tại",
+      "new_password": "Mật khẩu mới",
+      "confirm_password": "Xác nhận mật khẩu mới"
+    },
+    "devices": {
+      "title": "Thiết bị đăng nhập",
+      "empty": "Chưa có dữ liệu thiết bị (tính năng đang hoàn thiện)."
+    },
+    "delete_modal": {
+      "title": "Xóa tài khoản",
+      "description": "Tài khoản sẽ bị xóa vĩnh viễn. Bạn sẽ không thể đăng nhập lại bằng tài khoản này, nhưng email có thể được dùng để đăng ký lại."
+    }
   },
   "focusSession": {
     "activeView": {
@@ -398,5 +592,152 @@
       "question": "Hỏi han",
       "posture": "Tư thế"
     }
+  },
+  "feedback": {
+    "title": "Góp ý",
+    "subtitle": "Gửi góp ý, báo lỗi hoặc đề xuất tính năng để cải thiện FocusBuddy.",
+    "summary": {
+      "kicker": "Trung tâm phản hồi",
+      "title": "Giúp FocusBuddy tốt hơn sau mỗi phiên học",
+      "description": "Mỗi phản hồi đều được lưu lại để đội ngũ theo dõi, phân loại và xử lý đúng vấn đề bạn gặp phải.",
+      "aria": "Tổng quan feedback",
+      "sent": "Đã gửi",
+      "reviewing": "Đang xem xét",
+      "resolved": "Đã xử lý"
+    },
+    "compose": {
+      "title": "Gửi feedback mới",
+      "description": "Mô tả rõ vấn đề để tụi mình xử lý nhanh hơn."
+    },
+    "form": {
+      "title_label": "Tiêu đề",
+      "title_placeholder": "Ví dụ: Cần thêm thông báo khi kết thúc phiên",
+      "content_label": "Nội dung",
+      "content_placeholder": "Nhập chi tiết feedback của bạn...",
+      "rating_label": "Mức hài lòng",
+      "rating_hint": "Không bắt buộc, nhưng rất hữu ích.",
+      "rating_value": "{{rating}} sao",
+      "clear_rating": "Bỏ đánh giá",
+      "title_counter": "{{count}}/{{max}}",
+      "content_counter": "{{count}}/{{max}}",
+      "submitting": "Đang gửi...",
+      "submit": "Gửi feedback"
+    },
+    "history": {
+      "title": "Lịch sử feedback",
+      "description": "Theo dõi các góp ý bạn đã gửi.",
+      "refresh": "Tải lại",
+      "loading": "Đang tải feedback...",
+      "empty": "Bạn chưa gửi feedback nào.",
+      "admin_reply": "Phản hồi từ admin"
+    },
+    "types": {
+      "GENERAL": { "label": "Chung", "description": "Góp ý hoặc đề xuất chung" },
+      "BUG": { "label": "Báo lỗi", "description": "Báo cáo lỗi kỹ thuật hoặc sự cố" },
+      "FEATURE_REQUEST": { "label": "Tính năng mới", "description": "Đề xuất tính năng mới" },
+      "UI_UX": { "label": "Giao diện", "description": "Góp ý về thiết kế và trải nghiệm" },
+      "PAYMENT": { "label": "Thanh toán", "description": "Vấn đề liên quan đến gói cước/thanh toán" }
+    },
+    "status": {
+      "NEW": "Mới",
+      "REVIEWING": "Đang xem xét",
+      "RESOLVED": "Đã xử lý",
+      "REJECTED": "Đã từ chối"
+    },
+    "messages": {
+      "submit_success": "Đã gửi feedback. Cảm ơn bạn đã góp ý!",
+      "submit_failed": "Chưa gửi được feedback, vui lòng thử lại.",
+      "load_failed": "Chưa tải được danh sách feedback."
+    }
+  },
+  "upgrade": {
+    "header_title": "Nâng cấp Focus Buddy",
+    "header_subtitle": "Mở khóa các tính năng nâng cao để tối ưu hiệu suất tập trung.",
+    "current_plan_pro": "Bạn đang là Pro",
+    "current_plan_free": "Bạn đang là Free",
+    "pricing_note": "Tất cả giá chưa bao gồm VAT · Thanh toán theo chu kỳ đã chọn · Không tự động gia hạn",
+    "faq_title": "Câu hỏi thường gặp",
+    "faq_contact": "Vẫn còn thắc mắc? Liên hệ pinkydeng168@gmail.com(Lê Bọi Nhi)",
+    "plan_free_tagline": "Dành cho người mới bắt đầu",
+    "plan_free_features": [
+      "Tối đa 60 phút sử dụng mỗi ngày",
+      "Theo dõi tập trung cơ bản",
+      "Dashboard phân tích đơn giản",
+      "AI assistant mặc định"
+    ],
+    "plan_free_btn": "Gói hiện tại",
+    "plan_pro_tagline": "Dành cho người muốn tập trung nghiêm túc",
+    "plan_pro_features": [
+      "Không giới hạn thời gian sử dụng",
+      "AI assistant đa personality",
+      "Dashboard phân tích nâng cao",
+      "Chiến lược tập trung cá nhân hóa",
+      "Theo dõi hành vi nâng cao",
+      "Ưu tiên cập nhật và tính năng premium"
+    ],
+    "plan_pro_btn": "Nâng cấp Pro",
+    "plan_pro_btn_renew": "Gia hạn Pro",
+    "plan_popular_badge": "PHỔ BIẾN NHẤT",
+    "plan_yearly_payment": "nếu thanh toán theo năm",
+    "period_month": "/ tháng",
+    "period_year": "/ năm",
+    "billing_choice_aria": "Chọn chu kỳ thanh toán",
+    "billing_plan_title": "Pro plan",
+    "billing_choice_title": "Chọn chu kỳ thanh toán",
+    "billing_price_monthly": "49.000đ / tháng",
+    "billing_price_yearly": "399.000đ / năm",
+    "billing_monthly": "Theo tháng",
+    "billing_yearly": "Theo năm",
+    "billing_monthly_desc": "49.000đ / tháng · linh hoạt, dễ bắt đầu",
+    "billing_yearly_desc": "399.000đ / năm · tiết kiệm 200.000đ",
+    "billing_save_badge": "Tiết kiệm",
+    "billing_confirm_btn_monthly": "Tiếp tục với gói tháng",
+    "billing_confirm_btn_yearly": "Tiếp tục với gói năm",
+    "billing_submitting": "Đang khởi tạo thanh toán...",
+    "billing_waiting_title": "Đang chờ xác nhận thanh toán qua SePay...",
+    "billing_waiting_desc": "Vui lòng hoàn tất thanh toán trên trình duyệt vừa mở.",
+    "billing_success_aria": "Kết quả thanh toán",
+    "billing_success_title": "🎉 Nâng cấp Pro thành công!",
+    "billing_success_desc": "Bạn đã được sử dụng không giới hạn."
+  },
+  "profile": {
+    "header_title": "Hồ sơ người dùng",
+    "header_subtitle": "Quản lý hồ sơ và hiệu suất học tập của bạn.",
+    "not_updated": "Chưa cập nhật",
+    "joined_from": "Tham gia từ {{date}}",
+    "update_avatar": "Cập nhật ảnh đại diện",
+    "avatar_alt": "Ảnh đại diện",
+    "loading": "Đang tải...",
+    "stat_streak_days": "Ngày liên tục",
+    "stat_sessions": "Phiên tập trung",
+    "stat_total_time": "Tổng thời gian",
+    "personal_info_title": "Thông tin cá nhân",
+    "edit_profile": "Chỉnh sửa hồ sơ",
+    "display_name": "Tên hiển thị",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "dob": "Ngày sinh",
+    "address": "Địa chỉ",
+    "update_profile_btn": "Cập nhật hồ sơ",
+    "achievements_title": "Thành tựu",
+    "achievements_completed": "Đã hoàn thành",
+    "achievements_incomplete": "Chưa hoàn thành",
+    "achievements_empty": "Chưa có",
+    "achievements_no_pending": "Không còn thành tựu đang chờ",
+    "achievement_no_desc": "Chưa có mô tả cho thành tựu này.",
+    "achievement_in_progress": "Đang tiến hành",
+    "achievement_locked": "Đang khóa",
+    "achievements_no_data": "Chưa có dữ liệu thành tựu.",
+    "gender": "Giới tính",
+    "gender_male": "Nam",
+    "gender_female": "Nữ",
+    "gender_other": "Khác",
+    "province": "Tỉnh/thành",
+    "province_placeholder": "Chọn tỉnh/thành",
+    "ward": "Phường/xã",
+    "ward_placeholder": "Chọn phường/xã",
+    "btn_cancel": "Hủy",
+    "btn_save": "Lưu thay đổi",
+    "btn_saving": "Đang lưu..."
   }
 }

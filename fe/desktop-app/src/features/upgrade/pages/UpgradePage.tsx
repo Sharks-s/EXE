@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useCurrentPlan } from "../hooks/useCurrentPlan";
 import { useUpgradePayment } from "../hooks/useUpgradePayment";
@@ -65,6 +65,13 @@ export default function UpgradePage() {
     void startUpgrade(planCode);
   };
 
+  const handleCloseBilling = useCallback(() => {
+    if (paymentState === "success") resetPayment();
+    setSelectedBilling(null);
+  }, [paymentState, resetPayment]);
+
+  const isBillingModalOpen = selectedBilling !== null || paymentState === "success";
+
   return (
     <div className="upgrade-page">
       <header className="upgrade-header app-page-header">
@@ -96,13 +103,14 @@ export default function UpgradePage() {
           ))}
         </div>
 
-        {selectedBilling && (
+        {isBillingModalOpen && (
           <BillingChoicePanel
-            selectedBilling={selectedBilling}
+            selectedBilling={selectedBilling ?? "monthly"}
             onSelect={setSelectedBilling}
             isSubmitting={isUpgrading}
             paymentState={paymentState}
             onConfirm={handleConfirmBilling}
+            onClose={handleCloseBilling}
           />
         )}
 

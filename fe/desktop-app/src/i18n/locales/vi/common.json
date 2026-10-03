@@ -698,7 +698,9 @@
     "billing_waiting_desc": "Vui lòng hoàn tất thanh toán trên trình duyệt vừa mở.",
     "billing_success_aria": "Kết quả thanh toán",
     "billing_success_title": "🎉 Nâng cấp Pro thành công!",
-    "billing_success_desc": "Bạn đã được sử dụng không giới hạn."
+    "billing_success_desc": "Bạn đã được sử dụng không giới hạn.",
+    "billing_close": "Đóng",
+    "billing_success_btn": "Tuyệt vời!"
   },
   "profile": {
     "header_title": "Hồ sơ người dùng",

@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { BillingOption, PaymentState } from "../types/subscription.types";
 
@@ -7,6 +9,7 @@ export interface BillingChoicePanelProps {
     isSubmitting: boolean;
     paymentState: PaymentState;
     onConfirm: () => void;
+    onClose: () => void;
 }
 
 export function BillingChoicePanel({
@@ -15,25 +18,61 @@ export function BillingChoicePanel({
     isSubmitting,
     paymentState,
     onConfirm,
+    onClose,
 }: BillingChoicePanelProps) {
     const { t } = useTranslation("common");
     const isMonthly = selectedBilling === "monthly";
     const isWaiting = paymentState === "waiting";
     const isSuccess = paymentState === "success";
+    // Chỉ khóa đóng popup lúc đang khởi tạo giao dịch; khi đang chờ SePay vẫn cho đóng (polling chạy nền).
+    const canClose = !isSubmitting || isWaiting;
 
-    if (isSuccess) {
-        return (
-            <section className="billing-choice-panel" aria-label={t("upgrade.billing_success_aria")}>
-                <div className="payment-success-panel">
-                    <p>{t("upgrade.billing_success_title")}</p>
-                    <p className="hint">{t("upgrade.billing_success_desc")}</p>
+    useEffect(() => {
+        const handleKey = (event: KeyboardEvent) => {
+            if (event.key === "Escape" && canClose) onClose();
+        };
+        window.addEventListener("keydown", handleKey);
+        return () => window.removeEventListener("keydown", handleKey);
+    }, [canClose, onClose]);
+
+    const content = isSuccess ? (
+        <section
+            className="billing-choice-panel billing-modal billing-modal-success"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("upgrade.billing_success_aria")}
+            onClick={(event) => event.stopPropagation()}
+        >
+            <div className="payment-success-panel">
+                <div className="payment-success-icon">
+                    <span className="material-symbols-outlined">workspace_premium</span>
                 </div>
-            </section>
-        );
-    }
+                <p className="payment-success-title">{t("upgrade.billing_success_title")}</p>
+                <p className="hint">{t("upgrade.billing_success_desc")}</p>
+                <button type="button" className="billing-confirm-button" onClick={onClose}>
+                    {t("upgrade.billing_success_btn")}
+                </button>
+            </div>
+        </section>
+    ) : (
+        <section
+            className="billing-choice-panel billing-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("upgrade.billing_choice_aria")}
+            onClick={(event) => event.stopPropagation()}
+        >
+            <button
+                type="button"
+                className="billing-modal-close"
+                onClick={onClose}
+                disabled={!canClose}
+                aria-label={t("upgrade.billing_close")}
+                title={t("upgrade.billing_close")}
+            >
+                <span className="material-symbols-outlined">close</span>
+            </button>
 
-    return (
-        <section className="billing-choice-panel" aria-label={t("upgrade.billing_choice_aria")}>
             <div className="billing-choice-header">
                 <div>
                     <span>{t("upgrade.billing_plan_title")}</span>
@@ -47,7 +86,7 @@ export function BillingChoicePanel({
                     type="button"
                     className={`billing-option ${isMonthly ? "active" : ""}`}
                     onClick={() => onSelect("monthly")}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isWaiting}
                 >
                     <span className="billing-radio" />
                     <span className="billing-option-copy">
@@ -60,7 +99,7 @@ export function BillingChoicePanel({
                     type="button"
                     className={`billing-option recommended ${!isMonthly ? "active" : ""}`}
                     onClick={() => onSelect("yearly")}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isWaiting}
                 >
                     <span className="billing-radio" />
                     <span className="billing-option-copy">
@@ -73,10 +112,11 @@ export function BillingChoicePanel({
 
             {isWaiting ? (
                 <div className="payment-waiting-panel">
-                    <p>{t("upgrade.billing_waiting_title")}</p>
-                    <p className="hint">
-                        {t("upgrade.billing_waiting_desc")}
-                    </p>
+                    <span className="payment-waiting-spinner" aria-hidden="true" />
+                    <div>
+                        <p>{t("upgrade.billing_waiting_title")}</p>
+                        <p className="hint">{t("upgrade.billing_waiting_desc")}</p>
+                    </div>
                 </div>
             ) : (
                 <button
@@ -91,5 +131,12 @@ export function BillingChoicePanel({
                 </button>
             )}
         </section>
+    );
+
+    return createPortal(
+        <div className="billing-modal-overlay" onClick={() => canClose && onClose()}>
+            {content}
+        </div>,
+        document.body,
     );
 }

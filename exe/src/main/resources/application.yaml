@@ -547,7 +547,7 @@ app:
   sepay:
     merchant-id: ${SEPAY_MERCHANT_ID:}
     secret-key: ${SEPAY_SECRET_KEY:}
-    checkout-url: ${SEPAY_CHECKOUT_URL:https://pay.sepay.vn/v1/checkout/init}
+    checkout-url: ${SEPAY_CHECKOUT_URL:https://pay-sandbox.sepay.vn/v1/checkout/init}
     backend-base-url: ${APP_PUBLIC_BASE_URL:https://focusbuddy-api-lw5a.onrender.com}
     success-url: ${SEPAY_SUCCESS_URL:${APP_PUBLIC_BASE_URL:https://focusbuddy-api-lw5a.onrender.com}/payments/sepay/success}
     error-url: ${SEPAY_ERROR_URL:${APP_PUBLIC_BASE_URL:https://focusbuddy-api-lw5a.onrender.com}/payments/sepay/error}

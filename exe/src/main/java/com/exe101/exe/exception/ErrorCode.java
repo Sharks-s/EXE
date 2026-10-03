@@ -141,6 +141,9 @@ public enum ErrorCode {
     MOMO_REQUEST_FAILED("PAYMENT_005", HttpStatus.BAD_GATEWAY, "Failed to create MoMo payment request"),
     MOMO_SIGNATURE_INVALID("PAYMENT_006", HttpStatus.BAD_REQUEST, "Invalid MoMo signature"),
     MOMO_IPN_INVALID("PAYMENT_007", HttpStatus.BAD_REQUEST, "Invalid MoMo IPN payload"),
+    SEPAY_REQUEST_FAILED("PAYMENT_008", HttpStatus.BAD_GATEWAY, "Failed to create SePay payment request"),
+    SEPAY_SIGNATURE_INVALID("PAYMENT_009", HttpStatus.UNAUTHORIZED, "Invalid SePay signature"),
+    SEPAY_IPN_INVALID("PAYMENT_010", HttpStatus.BAD_REQUEST, "Invalid SePay IPN payload"),
     ;
 
     private final String code;

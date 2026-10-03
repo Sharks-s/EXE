@@ -56,7 +56,7 @@ export function useUpgradePayment(onUpgradeSuccess: () => void) {
                 try {
                     const result = await subscriptionApi.getPaymentStatus(orderCode);
 
-                    if (result.status === "SUCCESS") {
+                    if (result.status === "PAID" || result.status === "SUCCESS") {
                         setPaymentState("success");
                         setIsUpgrading(false);
                         toast.success(
@@ -111,9 +111,9 @@ export function useUpgradePayment(onUpgradeSuccess: () => void) {
         async (planCode: UpgradeProPlanCode) => {
             setIsUpgrading(true);
             try {
-                const payment = await subscriptionApi.createMomoPayment(planCode);
+                const payment = await subscriptionApi.createSePayPayment(planCode);
                 setPaymentState("waiting");
-                await open(payment.payUrl);
+                await open(payment.checkoutUrl);
                 pollPaymentStatus(payment.orderCode);
             } catch (err) {
                 console.error("[useUpgradePayment] Create payment failed:", err);

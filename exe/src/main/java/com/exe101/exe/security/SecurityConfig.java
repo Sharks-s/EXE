@@ -77,7 +77,12 @@ public class SecurityConfig {
                                 "/public/**",
                                 "/ai/**",
                                 "/payments/momo/ipn",
-                                "/payments/momo/redirect"
+                                "/payments/momo/redirect",
+                                "/payments/sepay/checkout/**",
+                                "/payments/sepay/ipn",
+                                "/payments/sepay/success",
+                                "/payments/sepay/error",
+                                "/payments/sepay/cancel"
                         ).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

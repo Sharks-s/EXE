@@ -8,12 +8,12 @@ import enBusiness from "./locales/en/businessErrors.json";
 import viCommon from "./locales/vi/common.json";
 import enCommon from "./locales/en/common.json";
 
-const STORAGE_KEY = "focusbuddy_language";
+const STORAGE_KEY = "focusbuddy_language_v2";
 const savedLanguage = localStorage.getItem(STORAGE_KEY) ?? "vi";
 
 i18n.use(initReactI18next).init({
   lng: savedLanguage,
-  fallbackLng: "en",
+  fallbackLng: "vi",
 
   resources: {
     vi: {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Page } from "@/shared/components/Sidebar";
 import type { NotificationItem } from "../types/notification.types";
 import { useNotifications } from "../hooks/useNotifications";
@@ -26,6 +27,7 @@ export function NotificationBell({
   onNavigate,
   isLocked = false,
 }: NotificationBellProps) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({
     left: 0,
@@ -119,6 +121,7 @@ export function NotificationBell({
         badgeCount={badgeCount}
         buttonRef={buttonRef}
         collapsed={collapsed}
+        label={t("notifications.title")}
         onClick={handleToggle}
       />
 

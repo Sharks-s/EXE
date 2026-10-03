@@ -1,4 +1,5 @@
 import type { KeyboardEvent, MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 import "./SettingsPage.css";
 import { useSettings } from "../hooks/useSettings";
 import type {
@@ -23,36 +24,36 @@ type ToggleSwitchProps = {
 };
 
 const NOTIFICATION_GROUPS: Array<{
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
   keys: BooleanNotificationPreferenceKey[];
-  items: Array<{ key: BooleanNotificationPreferenceKey; label: string }>;
+  items: Array<{ key: BooleanNotificationPreferenceKey; labelKey: string }>;
 }> = [
   {
-    title: "Phi\u00ean t\u1eadp trung",
-    description: "C\u00e1c c\u1eadp nh\u1eadt khi phi\u00ean b\u1eaft \u0111\u1ea7u, k\u1ebft th\u00fac ho\u1eb7c d\u1eebng s\u1edbm.",
+    titleKey: "settings.notifications.groups.focus.title",
+    descriptionKey: "settings.notifications.groups.focus.description",
     keys: ["sessionCompleted", "sessionAborted"],
     items: [
-      { key: "sessionCompleted", label: "Ho\u00e0n th\u00e0nh phi\u00ean" },
-      { key: "sessionAborted", label: "Phi\u00ean b\u1ecb d\u1eebng s\u1edbm" },
+      { key: "sessionCompleted", labelKey: "settings.notifications.items.session_completed" },
+      { key: "sessionAborted", labelKey: "settings.notifications.items.session_aborted" },
     ],
   },
   {
-    title: "Th\u00e0nh t\u00edch",
-    description: "Th\u00e0nh t\u1ef1u m\u1edbi v\u00e0 c\u00e1c m\u1ed1c streak \u0111\u00e1ng ch\u00fa \u00fd.",
+    titleKey: "settings.notifications.groups.achievements.title",
+    descriptionKey: "settings.notifications.groups.achievements.description",
     keys: ["achievementUnlocked", "streakMilestone"],
     items: [
-      { key: "achievementUnlocked", label: "M\u1edf kh\u00f3a th\u00e0nh t\u1ef1u" },
-      { key: "streakMilestone", label: "M\u1ed1c streak" },
+      { key: "achievementUnlocked", labelKey: "settings.notifications.items.achievement_unlocked" },
+      { key: "streakMilestone", labelKey: "settings.notifications.items.streak_milestone" },
     ],
   },
   {
-    title: "T\u00e0i kho\u1ea3n",
-    description: "Gi\u1edbi h\u1ea1n g\u00f3i Free v\u00e0 tr\u1ea1ng th\u00e1i thanh to\u00e1n.",
+    titleKey: "settings.notifications.groups.account.title",
+    descriptionKey: "settings.notifications.groups.account.description",
     keys: ["dailyLimitReached", "payments"],
     items: [
-      { key: "dailyLimitReached", label: "Gi\u1edbi h\u1ea1n ng\u00e0y" },
-      { key: "payments", label: "Thanh to\u00e1n" },
+      { key: "dailyLimitReached", labelKey: "settings.notifications.items.daily_limit" },
+      { key: "payments", labelKey: "settings.notifications.items.payments" },
     ],
   },
 ];
@@ -78,6 +79,7 @@ function ToggleSwitch({ disabled = false, enabled, onClick }: ToggleSwitchProps)
 }
 
 export default function SettingsPage() {
+  const { t } = useTranslation("common");
   const {
     i18n,
     personalities,
@@ -128,7 +130,7 @@ export default function SettingsPage() {
       <main className="main-content">
         <header className="mobile-header">
           <span className="material-symbols-outlined mobile-menu-icon">menu</span>
-          <h1>Cài đặt</h1>
+          <h1>{t("settings.title")}</h1>
           <div className="mobile-header-spacer" />
         </header>
 
@@ -139,17 +141,17 @@ export default function SettingsPage() {
                 <span className="app-page-title-icon">
                   <span className="material-symbols-outlined">settings</span>
                 </span>
-                <h1>Cài đặt</h1>
+                <h1>{t("settings.title")}</h1>
               </div>
-              <p>Quản lý cấu hình AI, bảo mật và tùy chọn ứng dụng.</p>
+              <p>{t("settings.subtitle")}</p>
             </div>
           </header>
 
           {/* ── Cấu hình AI đồng hành ── */}
           <section className="card grid-full">
             <div className="card-intro">
-              <h3>Cấu hình AI đồng hành</h3>
-              <p>Chọn phong cách tương tác và cách AI xưng hô với bạn.</p>
+              <h3>{t("settings.ai.title")}</h3>
+              <p>{t("settings.ai.description")}</p>
             </div>
 
             <div className="ai-grid">
@@ -164,9 +166,9 @@ export default function SettingsPage() {
                     className={`ai-option ${isActive ? "ai-option-active" : ""}`}
                     onClick={() => handleSelectPersonality(option.id)}
                   >
-                    {isActive && <span className="active-tag">ĐANG CHỌN</span>}
+                    {isActive && <span className="active-tag">{t("settings.ai.active")}</span>}
                     {option.isPremium && !isActive && (
-                      <span className="premium-tag">PREMIUM</span>
+                      <span className="premium-tag">{t("settings.ai.premium")}</span>
                     )}
                     <span
                       className={`material-symbols-outlined icon-fill ai-icon ${iconInfo.className}`}
@@ -182,20 +184,20 @@ export default function SettingsPage() {
 
             <div className="ai-address-form">
               <label>
-                AI xưng là
+                {t("settings.ai.self_label")}
                 <input
                   type="text"
-                  placeholder="tôi"
+                  placeholder={t("settings.ai.self_placeholder")}
                   maxLength={30}
                   value={selfAddress}
                   onChange={(e) => setSelfAddress(e.target.value)}
                 />
               </label>
               <label>
-                AI gọi bạn là
+                {t("settings.ai.user_label")}
                 <input
                   type="text"
-                  placeholder="bạn"
+                  placeholder={t("settings.ai.user_placeholder")}
                   maxLength={30}
                   value={userAddress}
                   onChange={(e) => setUserAddress(e.target.value)}
@@ -207,7 +209,7 @@ export default function SettingsPage() {
                 onClick={handleSaveAiAddress}
                 disabled={isSavingAiAddress}
               >
-                {isSavingAiAddress ? "Đang lưu..." : "Lưu thay đổi"}
+                {isSavingAiAddress ? t("settings.actions.saving") : t("settings.actions.save_changes")}
               </button>
             </div>
           </section>
@@ -215,8 +217,8 @@ export default function SettingsPage() {
           {/* ── Ngôn ngữ ── */}
           <section className="card grid-left">
             <div className="card-intro">
-              <h3>Ngôn ngữ</h3>
-              <p>Chọn ngôn ngữ hiển thị cho ứng dụng.</p>
+              <h3>{t("settings.language.title")}</h3>
+              <p>{t("settings.language.description")}</p>
             </div>
 
             <div className="language-options">
@@ -226,7 +228,7 @@ export default function SettingsPage() {
                 onClick={() => handleChangeLanguage("vi")}
               >
                 <span className="language-flag">🇻🇳</span>
-                <span>Tiếng Việt</span>
+                <span>{t("settings.language.vi")}</span>
                 {i18n.language === "vi" && (
                   <span className="material-symbols-outlined check-icon">check_circle</span>
                 )}
@@ -248,15 +250,15 @@ export default function SettingsPage() {
           {/* ── Phiên tập trung ── */}
           <section className="card grid-right">
             <div className="card-intro">
-              <h3>{"Phi\u00ean t\u1eadp trung"}</h3>
-              <p>{"C\u00e0i \u0111\u1eb7t c\u1ea3nh b\u00e1o gi\u00e1m s\u00e1t AI trong l\u00fac b\u1ea1n \u0111ang h\u1ecdc."}</p>
+              <h3>{t("settings.focus.title")}</h3>
+              <p>{t("settings.focus.description")}</p>
             </div>
 
             <div className="toggle-list">
               <div className="toggle-row">
                 <div>
-                  <p>{"Hi\u1ec7n c\u1eeda s\u1ed5 c\u1ea3nh b\u00e1o"}</p>
-                  <small>{"B\u1eadt popup Warning khi AI ph\u00e1t hi\u1ec7n b\u1ea1n xao nh\u00e3ng."}</small>
+                  <p>{t("settings.focus.warning_window")}</p>
+                  <small>{t("settings.focus.warning_window_desc")}</small>
                 </div>
                 <ToggleSwitch
                   enabled={warningWindowEnabled}
@@ -266,8 +268,8 @@ export default function SettingsPage() {
 
               <div className="toggle-row">
                 <div>
-                  <p>{"\u00c2m thanh nh\u1eafc nh\u1edf"}</p>
-                  <small>{"Ph\u00e1t \u00e2m thanh k\u00e8m theo c\u1ea3nh b\u00e1o AI."}</small>
+                  <p>{t("settings.focus.sound_reminder")}</p>
+                  <small>{t("settings.focus.sound_reminder_desc")}</small>
                 </div>
                 <ToggleSwitch
                   enabled={soundReminderEnabled}
@@ -280,16 +282,16 @@ export default function SettingsPage() {
           {/* ── Thông báo ── */}
           <section className="card grid-full">
             <div className="card-intro">
-              <h3>{"Th\u00f4ng b\u00e1o"}</h3>
-              <p>{"Qu\u1ea3n l\u00fd c\u00e1c th\u00f4ng b\u00e1o hi\u1ec3n th\u1ecb trong h\u1ed9p th\u01b0 chu\u00f4ng."}</p>
+              <h3>{t("settings.notifications.title")}</h3>
+              <p>{t("settings.notifications.description")}</p>
             </div>
 
             <div className="notification-settings-layout">
               <div className="notification-settings-main">
                 <div className="toggle-row notification-compact-row">
                   <div>
-                    <p>{"Hi\u1ec3n th\u1ecb huy hi\u1ec7u ch\u01b0a \u0111\u1ecdc"}</p>
-                    <small>{"Hi\u1ec7n s\u1ed1 m\u00e0u \u0111\u1ecf tr\u00ean bi\u1ec3u t\u01b0\u1ee3ng chu\u00f4ng."}</small>
+                    <p>{t("settings.notifications.unread_badge")}</p>
+                    <small>{t("settings.notifications.unread_badge_desc")}</small>
                   </div>
                   <ToggleSwitch
                     enabled={notificationPreferences.showUnreadBadge}
@@ -303,14 +305,14 @@ export default function SettingsPage() {
                   );
 
                   return (
-                    <details className="notification-group" key={group.title} open>
+                    <details className="notification-group" key={group.titleKey} open>
                       <summary className="notification-group-summary">
                         <span className="material-symbols-outlined notification-group-chevron">
                           expand_more
                         </span>
                         <span className="notification-group-copy">
-                          <strong>{group.title}</strong>
-                          <small>{group.description}</small>
+                          <strong>{t(group.titleKey)}</strong>
+                          <small>{t(group.descriptionKey)}</small>
                         </span>
                         <ToggleSwitch
                           enabled={groupEnabled}
@@ -323,7 +325,7 @@ export default function SettingsPage() {
                       <div className="notification-group-items">
                         {group.items.map((item) => (
                           <div className="notification-sub-row" key={item.key}>
-                            <span>{item.label}</span>
+                            <span>{t(item.labelKey)}</span>
                             <ToggleSwitch
                               enabled={notificationPreferences[item.key] === true}
                               onClick={() =>
@@ -339,12 +341,12 @@ export default function SettingsPage() {
               </div>
 
               <aside className="notification-quiet-panel">
-                <p className="notification-settings-label">{"Ch\u1ebf \u0111\u1ed9 y\u00ean l\u1eb7ng"}</p>
+                <p className="notification-settings-label">{t("settings.notifications.quiet_mode")}</p>
 
                 <div className="toggle-row notification-compact-row">
                   <div>
-                    <p>{"T\u1ea1m ho\u00e3n khi \u0111ang t\u1eadp trung"}</p>
-                    <small>{"Gom th\u00e0nh t\u00edch v\u00e0 streak \u0111\u1ec3 xem sau phi\u00ean."}</small>
+                    <p>{t("settings.notifications.pause_during_focus")}</p>
+                    <small>{t("settings.notifications.pause_during_focus_desc")}</small>
                   </div>
                   <ToggleSwitch
                     enabled={notificationPreferences.pauseDuringFocus}
@@ -356,8 +358,8 @@ export default function SettingsPage() {
 
                 <div className="toggle-row notification-compact-row">
                   <div>
-                    <p>{"Gi\u1edd y\u00ean l\u1eb7ng"}</p>
-                    <small>{"T\u1ea1m \u1ea9n nh\u1eafc nh\u1edf kh\u00f4ng quan tr\u1ecdng trong khung gi\u1edd n\u00e0y."}</small>
+                    <p>{t("settings.notifications.quiet_hours")}</p>
+                    <small>{t("settings.notifications.quiet_hours_desc")}</small>
                   </div>
                   <ToggleSwitch
                     enabled={notificationPreferences.quietHoursEnabled}
@@ -369,7 +371,7 @@ export default function SettingsPage() {
 
                 <div className="quiet-time-row">
                   <label>
-                    {"T\u1eeb"}
+                    {t("settings.notifications.from")}
                     <input
                       type="time"
                       value={notificationPreferences.quietHoursStart}
@@ -383,7 +385,7 @@ export default function SettingsPage() {
                     />
                   </label>
                   <label>
-                    {"\u0110\u1ebfn"}
+                    {t("settings.notifications.to")}
                     <input
                       type="time"
                       value={notificationPreferences.quietHoursEnd}
@@ -400,8 +402,8 @@ export default function SettingsPage() {
 
                 <div className="toggle-row notification-compact-row">
                   <div>
-                    <p>{"T\u00f3m t\u1eaft cu\u1ed1i phi\u00ean"}</p>
-                    <small>{"G\u1ed9p c\u00e1c c\u1eadp nh\u1eadt nh\u1ecf th\u00e0nh m\u1ed9t b\u1ea3n t\u00f3m t\u1eaft."}</small>
+                    <p>{t("settings.notifications.session_digest")}</p>
+                    <small>{t("settings.notifications.session_digest_desc")}</small>
                   </div>
                   <ToggleSwitch
                     enabled={notificationPreferences.sessionDigest}
@@ -415,8 +417,8 @@ export default function SettingsPage() {
           {/* ── Danh sách ứng dụng ── */}
           <section className="card grid-full">
             <div className="card-intro">
-              <h3>Danh sách ứng dụng</h3>
-              <p>Quản lý các ứng dụng luôn được phép hoặc luôn bị chặn.</p>
+              <h3>{t("settings.app_list.title")}</h3>
+              <p>{t("settings.app_list.description")}</p>
             </div>
 
             <div className="app-list-tabs">
@@ -425,14 +427,14 @@ export default function SettingsPage() {
                 className={`app-list-tab ${appListTab === "whitelist" ? "app-list-tab-active" : ""}`}
                 onClick={() => setAppListTab("whitelist")}
               >
-                Whitelist ({appRules.filter((r) => r.ruleType === "WHITELIST").length})
+                {t("settings.app_list.whitelist")} ({appRules.filter((r) => r.ruleType === "WHITELIST").length})
               </button>
               <button
                 type="button"
                 className={`app-list-tab ${appListTab === "blacklist" ? "app-list-tab-active" : ""}`}
                 onClick={() => setAppListTab("blacklist")}
               >
-                Blacklist ({appRules.filter((r) => r.ruleType === "BLACKLIST").length})
+                {t("settings.app_list.blacklist")} ({appRules.filter((r) => r.ruleType === "BLACKLIST").length})
               </button>
             </div>
 
@@ -441,8 +443,8 @@ export default function SettingsPage() {
                 type="text"
                 placeholder={
                   appListTab === "whitelist"
-                    ? "Thêm từ khóa app luôn cho phép..."
-                    : "Thêm từ khóa app luôn chặn..."
+                    ? t("settings.app_list.whitelist_placeholder")
+                    : t("settings.app_list.blacklist_placeholder")
                 }
                 value={newKeyword}
                 onChange={(e) => setNewKeyword(e.target.value)}
@@ -457,13 +459,13 @@ export default function SettingsPage() {
                 onClick={handleAddKeyword}
                 disabled={isAddingRule}
               >
-                {isAddingRule ? "Đang thêm..." : "+ Thêm"}
+                {isAddingRule ? t("settings.actions.adding") : t("settings.actions.add")}
               </button>
             </div>
 
             <div className="tag-list">
               {currentList.length === 0 ? (
-                <p className="tag-list-empty">Chưa có từ khóa nào.</p>
+                <p className="tag-list-empty">{t("settings.app_list.empty")}</p>
               ) : (
                 currentList.map((rule) => (
                   <span
@@ -482,7 +484,7 @@ export default function SettingsPage() {
 
           {/* ── Bảo mật & Tài khoản ── */}
           <section className="card security-card grid-full">
-            <h3>Bảo mật &amp; Tài khoản</h3>
+            <h3>{t("settings.security.title")}</h3>
 
             <div className="security-list">
               <div className="security-row">
@@ -491,8 +493,8 @@ export default function SettingsPage() {
                     password
                   </span>
                   <div>
-                    <p>Mật khẩu</p>
-                    <small>Cập nhật lần cuối: chưa rõ</small>
+                    <p>{t("settings.security.password")}</p>
+                    <small>{t("settings.security.password_updated_unknown")}</small>
                   </div>
                 </div>
                 <button
@@ -500,14 +502,14 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => setIsPasswordModalOpen(true)}
                 >
-                  Thay đổi
+                  {t("settings.actions.change")}
                 </button>
               </div>
             </div>
 
             <button className="logout-button" type="button" onClick={handleLogout}>
               <span className="material-symbols-outlined">logout</span>
-              Đăng xuất
+              {t("settings.actions.logout")}
             </button>
             <button
               className="delete-account-button"
@@ -515,7 +517,7 @@ export default function SettingsPage() {
               onClick={() => setIsDeleteModalOpen(true)}
             >
               <span className="material-symbols-outlined">delete_forever</span>
-              Xóa tài khoản
+              {t("settings.actions.delete_account")}
             </button>
           </section>
         </div>
@@ -530,7 +532,7 @@ export default function SettingsPage() {
       >
         <div className={`modal-card ${isPasswordModalOpen ? "modal-card-open" : ""}`}>
           <div className="modal-header">
-            <h3>Đổi mật khẩu</h3>
+            <h3>{t("settings.password_modal.title")}</h3>
             <button
               className="icon-button"
               type="button"
@@ -542,7 +544,7 @@ export default function SettingsPage() {
 
           <form className="password-form" onSubmit={handlePasswordSubmit}>
             <label>
-              Mật khẩu hiện tại
+              {t("settings.password_modal.current_password")}
               <input
                 type="password"
                 value={passwordForm.oldPassword}
@@ -556,7 +558,7 @@ export default function SettingsPage() {
               />
             </label>
             <label>
-              Mật khẩu mới
+              {t("settings.password_modal.new_password")}
               <input
                 type="password"
                 value={passwordForm.newPassword}
@@ -570,7 +572,7 @@ export default function SettingsPage() {
               />
             </label>
             <label>
-              Xác nhận mật khẩu mới
+              {t("settings.password_modal.confirm_password")}
               <input
                 type="password"
                 value={passwordForm.confirmPassword}
@@ -589,14 +591,14 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setIsPasswordModalOpen(false)}
               >
-                Hủy
+                {t("settings.actions.cancel")}
               </button>
               <button
                 className="primary-button"
                 type="submit"
                 disabled={isChangingPassword}
               >
-                {isChangingPassword ? "Đang lưu..." : "Lưu thay đổi"}
+                {isChangingPassword ? t("settings.actions.saving") : t("settings.actions.save_changes")}
               </button>
             </div>
           </form>
@@ -612,7 +614,7 @@ export default function SettingsPage() {
       >
         <div className={`modal-card ${isDeviceModalOpen ? "modal-card-open" : ""}`}>
           <div className="modal-header">
-            <h3>Thiết bị đăng nhập</h3>
+            <h3>{t("settings.devices.title")}</h3>
             <button
               className="icon-button"
               type="button"
@@ -625,7 +627,7 @@ export default function SettingsPage() {
           <div className="device-list">
             {devices.length === 0 ? (
               <p className="tag-list-empty">
-                Chưa có dữ liệu thiết bị (tính năng đang hoàn thiện).
+                {t("settings.devices.empty")}
               </p>
             ) : (
               devices.map((device) => (
@@ -646,7 +648,7 @@ export default function SettingsPage() {
                       // TODO: nối API thu hồi device
                     }}
                   >
-                    Thu hồi
+                    {t("settings.actions.revoke")}
                   </button>
                 </div>
               ))
@@ -665,7 +667,7 @@ export default function SettingsPage() {
       >
         <div className={`modal-card ${isDeleteModalOpen ? "modal-card-open" : ""}`}>
           <div className="modal-header">
-            <h3>Xóa tài khoản</h3>
+            <h3>{t("settings.delete_modal.title")}</h3>
             <button
               className="icon-button"
               type="button"
@@ -678,8 +680,7 @@ export default function SettingsPage() {
 
           <div className="delete-confirm">
             <p>
-              Tài khoản sẽ bị xóa vĩnh viễn. Bạn sẽ không thể đăng nhập lại
-              bằng tài khoản này, nhưng email có thể được dùng để đăng ký lại.
+              {t("settings.delete_modal.description")}
             </p>
             <div className="modal-actions">
               <button
@@ -688,7 +689,7 @@ export default function SettingsPage() {
                 onClick={() => setIsDeleteModalOpen(false)}
                 disabled={isDeletingAccount}
               >
-                Hủy
+                {t("settings.actions.cancel")}
               </button>
               <button
                 className="danger-button"
@@ -696,7 +697,7 @@ export default function SettingsPage() {
                 onClick={handleDeleteAccount}
                 disabled={isDeletingAccount}
               >
-                {isDeletingAccount ? "Đang xóa..." : "Xóa tài khoản"}
+                {isDeletingAccount ? t("settings.actions.deleting") : t("settings.actions.delete_account")}
               </button>
             </div>
           </div>

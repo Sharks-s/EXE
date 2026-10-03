@@ -3,11 +3,10 @@ import type { RefObject } from "react";
 type NotificationButtonProps = {
   badgeCount: number;
   collapsed: boolean;
+  label: string;
   onClick: () => void;
   buttonRef: RefObject<HTMLButtonElement | null>;
 };
-
-const LABEL = "Th\u00f4ng b\u00e1o";
 
 function BellIcon() {
   return (
@@ -31,13 +30,14 @@ export function NotificationButton({
   badgeCount,
   buttonRef,
   collapsed,
+  label,
   onClick,
 }: NotificationButtonProps) {
   return (
     <button
       ref={buttonRef}
       onClick={onClick}
-      title={collapsed ? LABEL : undefined}
+      title={collapsed ? label : undefined}
       className={`
         relative w-full flex items-center py-2.5 rounded-xl text-sm
         text-slate-500 hover:bg-[#f5f2ff] hover:text-slate-800
@@ -59,7 +59,7 @@ export function NotificationButton({
           ${collapsed ? "max-w-0 opacity-0 ml-0" : "max-w-[160px] opacity-100 ml-3"}
         `}
       >
-        {LABEL}
+        {label}
       </span>
     </button>
   );

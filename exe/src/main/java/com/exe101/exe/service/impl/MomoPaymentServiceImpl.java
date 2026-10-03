@@ -24,8 +24,13 @@ import com.exe101.exe.service.PaymentService;
 import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.HtmlUtils;
 
 import javax.crypto.Mac;
@@ -71,6 +76,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
     private final NotificationService notificationService;
     private final TransactionRecorder transactionRecorder;
     private final UserRepository userRepository;
+    private final RestTemplate restTemplate;
 
     @Override
     public CreatePaymentResponse createMomoPayment(CreatePaymentRequest request, Long userId) {
@@ -173,20 +179,24 @@ public class MomoPaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public void handleSePayIpn(String secretKey, SePayIpnRequest ipn) {
-        if (sePayProperties.getSecretKey() == null || !sePayProperties.getSecretKey().equals(secretKey)) {
-            log.warn("[SePay IPN] Invalid X-Secret-Key");
-            throw new BusinessException(ErrorCode.SEPAY_SIGNATURE_INVALID);
-        }
-
         if (ipn == null || ipn.order() == null || ipn.order().orderInvoiceNumber() == null) {
             throw new BusinessException(ErrorCode.SEPAY_IPN_INVALID);
         }
 
         String orderCode = ipn.order().orderInvoiceNumber();
+        log.info("[SePay IPN] Received notificationType={}, orderCode={}, orderStatus={}, amount={}",
+                ipn.notificationType(), orderCode, ipn.order().orderStatus(), ipn.order().orderAmount());
+
+        if (!isValidSePaySecret(secretKey)) {
+            log.warn("[SePay IPN] Invalid X-Secret-Key, orderCode={}", orderCode);
+            throw new BusinessException(ErrorCode.SEPAY_SIGNATURE_INVALID);
+        }
+
         Transaction transaction = transactionRepository.findByOrderCodeForUpdate(orderCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
 
         if (transaction.getStatus() == TransactionStatus.SUCCESS) {
+            log.info("[SePay IPN] Duplicate paid notification ignored, orderCode={}", orderCode);
             return;
         }
 
@@ -196,10 +206,13 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 transaction.setAdminNote("[SePay IPN] Transaction voided");
                 transactionRepository.save(transaction);
             }
+            log.info("[SePay IPN] Ignored notificationType={}, orderCode={}", ipn.notificationType(), orderCode);
             return;
         }
 
         if (!"CAPTURED".equals(ipn.order().orderStatus())) {
+            log.info("[SePay IPN] Ignored non-captured orderStatus={}, orderCode={}",
+                    ipn.order().orderStatus(), orderCode);
             return;
         }
 
@@ -224,15 +237,21 @@ public class MomoPaymentServiceImpl implements PaymentService {
         }
 
         applySuccessfulPayment(transaction, transactionId, "SEPAY_IPN");
+        log.info("[SePay IPN] Payment marked SUCCESS, orderCode={}, transactionId={}", orderCode, transactionId);
     }
 
     @Override
+    @Transactional
     public TransactionStatusResponse getTransactionStatus(String orderCode, Long userId) {
         Transaction transaction = transactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
 
         if (!transaction.getUser().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
+        }
+
+        if (transaction.getStatus() == TransactionStatus.PENDING) {
+            reconcileSePayOrder(transaction);
         }
 
         return TransactionStatusResponse.builder()
@@ -302,6 +321,130 @@ public class MomoPaymentServiceImpl implements PaymentService {
             return "https://pay-sandbox.sepay.vn/v1/checkout/init";
         }
         return sePayProperties.getCheckoutUrl();
+    }
+
+    private String resolveApiBaseUrl() {
+        String merchantId = sePayProperties.getMerchantId();
+        if (merchantId != null && merchantId.startsWith("SP-TEST-")) {
+            return "https://pgapi-sandbox.sepay.vn";
+        }
+        if (merchantId != null && merchantId.startsWith("SP-LIVE-")) {
+            return "https://pgapi.sepay.vn";
+        }
+        return sePayProperties.getApiBaseUrl();
+    }
+
+    private boolean isValidSePaySecret(String secretKey) {
+        if (sePayProperties.getSecretKey() == null || sePayProperties.getSecretKey().isBlank()) {
+            return true;
+        }
+        if (sePayProperties.getSecretKey().equals(secretKey)) {
+            return true;
+        }
+        boolean sandboxMerchant = sePayProperties.getMerchantId() != null
+                && sePayProperties.getMerchantId().startsWith("SP-TEST-");
+        if (sandboxMerchant && (secretKey == null || secretKey.isBlank())) {
+            log.warn("[SePay IPN] Missing X-Secret-Key accepted for sandbox merchant. Enable SECRET_KEY auth before production.");
+            return true;
+        }
+        return false;
+    }
+
+    private void reconcileSePayOrder(Transaction transaction) {
+        if (sePayProperties.getMerchantId() == null || sePayProperties.getMerchantId().isBlank()
+                || sePayProperties.getSecretKey() == null || sePayProperties.getSecretKey().isBlank()) {
+            return;
+        }
+
+        try {
+            SePayOrderData order = fetchSePayOrder(transaction.getOrderCode());
+            if (order == null) {
+                return;
+            }
+
+            if (!"CAPTURED".equals(order.orderStatus())) {
+                log.info("[SePay Sync] Order still not captured, orderCode={}, sePayStatus={}",
+                        transaction.getOrderCode(), order.orderStatus());
+                return;
+            }
+
+            BigDecimal receivedAmount = parseAmount(order.orderAmount());
+            if (receivedAmount.compareTo(BigDecimal.valueOf(transaction.getAmount())) != 0) {
+                log.error("[SePay Sync] Amount mismatch orderCode={}, expected={}, got={}",
+                        transaction.getOrderCode(), transaction.getAmount(), order.orderAmount());
+                return;
+            }
+
+            String transactionId = order.transactions() == null || order.transactions().isEmpty()
+                    ? null
+                    : order.transactions().getFirst().transactionId();
+            applySuccessfulPayment(transaction, transactionId, "SEPAY_SYNC");
+            log.info("[SePay Sync] Payment marked SUCCESS, orderCode={}, transactionId={}",
+                    transaction.getOrderCode(), transactionId);
+        } catch (org.springframework.web.client.HttpClientErrorException.Unauthorized e) {
+            log.warn("[SePay Sync] 401 Unauthorized from SePay API ({}). Check SEPAY_MERCHANT_ID/SEPAY_SECRET_KEY match the environment. orderCode={}",
+                    resolveApiBaseUrl(), transaction.getOrderCode());
+        } catch (RestClientException e) {
+            log.warn("[SePay Sync] Could not query orderCode={}", transaction.getOrderCode(), e);
+        }
+    }
+
+    private SePayOrderData fetchSePayOrder(String orderCode) {
+        HttpHeaders headers = new HttpHeaders();
+        String credentials = sePayProperties.getMerchantId() + ":" + sePayProperties.getSecretKey();
+        String basicAuth = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        headers.set(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth);
+
+        String baseUrl = resolveApiBaseUrl();
+        String normalizedBaseUrl = baseUrl.endsWith("/")
+                ? baseUrl.substring(0, baseUrl.length() - 1)
+                : baseUrl;
+        String url = normalizedBaseUrl + "/v1/order?q="
+                + URLEncoder.encode(orderCode, StandardCharsets.UTF_8);
+
+        SePayOrderListResponse response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                SePayOrderListResponse.class
+        ).getBody();
+
+        if (response == null || response.data() == null) {
+            return null;
+        }
+
+        return response.data().stream()
+                .filter(order -> orderCode.equals(order.orderInvoiceNumber()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private record SePayOrderListResponse(
+            List<SePayOrderData> data
+    ) {
+    }
+
+    private record SePayOrderData(
+            @com.fasterxml.jackson.annotation.JsonProperty("order_id")
+            String orderId,
+            @com.fasterxml.jackson.annotation.JsonProperty("order_invoice_number")
+            String orderInvoiceNumber,
+            @com.fasterxml.jackson.annotation.JsonProperty("order_status")
+            String orderStatus,
+            @com.fasterxml.jackson.annotation.JsonProperty("order_amount")
+            String orderAmount,
+            @com.fasterxml.jackson.annotation.JsonProperty("order_currency")
+            String orderCurrency,
+            List<SePayOrderTransaction> transactions
+    ) {
+    }
+
+    private record SePayOrderTransaction(
+            @com.fasterxml.jackson.annotation.JsonProperty("transaction_id")
+            String transactionId,
+            @com.fasterxml.jackson.annotation.JsonProperty("transaction_status")
+            String transactionStatus
+    ) {
     }
 
     private String generateUniqueOrderCode() {
@@ -382,8 +525,8 @@ public class MomoPaymentServiceImpl implements PaymentService {
         notificationService.create(
                 transaction.getUser().getId(),
                 NotificationType.PAYMENT_SUCCESS,
-                "Thanh toan thanh cong",
-                "Goi " + plan.getName() + " da duoc kich hoat thanh cong.",
+                "Thanh toán thành công",
+                "Gói " + displayPlanName(plan) + " đã được kích hoạt thành công.",
                 "upgrade",
                 Map.of(
                         "orderCode", transaction.getOrderCode(),
@@ -392,5 +535,13 @@ public class MomoPaymentServiceImpl implements PaymentService {
                         "subscriptionId", savedSubscription.getId()
                 )
         );
+    }
+
+    private String displayPlanName(SubscriptionPlan plan) {
+        return switch (plan.getCode()) {
+            case "PRO_MONTHLY" -> "Pro tháng";
+            case "PRO_YEARLY" -> "Pro năm";
+            default -> plan.getName();
+        };
     }
 }

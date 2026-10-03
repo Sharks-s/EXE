@@ -93,13 +93,14 @@ export function SetupView({ onNavigate }: SetupViewProps) {
         focusGoal,
         durationMinutes: duration,
         todayFocusMinutes: daySummary?.totalFocusMinutes,
-      }),
+      }, t),
     [
       daySummary?.totalFocusMinutes,
       duration,
       equippedPet?.customName,
       focusGoal,
       userProfile?.personalityCode,
+      t
     ],
   );
 

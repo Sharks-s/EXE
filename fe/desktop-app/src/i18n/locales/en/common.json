@@ -8,6 +8,11 @@
     "verify_title": "Verify OTP",
     "verify_subtitle": "We sent a 6-digit code to",
     "set_password_title": "Set Password",
+    "forgot_title": "Reset Password",
+    "forgot_subtitle": "Enter your email and we'll send you an OTP",
+    "forgot_password": "Forgot password?",
+    "new_password_title": "New Password",
+    "new_password_subtitle": "Please enter your new password",
     "set_password_subtitle": "Almost there! Set a password for your account",
     "email_placeholder": "Email",
     "password_placeholder": "Password",
@@ -16,6 +21,8 @@
     "btn_register": "Sign Up",
     "btn_verify": "Verify",
     "btn_complete": "Complete",
+    "btn_send_otp": "Send OTP",
+    "btn_reset_password": "Reset Password",
     "btn_resend": "Resend OTP",
     "btn_back": "Back",
     "signing_in": "Signing in...",
@@ -23,6 +30,7 @@
     "verifying": "Verifying...",
     "completing": "Setting up...",
     "expires_in": "Expires in",
+    "resetting": "Resetting...",
     "toggle_signin_title": "Welcome Back",
     "toggle_signin_subtitle": "Enter your personal details to continue your journey",
     "toggle_signup_title": "Hello, Friend",
@@ -49,6 +57,41 @@
       "sweet": "SWEET",
       "strict": "STRICT",
       "mean": "SAVAGE"
+    },
+
+    "buddy_messages": {
+      "no_pet": "Equip a pet to have a companion during your focus session.",
+      "today_focus": " You have focused for {{minutes}} minutes today.",
+      "SWEET": [
+        "{{petName}} will be here cheering for you. Let's start {{durationMinutes}} minutes for {{focusGoal}} gently.{{todayFocusText}}",
+        "{{petName}} believes in you. Just take small steps with {{focusGoal}}.",
+        "Let's get into it softly, {{petName}} is guarding your focus."
+      ],
+      "STRICT": [
+        "{{petName}} is ready. The next {{durationMinutes}} minutes are strictly for {{focusGoal}}, no wandering.",
+        "Focus mode on. {{petName}} will remind you to stick to your commitment to {{focusGoal}}.",
+        "The goal is clear: {{focusGoal}}. Start now, finish first, then rest."
+      ],
+      "MEAN": [
+        "{{petName}} is watching. Don't let {{focusGoal}} be delayed any longer.",
+        "{{durationMinutes}} minutes isn't too long. {{petName}} expects you not to make it harder than necessary.",
+        "If you chose {{focusGoal}}, see it through. {{petName}} will keep an eye on you."
+      ],
+      "CALM": [
+        "{{petName}} is with you. Take a breath, then start {{focusGoal}} slowly and steadily.",
+        "Keep a steady pace. {{petName}} will accompany you for the next {{durationMinutes}} minutes.",
+        "No need to rush. Just return to {{focusGoal}}, one minute at a time."
+      ],
+      "FRIEND": [
+        "{{petName}} is teaming up with you today. Let's tackle {{focusGoal}} together.",
+        "With {{petName}} by your side. Let's do {{durationMinutes}} minutes, then take a break.",
+        "{{focusGoal}} sounds good. {{petName}} will stick with you until the end of the session."
+      ],
+      "INSPIRING": [
+        "{{petName}} is ready to accompany you. Make these {{durationMinutes}} minutes a beautiful step forward.",
+        "Starting today with {{focusGoal}}. {{petName}} believes this will be a worthwhile session.",
+        "A good focus session can change your whole day. {{petName}} will go with you."
+      ]
     }
   },
   "sidebar": {
@@ -56,10 +99,163 @@
     "analytics": "Analytics",
     "settings": "Settings",
     "profile": "Profile",
+    "pet": "Buddy",
     "upgrade": "Upgrade Pro",
     "logout": "Logout",
     "songs": "Music",
-    "feedback": "Feedback"
+    "feedback": "Feedback",
+    "minutes": "{{count}} min",
+    "pro_unlimited": "Pro unlimited",
+    "unlimited": "Unlimited",
+    "used_today": "Used {{minutes}} today",
+    "remaining": "Remaining",
+    "remaining_today": "{{minutes}} remaining today",
+    "used_of_limit": "Used {{used}} / {{limit}}",
+    "locked_tooltip": "A focus session is running. Please end it first."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "{{count}} unread",
+    "all_read": "All read",
+    "mark_all_read": "Mark all as read",
+    "loading": "Loading...",
+    "empty": "No notifications yet",
+    "delete_title": "Delete notification",
+    "types": {
+      "SESSION_COMPLETED": "Session completed",
+      "ACHIEVEMENT_UNLOCKED": "New achievement",
+      "STREAK_MILESTONE": "Streak milestone",
+      "SESSION_ABORTED": "Session ended early",
+      "DAILY_LIMIT_REACHED": "Daily limit",
+      "PAYMENT_SUCCESS": "Payment successful",
+      "PAYMENT_FAILED": "Payment failed"
+    },
+    "titles": {
+      "daily_limit": "Daily limit reached",
+      "session_aborted": "Focus session ended early",
+      "session_completed": "Focus session completed",
+      "streak": "New streak milestone",
+      "achievement": "New achievement unlocked",
+      "payment_failed": "Payment failed",
+      "payment_success": "Payment successful"
+    },
+    "messages": {
+      "daily_limit": "You have used all free focus time today. Upgrade Pro to keep focusing.",
+      "session_aborted": "Your session ended early after {{minutes}} minutes.",
+      "session_completed": "You completed {{minutes}} minutes and earned {{points}} points.",
+      "streak": "You are keeping a {{days}}-day streak.",
+      "achievement": "You unlocked {{achievementName}} and earned {{points}} points.",
+      "payment_failed": "Transaction {{orderCode}} failed. Please try again.",
+      "payment_success": "{{planName}} plan has been activated successfully."
+    },
+    "plans": {
+      "pro_monthly": "Pro Monthly",
+      "pro_yearly": "Pro Yearly"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage AI configuration, security, and app preferences.",
+    "actions": {
+      "add": "+ Add",
+      "adding": "Adding...",
+      "cancel": "Cancel",
+      "change": "Change",
+      "delete_account": "Delete account",
+      "deleting": "Deleting...",
+      "logout": "Log out",
+      "revoke": "Revoke",
+      "save_changes": "Save changes",
+      "saving": "Saving..."
+    },
+    "ai": {
+      "title": "AI companion configuration",
+      "description": "Choose the interaction style and how the AI addresses you.",
+      "active": "SELECTED",
+      "premium": "PREMIUM",
+      "self_label": "AI refers to itself as",
+      "self_placeholder": "me",
+      "user_label": "AI calls you",
+      "user_placeholder": "you"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose the display language for the app.",
+      "vi": "Vietnamese"
+    },
+    "focus": {
+      "title": "Focus session",
+      "description": "Configure AI monitoring alerts while you are studying.",
+      "warning_window": "Show warning window",
+      "warning_window_desc": "Show a warning popup when AI detects distraction.",
+      "sound_reminder": "Sound reminder",
+      "sound_reminder_desc": "Play a sound together with AI warnings."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Manage notifications displayed in the bell inbox.",
+      "unread_badge": "Show unread badge",
+      "unread_badge_desc": "Show the red count on the bell icon.",
+      "quiet_mode": "Quiet mode",
+      "pause_during_focus": "Pause while focusing",
+      "pause_during_focus_desc": "Collect achievements and streaks to view after the session.",
+      "quiet_hours": "Quiet hours",
+      "quiet_hours_desc": "Temporarily hide non-critical reminders during this window.",
+      "from": "From",
+      "to": "To",
+      "session_digest": "End-of-session summary",
+      "session_digest_desc": "Group small updates into one summary.",
+      "groups": {
+        "focus": {
+          "title": "Focus sessions",
+          "description": "Updates when sessions start, finish, or end early."
+        },
+        "achievements": {
+          "title": "Achievements",
+          "description": "New achievements and notable streak milestones."
+        },
+        "account": {
+          "title": "Account",
+          "description": "Free plan limits and payment status."
+        }
+      },
+      "items": {
+        "session_completed": "Session completed",
+        "session_aborted": "Session ended early",
+        "achievement_unlocked": "Achievement unlocked",
+        "streak_milestone": "Streak milestone",
+        "daily_limit": "Daily limit",
+        "payments": "Payments"
+      }
+    },
+    "app_list": {
+      "title": "App list",
+      "description": "Manage apps that are always allowed or always blocked.",
+      "whitelist": "Whitelist",
+      "blacklist": "Blacklist",
+      "whitelist_placeholder": "Add an always-allowed app keyword...",
+      "blacklist_placeholder": "Add an always-blocked app keyword...",
+      "empty": "No keywords yet."
+    },
+    "security": {
+      "title": "Security & Account",
+      "password": "Password",
+      "password_updated_unknown": "Last updated: unknown"
+    },
+    "password_modal": {
+      "title": "Change password",
+      "current_password": "Current password",
+      "new_password": "New password",
+      "confirm_password": "Confirm new password"
+    },
+    "devices": {
+      "title": "Signed-in devices",
+      "empty": "No device data yet (this feature is still being completed)."
+    },
+    "delete_modal": {
+      "title": "Delete account",
+      "description": "The account will be permanently deleted. You will not be able to sign in with this account again, but the email may be used to register again."
+    }
   },
   "focusSession": {
     "activeView": {
@@ -396,5 +592,152 @@
       "question": "Question",
       "posture": "Posture"
     }
+  },
+  "feedback": {
+    "title": "User Feedback",
+    "subtitle": "Send feedback, report bugs or suggest features to improve FocusBuddy.",
+    "summary": {
+      "kicker": "Feedback Center",
+      "title": "Help FocusBuddy get better after every session",
+      "description": "Every feedback is saved for the team to monitor, categorize, and solve the issues you encounter.",
+      "aria": "Feedback overview",
+      "sent": "Sent",
+      "reviewing": "Reviewing",
+      "resolved": "Resolved"
+    },
+    "compose": {
+      "title": "Send new feedback",
+      "description": "Describe the issue clearly so we can fix it faster."
+    },
+    "form": {
+      "title_label": "Title",
+      "title_placeholder": "E.g.: Need a notification when session ends",
+      "content_label": "Content",
+      "content_placeholder": "Enter your feedback details...",
+      "rating_label": "Satisfaction",
+      "rating_hint": "Optional, but very helpful.",
+      "rating_value": "{{rating}} stars",
+      "clear_rating": "Clear rating",
+      "title_counter": "{{count}}/{{max}}",
+      "content_counter": "{{count}}/{{max}}",
+      "submitting": "Submitting...",
+      "submit": "Submit feedback"
+    },
+    "history": {
+      "title": "Feedback History",
+      "description": "Track the feedback you have sent.",
+      "refresh": "Refresh",
+      "loading": "Loading feedback...",
+      "empty": "You have not sent any feedback yet.",
+      "admin_reply": "Admin reply"
+    },
+    "types": {
+      "GENERAL": { "label": "General", "description": "General feedback or suggestions" },
+      "BUG": { "label": "Bug Report", "description": "Report a technical error or issue" },
+      "FEATURE_REQUEST": { "label": "Feature Request", "description": "Suggest a new feature" },
+      "UI_UX": { "label": "UI/UX", "description": "Feedback on design and experience" },
+      "PAYMENT": { "label": "Payment", "description": "Issues related to subscription/payment" }
+    },
+    "status": {
+      "NEW": "New",
+      "REVIEWING": "Reviewing",
+      "RESOLVED": "Resolved",
+      "REJECTED": "Rejected"
+    },
+    "messages": {
+      "submit_success": "Feedback sent successfully. Thank you!",
+      "submit_failed": "Failed to send feedback, please try again.",
+      "load_failed": "Failed to load feedback list."
+    }
+  },
+  "upgrade": {
+    "header_title": "Upgrade Focus Buddy",
+    "header_subtitle": "Unlock advanced features to optimize your focus performance.",
+    "current_plan_pro": "You are on Pro",
+    "current_plan_free": "You are on Free",
+    "pricing_note": "All prices exclude VAT · Billed based on selected cycle · No auto-renewal",
+    "faq_title": "Frequently Asked Questions",
+    "faq_contact": "Still have questions? Contact pinkydeng168@gmail.com (Lê Bội Nhi)",
+    "plan_free_tagline": "For beginners",
+    "plan_free_features": [
+      "Up to 60 minutes of usage per day",
+      "Basic focus tracking",
+      "Simple analytics dashboard",
+      "Default AI assistant"
+    ],
+    "plan_free_btn": "Current plan",
+    "plan_pro_tagline": "For those who want to focus seriously",
+    "plan_pro_features": [
+      "Unlimited usage time",
+      "Multi-personality AI assistant",
+      "Advanced analytics dashboard",
+      "Personalized focus strategy",
+      "Advanced behavior tracking",
+      "Priority updates and premium features"
+    ],
+    "plan_pro_btn": "Upgrade to Pro",
+    "plan_pro_btn_renew": "Renew Pro",
+    "plan_popular_badge": "MOST POPULAR",
+    "plan_yearly_payment": "if billed annually",
+    "period_month": "/ month",
+    "period_year": "/ year",
+    "billing_choice_aria": "Select billing cycle",
+    "billing_plan_title": "Pro plan",
+    "billing_choice_title": "Select billing cycle",
+    "billing_price_monthly": "49,000đ / month",
+    "billing_price_yearly": "399,000đ / year",
+    "billing_monthly": "Monthly",
+    "billing_yearly": "Yearly",
+    "billing_monthly_desc": "49,000đ / month · flexible, easy to start",
+    "billing_yearly_desc": "399,000đ / year · save 200,000đ",
+    "billing_save_badge": "Save",
+    "billing_confirm_btn_monthly": "Continue with monthly plan",
+    "billing_confirm_btn_yearly": "Continue with yearly plan",
+    "billing_submitting": "Initializing payment...",
+    "billing_waiting_title": "Waiting for payment confirmation via SePay...",
+    "billing_waiting_desc": "Please complete the payment on the browser just opened.",
+    "billing_success_aria": "Payment result",
+    "billing_success_title": "🎉 Pro upgrade successful!",
+    "billing_success_desc": "You now have unlimited usage."
+  },
+  "profile": {
+    "header_title": "User Profile",
+    "header_subtitle": "Manage your profile and learning performance.",
+    "not_updated": "Not updated",
+    "joined_from": "Joined from {{date}}",
+    "update_avatar": "Update avatar",
+    "avatar_alt": "Avatar",
+    "loading": "Loading...",
+    "stat_streak_days": "Streak days",
+    "stat_sessions": "Focus sessions",
+    "stat_total_time": "Total time",
+    "personal_info_title": "Personal Information",
+    "edit_profile": "Edit profile",
+    "display_name": "Display Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "dob": "Date of Birth",
+    "address": "Address",
+    "update_profile_btn": "Update Profile",
+    "achievements_title": "Achievements",
+    "achievements_completed": "Completed",
+    "achievements_incomplete": "Incomplete",
+    "achievements_empty": "Empty",
+    "achievements_no_pending": "No pending achievements",
+    "achievement_no_desc": "No description available for this achievement.",
+    "achievement_in_progress": "In progress",
+    "achievement_locked": "Locked",
+    "achievements_no_data": "No achievement data available.",
+    "gender": "Gender",
+    "gender_male": "Male",
+    "gender_female": "Female",
+    "gender_other": "Other",
+    "province": "Province/City",
+    "province_placeholder": "Select Province/City",
+    "ward": "Ward/Commune",
+    "ward_placeholder": "Select Ward/Commune",
+    "btn_cancel": "Cancel",
+    "btn_save": "Save changes",
+    "btn_saving": "Saving..."
   }
 }

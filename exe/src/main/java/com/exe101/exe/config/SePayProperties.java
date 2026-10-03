@@ -14,6 +14,7 @@ public class SePayProperties {
     private String merchantId;
     private String secretKey;
     private String checkoutUrl;
+    private String apiBaseUrl;
     private String successUrl;
     private String errorUrl;
     private String cancelUrl;

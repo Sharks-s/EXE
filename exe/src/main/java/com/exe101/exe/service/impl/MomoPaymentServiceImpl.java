@@ -98,7 +98,6 @@ public class MomoPaymentServiceImpl implements PaymentService {
         Optional<Transaction> reusableTransaction = transactionRepository
                 .findFirstByUserIdAndPlanAndStatusOrderByCreatedAtDesc(
                         userId, plan.getCode(), TransactionStatus.PENDING)
-                .filter(t -> t.getProvider() == PaymentProvider.SEPAY)
                 .filter(t -> t.getCreatedAt().isAfter(
                         Instant.now().minusSeconds(PAYURL_REUSE_WINDOW_MINUTES * 60)));
 
@@ -114,7 +113,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
             orderCode = generateUniqueOrderCode();
             requestId = UUID.randomUUID().toString();
             transactionRecorder.createPending(
-                    user, orderCode, plan.getCode(), amount, requestId, PaymentProvider.SEPAY);
+                    user, orderCode, plan.getCode(), amount, requestId, PaymentProvider.MOMO);
         }
 
         String checkoutUrl = backendCheckoutUrl(orderCode);
@@ -132,10 +131,6 @@ public class MomoPaymentServiceImpl implements PaymentService {
     public String buildSePayCheckoutForm(String orderCode) {
         Transaction transaction = transactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
-
-        if (transaction.getProvider() != PaymentProvider.SEPAY) {
-            throw new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND);
-        }
 
         Map<String, String> fields = buildSePayFields(transaction);
         String inputs = fields.entrySet().stream()

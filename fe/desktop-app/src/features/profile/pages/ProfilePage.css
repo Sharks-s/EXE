@@ -49,14 +49,20 @@ button {
 .page-grid {
   width: min(100%, 1280px);
   margin: 0 auto;
-  padding: 16px 24px 20px;
+  /* Cùng padding với các page khác (Analytics, Pets, Setup...) để header thẳng hàng */
+  padding: 24px 32px 8px;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
 }
 
+/* Header chuẩn cách nội dung 20px: 4px margin + 16px gap của grid */
+.page-grid > .app-page-header {
+  margin-bottom: 4px;
+}
+
 .profile-page-header {
-  margin-bottom: 0;
+  margin-bottom: 4px;
 }
 
 .grid-full {

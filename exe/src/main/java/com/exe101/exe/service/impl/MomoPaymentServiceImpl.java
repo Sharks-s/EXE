@@ -141,7 +141,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
                         HtmlUtils.htmlEscape(entry.getValue())))
                 .collect(Collectors.joining("\n"));
 
-        String action = HtmlUtils.htmlEscape(sePayProperties.getCheckoutUrl());
+        String action = HtmlUtils.htmlEscape(resolveCheckoutUrl());
         return """
                 <!doctype html>
                 <html lang="en">
@@ -294,6 +294,14 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 : baseUrl;
         return normalizedBaseUrl + "/payments/sepay/checkout/"
                 + URLEncoder.encode(orderCode, StandardCharsets.UTF_8);
+    }
+
+    private String resolveCheckoutUrl() {
+        if (sePayProperties.getMerchantId() != null
+                && sePayProperties.getMerchantId().startsWith("SP-TEST-")) {
+            return "https://pay-sandbox.sepay.vn/v1/checkout/init";
+        }
+        return sePayProperties.getCheckoutUrl();
     }
 
     private String generateUniqueOrderCode() {

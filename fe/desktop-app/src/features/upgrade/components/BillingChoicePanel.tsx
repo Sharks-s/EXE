@@ -71,7 +71,7 @@ export function BillingChoicePanel({
 
             {isWaiting ? (
                 <div className="payment-waiting-panel">
-                    <p>Đang chờ xác nhận thanh toán từ MoMo...</p>
+                    <p>Đang chờ xác nhận thanh toán qua SePay...</p>
                     <p className="hint">
                         Vui lòng hoàn tất thanh toán trên trình duyệt vừa mở.
                     </p>

@@ -25,12 +25,18 @@ public class TransactionRecorder {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Transaction createPending(User user, String orderCode, String planCode,
                                      long amount, String requestId) {
+        return createPending(user, orderCode, planCode, amount, requestId, PaymentProvider.MOMO);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Transaction createPending(User user, String orderCode, String planCode,
+                                     long amount, String requestId, PaymentProvider provider) {
         Transaction transaction = Transaction.builder()
                 .user(user)
                 .orderCode(orderCode)
                 .plan(planCode)
                 .amount(amount)
-                .provider(PaymentProvider.MOMO)
+                .provider(provider)
                 .status(TransactionStatus.PENDING)
                 .providerRequestId(requestId)
                 .build();
@@ -41,7 +47,7 @@ public class TransactionRecorder {
     public void markFailedToInitiate(String orderCode, String reason) {
         transactionRepository.findByOrderCode(orderCode).ifPresent(t -> {
             t.setStatus(TransactionStatus.FAILED);
-            t.setAdminNote("Momo create-payment call failed: " + reason);
+            t.setAdminNote("Payment create call failed: " + reason);
             transactionRepository.save(t);
         });
     }

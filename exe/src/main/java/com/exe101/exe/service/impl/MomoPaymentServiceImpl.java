@@ -1,59 +1,69 @@
 package com.exe101.exe.service.impl;
 
-import com.exe101.exe.config.MomoProperties;
-
+import com.exe101.exe.config.SePayProperties;
 import com.exe101.exe.dto.request.CreatePaymentRequest;
-import com.exe101.exe.dto.request.MomoCreatePaymentRequest;
 import com.exe101.exe.dto.request.MomoIpnRequest;
-import com.exe101.exe.dto.request.MomoQueryRequest;
+import com.exe101.exe.dto.request.SePayIpnRequest;
 import com.exe101.exe.dto.response.CreatePaymentResponse;
-import com.exe101.exe.dto.response.MomoCreatePaymentResult;
-import com.exe101.exe.dto.response.MomoQueryResult;
 import com.exe101.exe.dto.response.TransactionStatusResponse;
 import com.exe101.exe.exception.BusinessException;
 import com.exe101.exe.exception.ErrorCode;
-import com.exe101.exe.exception.MomoAmbiguousResultException;
-import com.exe101.exe.external.MomoClient;
 import com.exe101.exe.model.entity.Subscription;
 import com.exe101.exe.model.entity.SubscriptionPlan;
 import com.exe101.exe.model.entity.Transaction;
 import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.enums.NotificationType;
+import com.exe101.exe.model.enums.PaymentProvider;
 import com.exe101.exe.model.enums.TransactionStatus;
 import com.exe101.exe.repository.SubscriptionPlanRepository;
 import com.exe101.exe.repository.SubscriptionRepository;
 import com.exe101.exe.repository.TransactionRepository;
 import com.exe101.exe.repository.UserRepository;
-import com.exe101.exe.security.MomoSignatureUtil;
-import com.exe101.exe.service.PaymentService;
 import com.exe101.exe.service.NotificationService;
+import com.exe101.exe.service.PaymentService;
 import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MomoPaymentServiceImpl implements PaymentService {
 
-    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    private static final DateTimeFormatter ORDER_CODE_FORMAT =
-            DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final int MAX_ORDER_CODE_RETRY = 5;
+    private static final long PAYURL_REUSE_WINDOW_MINUTES = 10;
+    private static final List<String> SEPAY_SIGNED_FIELDS = List.of(
+            "order_amount",
+            "merchant",
+            "currency",
+            "operation",
+            "order_description",
+            "order_invoice_number",
+            "customer_id",
+            "payment_method",
+            "success_url",
+            "error_url",
+            "cancel_url"
+    );
 
-    private final MomoClient momoClient;
-    private final MomoProperties momoProperties;
+    private final SePayProperties sePayProperties;
     private final TransactionRepository transactionRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final SubscriptionRepository subscriptionRepository;
@@ -62,13 +72,22 @@ public class MomoPaymentServiceImpl implements PaymentService {
     private final TransactionRecorder transactionRecorder;
     private final UserRepository userRepository;
 
-    private static final long PAYURL_REUSE_WINDOW_MINUTES = 10;
-
     @Override
     public CreatePaymentResponse createMomoPayment(CreatePaymentRequest request, Long userId) {
+        return createSePayPayment(request, userId);
+    }
+
+    @Override
+    public void handleMomoIpn(MomoIpnRequest ipnRequest) {
+        log.warn("[Payment] Ignored legacy MoMo IPN after SePay migration, orderId={}", ipnRequest.orderId());
+    }
+
+    @Override
+    public CreatePaymentResponse createSePayPayment(CreatePaymentRequest request, Long userId) {
         User user = userService.findById(userId);
 
         SubscriptionPlan plan = subscriptionPlanRepository.findByCode(request.planCode())
+                .filter(SubscriptionPlan::isActive)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND));
 
         if (plan.getPriceVnd() == null || plan.getPriceVnd() <= 0) {
@@ -76,12 +95,10 @@ public class MomoPaymentServiceImpl implements PaymentService {
         }
 
         long amount = plan.getPriceVnd();
-
-        // Tìm giao dịch PENDING gần nhất cùng plan -> tránh tạo rác nếu user thoát
-        // ra rồi bấm nâng cấp lại ngay sau đó
         Optional<Transaction> reusableTransaction = transactionRepository
                 .findFirstByUserIdAndPlanAndStatusOrderByCreatedAtDesc(
                         userId, plan.getCode(), TransactionStatus.PENDING)
+                .filter(t -> t.getProvider() == PaymentProvider.SEPAY)
                 .filter(t -> t.getCreatedAt().isAfter(
                         Instant.now().minusSeconds(PAYURL_REUSE_WINDOW_MINUTES * 60)));
 
@@ -89,149 +106,130 @@ public class MomoPaymentServiceImpl implements PaymentService {
         String requestId;
 
         if (reusableTransaction.isPresent()) {
-            // Dùng lại transaction PENDING gần đây để tránh tạo nhiều payment order
-            // khi user thoát ra rồi bấm mua lại ngay.
             Transaction existing = reusableTransaction.get();
             orderCode = existing.getOrderCode();
             requestId = existing.getProviderRequestId();
-            log.info("[Payment] Reuse PENDING transaction orderId={} user={}", orderCode, userId);
+            log.info("[SePay] Reuse PENDING transaction orderCode={} user={}", orderCode, userId);
         } else {
-            orderCode = generateUniqueOrderCode(userId);
+            orderCode = generateUniqueOrderCode();
             requestId = UUID.randomUUID().toString();
-            transactionRecorder.createPending(user, orderCode, plan.getCode(), amount, requestId);
+            transactionRecorder.createPending(
+                    user, orderCode, plan.getCode(), amount, requestId, PaymentProvider.SEPAY);
         }
 
-        String extraData = "";
-        String orderInfo = buildOrderInfo(plan);
-        String rawSignature = MomoSignatureUtil.buildCreateRawSignature(
-                momoProperties.getAccessKey(), amount, extraData, momoProperties.getIpnUrl(),
-                orderCode, orderInfo, momoProperties.getPartnerCode(),
-                momoProperties.getRedirectUrl(), requestId, momoProperties.getRequestType());
-        String signature = MomoSignatureUtil.hmacSha256(rawSignature, momoProperties.getSecretKey());
-
-        MomoCreatePaymentRequest momoRequest = MomoCreatePaymentRequest.builder()
-                .partnerCode(momoProperties.getPartnerCode())
-                .partnerName(momoProperties.getPartnerName())
-                .storeId(momoProperties.getStoreId())
-                .requestId(requestId)
-                .amount(amount)
-                .orderId(orderCode)
-                .orderInfo(orderInfo)
-                .redirectUrl(momoProperties.getRedirectUrl())
-                .ipnUrl(momoProperties.getIpnUrl())
-                .requestType(momoProperties.getRequestType())
-                .extraData(extraData)
-                .signature(signature)
-                .lang("vi")
-                .build();
-
-        MomoCreatePaymentResult result;
-        try {
-            result = momoClient.createPayment(momoRequest);
-        } catch (MomoAmbiguousResultException e) {
-            log.warn("[Payment] Ambiguous result khi tạo payment orderId={}, giữ PENDING chờ reconciliation",
-                    orderCode, e);
-            throw new BusinessException(ErrorCode.EXTERNAL_SERVICE_ERROR);
-        } catch (BusinessException e) {
-            // Chỉ mark FAILED nếu đây là transaction MỚI tạo — không đụng transaction cũ đang tái sử dụng,
-            // vì nó có thể vẫn đang chờ IPN từ lần request trước đó
-            if (reusableTransaction.isEmpty()) {
-                transactionRecorder.markFailedToInitiate(orderCode, e.getMessage());
-            }
-            throw e;
-        }
-
+        String checkoutUrl = backendCheckoutUrl(orderCode);
         return CreatePaymentResponse.builder()
                 .orderCode(orderCode)
-                .payUrl(result.payUrl())
-                .deeplink(result.deeplink())
+                .checkoutUrl(checkoutUrl)
+                .payUrl(checkoutUrl)
+                .deeplink(null)
                 .amount(amount)
                 .build();
     }
 
     @Override
-    @Transactional
-    public void handleMomoIpn(MomoIpnRequest ipn) {
-        String rawSignature = MomoSignatureUtil.buildIpnRawSignature(
-                momoProperties.getAccessKey(), ipn.amount(), nullToEmpty(ipn.extraData()),
-                nullToEmpty(ipn.message()), ipn.orderId(), nullToEmpty(ipn.orderInfo()),
-                nullToEmpty(ipn.orderType()), ipn.partnerCode(), nullToEmpty(ipn.payType()),
-                ipn.requestId(), ipn.responseTime(), ipn.resultCode(), ipn.transId());
-        String expectedSignature = MomoSignatureUtil.hmacSha256(rawSignature, momoProperties.getSecretKey());
-
-        if (!MomoSignatureUtil.isValidSignature(expectedSignature, ipn.signature())) {
-            log.warn("[Momo IPN] Invalid signature, orderId={}", ipn.orderId());
-            throw new BusinessException(ErrorCode.MOMO_SIGNATURE_INVALID);
-        }
-
-        if (!momoProperties.getPartnerCode().equals(ipn.partnerCode())) {
-            log.warn("[Momo IPN] partnerCode mismatch, got={}", ipn.partnerCode());
-            throw new BusinessException(ErrorCode.MOMO_IPN_INVALID);
-        }
-
-        Transaction transaction = transactionRepository.findByOrderCodeForUpdate(ipn.orderId())
+    @Transactional(readOnly = true)
+    public String buildSePayCheckoutForm(String orderCode) {
+        Transaction transaction = transactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
 
-        if (!Objects.equals(transaction.getAmount(), ipn.amount())) {
-            log.error("[Momo IPN] Amount mismatch! orderId={}, expected={}, got={}",
-                    ipn.orderId(), transaction.getAmount(), ipn.amount());
-            throw new BusinessException(ErrorCode.MOMO_IPN_INVALID);
+        if (transaction.getProvider() != PaymentProvider.SEPAY) {
+            throw new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND);
         }
 
-        applyPaymentResult(transaction, ipn.transId(), ipn.resultCode(), ipn.message(), "IPN");
+        Map<String, String> fields = buildSePayFields(transaction);
+        String inputs = fields.entrySet().stream()
+                .map(entry -> """
+                        <input type="hidden" name="%s" value="%s">
+                        """.formatted(
+                        HtmlUtils.htmlEscape(entry.getKey()),
+                        HtmlUtils.htmlEscape(entry.getValue())))
+                .collect(Collectors.joining("\n"));
+
+        String action = HtmlUtils.htmlEscape(sePayProperties.getCheckoutUrl());
+        return """
+                <!doctype html>
+                <html lang="en">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <title>Redirecting to SePay</title>
+                  <style>
+                    body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: Arial, sans-serif; background: #f8fafc; color: #0f172a; }
+                    main { width: min(420px, calc(100vw - 32px)); padding: 28px; border: 1px solid #e2e8f0; border-radius: 18px; background: white; box-shadow: 0 24px 60px rgba(15, 23, 42, .12); }
+                    h1 { margin: 0 0 10px; font-size: 24px; }
+                    p { margin: 0; color: #475569; line-height: 1.6; }
+                  </style>
+                </head>
+                <body>
+                  <main>
+                    <h1>Opening SePay checkout...</h1>
+                    <p>Please wait while Focus Buddy redirects you to the secure payment page.</p>
+                  </main>
+                  <form id="sepay-form" action="%s" method="POST">
+                    %s
+                  </form>
+                  <script>document.getElementById("sepay-form").submit();</script>
+                </body>
+                </html>
+                """.formatted(action, inputs);
     }
 
     @Override
     @Transactional
-    public void reconcilePendingTransaction(String orderCode) {
+    public void handleSePayIpn(String secretKey, SePayIpnRequest ipn) {
+        if (sePayProperties.getSecretKey() == null || !sePayProperties.getSecretKey().equals(secretKey)) {
+            log.warn("[SePay IPN] Invalid X-Secret-Key");
+            throw new BusinessException(ErrorCode.SEPAY_SIGNATURE_INVALID);
+        }
+
+        if (ipn == null || ipn.order() == null || ipn.order().orderInvoiceNumber() == null) {
+            throw new BusinessException(ErrorCode.SEPAY_IPN_INVALID);
+        }
+
+        String orderCode = ipn.order().orderInvoiceNumber();
         Transaction transaction = transactionRepository.findByOrderCodeForUpdate(orderCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
 
-        if (transaction.getStatus() != TransactionStatus.PENDING) {
-            return; // đã có IPN xử lý xong trước khi job chạy tới, bỏ qua
-        }
-
-        String requestId = UUID.randomUUID().toString();
-        String rawSignature = MomoSignatureUtil.buildQueryRawSignature(
-                momoProperties.getAccessKey(), orderCode, momoProperties.getPartnerCode(), requestId);
-        String signature = MomoSignatureUtil.hmacSha256(rawSignature, momoProperties.getSecretKey());
-
-        MomoQueryRequest queryRequest = MomoQueryRequest.builder()
-                .partnerCode(momoProperties.getPartnerCode())
-                .requestId(requestId)
-                .orderId(orderCode)
-                .signature(signature)
-                .lang("vi")
-                .build();
-
-        MomoQueryResult result;
-        try {
-            result = momoClient.queryTransaction(queryRequest);
-        } catch (MomoAmbiguousResultException e) {
-            log.warn("[Reconciliation] Vẫn chưa xác định được kết quả cho orderId={}, thử lại lần sau", orderCode);
+        if (transaction.getStatus() == TransactionStatus.SUCCESS) {
             return;
         }
 
-        if (result.resultCode() == null) {
-            log.warn("[Reconciliation] MoMo trả resultCode null cho orderId={}, thử lại lần sau", orderCode);
+        if (!"ORDER_PAID".equals(ipn.notificationType())) {
+            if ("TRANSACTION_VOID".equals(ipn.notificationType())) {
+                transaction.setStatus(TransactionStatus.CANCELLED);
+                transaction.setAdminNote("[SePay IPN] Transaction voided");
+                transactionRepository.save(transaction);
+            }
             return;
         }
 
-        // resultCode = 7002: giao dịch đang được xử lý (user chưa thanh toán xong) -> chưa kết luận, chờ tiếp
-        if (result.resultCode() == 7002) {
-            log.info("[Reconciliation] orderId={} vẫn đang xử lý phía MoMo, chờ lần sau", orderCode);
+        if (!"CAPTURED".equals(ipn.order().orderStatus())) {
             return;
         }
 
-        if (!Objects.equals(transaction.getAmount(), result.amount())) {
-            log.error("[Reconciliation] Amount mismatch! orderId={}, expected={}, got={}",
-                    orderCode, transaction.getAmount(), result.amount());
-            return; // không tự xử lý, cần admin kiểm tra
+        if (!"VND".equals(ipn.order().orderCurrency())) {
+            throw new BusinessException(ErrorCode.SEPAY_IPN_INVALID);
         }
 
-        applyPaymentResult(transaction, result.transId(), result.resultCode(), result.message(), "RECONCILIATION");
+        BigDecimal receivedAmount = parseAmount(ipn.order().orderAmount());
+        if (receivedAmount.compareTo(BigDecimal.valueOf(transaction.getAmount())) != 0) {
+            log.error("[SePay IPN] Amount mismatch orderCode={}, expected={}, got={}",
+                    orderCode, transaction.getAmount(), ipn.order().orderAmount());
+            throw new BusinessException(ErrorCode.SEPAY_IPN_INVALID);
+        }
+
+        String transactionId = ipn.transaction() != null ? ipn.transaction().transactionId() : null;
+        if (transactionId != null) {
+            transactionRepository.findByProviderTransactionId(transactionId)
+                    .filter(existing -> !existing.getId().equals(transaction.getId()))
+                    .ifPresent(existing -> {
+                        throw new BusinessException(ErrorCode.SEPAY_IPN_INVALID);
+                    });
+        }
+
+        applySuccessfulPayment(transaction, transactionId, "SEPAY_IPN");
     }
-
 
     @Override
     public TransactionStatusResponse getTransactionStatus(String orderCode, Long userId) {
@@ -250,64 +248,103 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 .build();
     }
 
-    // Helper
+    @Override
+    public void reconcilePendingTransaction(String orderCode) {
+        log.debug("[SePay] Reconciliation skipped; waiting for IPN. orderCode={}", orderCode);
+    }
 
-    private String generateUniqueOrderCode(Long userId) {
+    private Map<String, String> buildSePayFields(Transaction transaction) {
+        Map<String, String> fields = new LinkedHashMap<>();
+        fields.put("order_amount", String.valueOf(transaction.getAmount()));
+        fields.put("merchant", sePayProperties.getMerchantId());
+        fields.put("currency", "VND");
+        fields.put("operation", "PURCHASE");
+        fields.put("order_description", buildOrderDescription(transaction.getPlan()));
+        fields.put("order_invoice_number", transaction.getOrderCode());
+        fields.put("customer_id", String.valueOf(transaction.getUser().getId()));
+        fields.put("payment_method", "BANK_TRANSFER");
+        fields.put("success_url", sePayProperties.getSuccessUrl());
+        fields.put("error_url", sePayProperties.getErrorUrl());
+        fields.put("cancel_url", sePayProperties.getCancelUrl());
+        fields.put("signature", generateSePaySignature(fields));
+        return fields;
+    }
+
+    private String generateSePaySignature(Map<String, String> fields) {
+        String signedString = SEPAY_SIGNED_FIELDS.stream()
+                .filter(fields::containsKey)
+                .map(key -> key + "=" + fields.get(key))
+                .collect(Collectors.joining(","));
+
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(
+                    sePayProperties.getSecretKey().getBytes(StandardCharsets.UTF_8),
+                    "HmacSHA256");
+            mac.init(secretKeySpec);
+            byte[] hash = mac.doFinal(signedString.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SEPAY_REQUEST_FAILED);
+        }
+    }
+
+    private String backendCheckoutUrl(String orderCode) {
+        String baseUrl = sePayProperties.getBackendBaseUrl();
+        if (baseUrl == null || baseUrl.isBlank()) {
+            throw new BusinessException(ErrorCode.SEPAY_REQUEST_FAILED);
+        }
+        String normalizedBaseUrl = baseUrl.endsWith("/")
+                ? baseUrl.substring(0, baseUrl.length() - 1)
+                : baseUrl;
+        return normalizedBaseUrl + "/payments/sepay/checkout/"
+                + URLEncoder.encode(orderCode, StandardCharsets.UTF_8);
+    }
+
+    private String generateUniqueOrderCode() {
         for (int i = 0; i < MAX_ORDER_CODE_RETRY; i++) {
-            String ts = Instant.now().atZone(VN_ZONE).format(ORDER_CODE_FORMAT);
-            String random = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-            String candidate = "EXE" + ts + userId + random;
+            String random = UUID.randomUUID().toString()
+                    .replace("-", "")
+                    .substring(0, 12)
+                    .toUpperCase();
+            String candidate = "FB-" + random;
             if (!transactionRepository.existsByOrderCode(candidate)) {
                 return candidate;
             }
         }
-        throw new BusinessException(ErrorCode.MOMO_REQUEST_FAILED);
+        throw new BusinessException(ErrorCode.SEPAY_REQUEST_FAILED);
     }
 
-    private String buildOrderInfo(SubscriptionPlan plan) {
-        return "Thanh toán gói " + plan.getName();
+    private String buildOrderDescription(String planCode) {
+        return "Focus Buddy Pro " + planCode;
     }
 
-    private String nullToEmpty(String value) {
-        return value != null ? value : "";
-    }
-
-    /**
-     * Logic dùng chung cho cả IPN và Reconciliation, xử lý sau khi đã xác thực đủ:
-     * amount khớp, transaction đang PENDING và đã bị khoá dòng.
-     */
-    private void applyPaymentResult(Transaction transaction, Long transId, Integer resultCode,
-                                    String message, String source) {
-        transaction.setProviderTransactionId(transId != null ? String.valueOf(transId) : null);
-
-        boolean success = resultCode != null && resultCode == 0;
-
-        if (!success) {
-            transaction.setStatus(TransactionStatus.FAILED);
-            transaction.setAdminNote("[" + source + "] Momo resultCode=" + resultCode + " message=" + message);
-            transactionRepository.save(transaction);
-            return;
+    private BigDecimal parseAmount(String amount) {
+        try {
+            return new BigDecimal(amount);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.SEPAY_IPN_INVALID);
         }
+    }
 
+    private void applySuccessfulPayment(Transaction transaction, String transactionId, String source) {
         SubscriptionPlan plan = subscriptionPlanRepository.findByCode(transaction.getPlan())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND));
 
         Instant now = Instant.now();
         transaction.setStatus(TransactionStatus.SUCCESS);
+        transaction.setProviderTransactionId(transactionId);
         transaction.setPaidAt(now);
 
         if (plan.getDurationDays() == null || plan.getDurationDays() <= 0) {
-            log.error("[{}] Plan {} thiếu durationDays hợp lệ, orderId={} — " +
-                            "PAYMENT THÀNH CÔNG nhưng CHƯA CẤP subscription, cần xử lý thủ công!",
+            log.error("[{}] Plan {} missing valid durationDays, orderCode={}",
                     source, plan.getCode(), transaction.getOrderCode());
-            transaction.setAdminNote("Payment succeeded but plan.durationDays invalid. " +
-                    "Manual reconciliation required to grant subscription.");
+            transaction.setAdminNote("Payment succeeded but plan.durationDays invalid. Manual reconciliation required.");
             transactionRepository.save(transaction);
             return;
         }
 
         long durationSeconds = (long) plan.getDurationDays() * 24 * 3600;
-
         userRepository.findByIdForUpdate(transaction.getUser().getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_ID_NOT_FOUND));
 
@@ -334,15 +371,16 @@ public class MomoPaymentServiceImpl implements PaymentService {
                     .isActive(true)
                     .build();
         }
-        Subscription savedSubscription = subscriptionRepository.save(subscription);
 
+        Subscription savedSubscription = subscriptionRepository.save(subscription);
         transaction.setSubscription(savedSubscription);
         transactionRepository.save(transaction);
+
         notificationService.create(
                 transaction.getUser().getId(),
                 NotificationType.PAYMENT_SUCCESS,
-                "Thanh toán thành công",
-                "Gói " + plan.getName() + " đã được kích hoạt thành công.",
+                "Thanh toan thanh cong",
+                "Goi " + plan.getName() + " da duoc kich hoat thanh cong.",
                 "upgrade",
                 Map.of(
                         "orderCode", transaction.getOrderCode(),

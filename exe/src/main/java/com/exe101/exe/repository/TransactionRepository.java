@@ -17,6 +17,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
 
     Optional<Transaction> findByOrderCode(String orderCode);
 
+    Optional<Transaction> findByProviderTransactionId(String providerTransactionId);
+
     boolean existsByOrderCode(String orderCode);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

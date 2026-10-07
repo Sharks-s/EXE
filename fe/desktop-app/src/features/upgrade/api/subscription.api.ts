@@ -37,6 +37,21 @@ export interface TransactionStatusResponse {
   amount: number;
 }
 
+export interface CurrentSubscriptionResponse {
+  id?: number;
+  plan?: string;
+  planCode?: string;
+  name?: string;
+  status?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  expiresAt?: string | null;
+  expiredAt?: string | null;
+  expiryDate?: string | null;
+  cancelledAt?: string | null;
+  autoRenew?: boolean;
+}
+
 type RawCreatePaymentResponse = Partial<CreatePaymentResponse> & {
   payUrl?: string;
   checkout_url?: string;
@@ -86,4 +101,23 @@ export const subscriptionApi = {
         `/payments/${orderCode}/status`
       )
       .then((r) => r.data.data),
+
+  getCurrentSubscription: () =>
+    api
+      .get<ApiResponse<CurrentSubscriptionResponse | null>>("/subscriptions/me")
+      .then((r) => r.data.data),
+
+  cancelCurrentSubscription: () =>
+    api
+      .post<ApiResponse<CurrentSubscriptionResponse | null>>(
+        "/subscriptions/me/cancel"
+      )
+      .then((r) => r.data.data)
+      .catch(() =>
+        api
+          .delete<ApiResponse<CurrentSubscriptionResponse | null>>(
+            "/subscriptions/me"
+          )
+          .then((r) => r.data.data)
+      ),
 };

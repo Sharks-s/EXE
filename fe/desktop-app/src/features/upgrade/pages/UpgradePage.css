@@ -872,3 +872,306 @@
     margin-top: 28px;
   }
 }
+
+/* Upgrade refresh: aligned with the rest of the application. */
+.upgrade-page {
+  min-height: 100vh;
+  height: auto;
+  color: #0f172a;
+  background: linear-gradient(180deg, #fbf8ff 0%, #f7fbff 46%, #f8fbf7 100%);
+}
+
+.upgrade-page * {
+  box-sizing: border-box;
+}
+
+.upgrade-header {
+  padding: 24px 32px 0;
+}
+
+.current-plan-badge {
+  gap: 8px;
+  padding: 9px 14px;
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  border-radius: 13px;
+  box-shadow: 0 10px 24px rgba(30, 58, 138, 0.08);
+}
+
+.current-plan-badge::before {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  content: "";
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+}
+
+.current-plan-badge span {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.upgrade-body {
+  padding: 4px 32px 48px;
+}
+
+.pricing-grid {
+  max-width: 940px;
+  gap: 24px;
+}
+
+.plan-card {
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid rgba(211, 224, 239, 0.9);
+  border-radius: 22px;
+  box-shadow: 0 18px 46px rgba(30, 58, 138, 0.08);
+}
+
+.plan-card.highlight {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fbff 62%, #f0fdfa 100%);
+  border: 1px solid #93c5fd;
+  box-shadow: 0 22px 52px rgba(37, 99, 235, 0.13);
+}
+
+.plan-card.current:not(.highlight) {
+  border-color: #cbd5e1;
+}
+
+.plan-stripe {
+  height: 5px;
+  background: linear-gradient(90deg, #2563eb, #14b8a6);
+}
+
+.popular-badge,
+.plan-status-badge {
+  position: absolute;
+  top: 19px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 9px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.popular-badge {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+
+.plan-status-badge {
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.plan-status-badge .material-symbols-outlined {
+  font-size: 14px;
+  font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20;
+}
+
+.plan-content {
+  padding: 30px 28px 28px;
+}
+
+.plan-header {
+  gap: 13px;
+  margin-bottom: 22px;
+  padding-right: 118px;
+}
+
+.plan-icon {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 13px;
+}
+
+.plan-card.highlight .plan-icon {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.plan-icon .material-symbols-outlined { font-size: 23px; }
+
+.plan-header h3 {
+  color: #0f172a;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.plan-header p {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.plan-price {
+  min-height: 52px;
+  margin-bottom: 18px;
+}
+
+.plan-price span {
+  color: #334155;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.plan-card.highlight .plan-price span { color: #1d4ed8; }
+.plan-price small { color: #64748b; font-weight: 700; }
+.plan-divider { margin-bottom: 20px; background: #e2e8f0; }
+
+.feature-list { gap: 12px; }
+
+.feature-item {
+  gap: 10px;
+}
+
+.check-icon {
+  width: 20px;
+  height: 20px;
+  color: #047857;
+  background: #d1fae5;
+  border-radius: 7px;
+  font-size: 14px;
+}
+
+.feature-item p {
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.yearly-payment {
+  margin-top: 3px;
+  padding: 11px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+}
+
+.yearly-payment .check-icon {
+  color: #b45309;
+  background: #fef3c7;
+}
+
+.old-price { color: #94a3b8; }
+.new-price { color: #047857; font-weight: 900; }
+
+.plan-button {
+  min-height: 46px;
+  padding: 0 16px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 13px;
+  color: #64748b;
+  font-weight: 900;
+}
+
+.plan-button.primary {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
+}
+
+.plan-button.primary:hover:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.plan-button:disabled {
+  color: #64748b;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.pricing-note {
+  margin-top: 20px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 17px;
+}
+
+.billing-modal-overlay {
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(8px);
+}
+
+.billing-choice-panel {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.25);
+}
+
+.billing-modal-close {
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.billing-modal-close:hover:not(:disabled) { color: #1d4ed8; background: #eff6ff; }
+.billing-choice-header span { color: #1d4ed8; letter-spacing: 0.06em; }
+.billing-choice-header h2 { color: #0f172a; letter-spacing: 0; }
+.billing-choice-header p { color: #047857; }
+
+.billing-option {
+  min-height: 82px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.billing-option:hover { border-color: #93c5fd; background: #eff6ff; }
+.billing-option.active { background: #eff6ff; border-color: #2563eb; box-shadow: 0 8px 22px rgba(37, 99, 235, 0.1); }
+.billing-option.active .billing-radio { border-color: #2563eb; }
+.billing-option-copy strong { color: #0f172a; }
+.billing-option-copy small { color: #64748b; }
+.billing-save-badge { color: #047857; background: #d1fae5; }
+
+.billing-confirm-button {
+  min-height: 46px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  border-radius: 13px;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
+}
+
+.payment-waiting-panel {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.payment-waiting-spinner { border-color: rgba(37, 99, 235, 0.2); border-top-color: #2563eb; }
+.payment-success-icon { background: linear-gradient(135deg, #2563eb, #14b8a6); box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22); }
+
+@media (max-width: 720px) {
+  .upgrade-header { align-items: stretch; }
+  .current-plan-badge { align-self: flex-start; }
+  .pricing-grid { max-width: 460px; }
+}
+
+@media (max-width: 520px) {
+  .upgrade-header { padding: 16px 14px 0; }
+  .upgrade-body { padding: 0 14px 28px; }
+  .plan-content { padding: 24px 18px 20px; }
+  .plan-header { padding-right: 96px; }
+  .popular-badge,
+  .plan-status-badge { top: 16px; right: 14px; max-width: 100px; }
+  .plan-status-badge { line-height: 1.25; }
+}

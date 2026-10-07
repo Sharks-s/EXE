@@ -17,7 +17,8 @@ export function PetNavbar({ activeTab, onChangeTab }: PetNavbarProps) {
                 className={activeTab === "my-pets" ? "active" : ""}
                 onClick={() => onChangeTab("my-pets")}
             >
-                🐾 {t("common:pet.my_pets")}
+                <span className="material-symbols-outlined icon-fill">pets</span>
+                {t("common:pet.my_pets")}
             </button>
 
             <button
@@ -25,7 +26,8 @@ export function PetNavbar({ activeTab, onChangeTab }: PetNavbarProps) {
                 className={activeTab === "shop" ? "active" : ""}
                 onClick={() => onChangeTab("shop")}
             >
-                🛒 {t("common:pet.shop")}
+                <span className="material-symbols-outlined icon-fill">shopping_cart</span>
+                {t("common:pet.shop")}
             </button>
         </nav>
     );

@@ -316,10 +316,13 @@ export default function FeedbackPage() {
                   </span>
                 </div>
                 <button
-                  className="primary-button"
+                  className={`primary-button ${isSubmitting ? "is-submitting" : ""}`}
                   type="submit"
                   disabled={!canSubmit || isSubmitting}
                 >
+                  <span className="material-symbols-outlined">
+                    {isSubmitting ? "progress_activity" : "send"}
+                  </span>
                   {isSubmitting ? t("feedback.form.submitting") : t("feedback.form.submit")}
                 </button>
               </div>

@@ -144,7 +144,7 @@ app:
       - code: "STRICT"
         name: "Strict Assistant"
         description: "Disciplined, straightforward, and unyielding."
-        premium: false
+        premium: true
       - code: "MEAN"
         name: "Mean Assistant"
         description: "Challenging, provocative, and roasts your ego mercilessly."

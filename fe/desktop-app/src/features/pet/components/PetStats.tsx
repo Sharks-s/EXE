@@ -18,16 +18,20 @@ export function PetStats({
 
     return (
         <section className="pet-stats">
-            <div className="pet-stat-card">
-                <div className="stat-icon purple">🐾</div>
+            <div className="pet-stat-card stat-purple">
+                <div className="stat-icon purple">
+                    <span className="material-symbols-outlined icon-fill">pets</span>
+                </div>
                 <div>
                     <strong>{totalPets}</strong>
                     <span>{t("common:pet.total_companions")}</span>
                 </div>
             </div>
 
-            <div className="pet-stat-card">
-                <div className="stat-icon green">🛡</div>
+            <div className="pet-stat-card stat-green">
+                <div className="stat-icon green">
+                    <span className="material-symbols-outlined icon-fill">verified</span>
+                </div>
                 <div>
                     <strong>{equippedPet?.code ?? t("common:pet.none")}</strong>
                     <span>{t("common:pet.equipped")}</span>
@@ -42,8 +46,10 @@ export function PetStats({
                 </div>
             </div>
 
-            <div className="pet-stat-card">
-                <div className="stat-icon orange">☆</div>
+            <div className="pet-stat-card stat-orange">
+                <div className="stat-icon orange">
+                    <span className="material-symbols-outlined icon-fill">stars</span>
+                </div>
                 <div>
                     <strong>{currentPoints ?? 0}</strong>
                     <span>{t("common:pet.focus_points", { defaultValue: "Focus Points" })}</span>
@@ -56,7 +62,7 @@ export function PetStats({
                 </div>
             </div>
 
-            <div className="pet-stat-card">
+            <div className="pet-stat-card stat-blue">
                 <div className="stat-icon blue">
                     <span className="material-symbols-outlined icon-fill">workspace_premium</span>
                 </div>

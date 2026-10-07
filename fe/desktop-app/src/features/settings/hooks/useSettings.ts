@@ -9,9 +9,15 @@ import {
 } from "@/features/auth";
 import { settingsApi } from "../api/settings.api";
 import { profileApi } from "@/features/profile";
+import {
+    subscriptionApi,
+    type CurrentSubscriptionResponse,
+} from "@/features/upgrade/api/subscription.api";
+import { useFocusStore } from "@/features/focus-session";
 import { queryClient } from "@/lib/queryClient";
 import { toast } from "@/shared/store/toastStore";
 import type { PersonalityResponse, AppRuleResponse } from "../types/settings.types";
+import type { DailyUsageResponse } from "@/features/profile/types/profile.types";
 import {
     loadNotificationPreferences,
     saveNotificationPreferences,
@@ -50,6 +56,15 @@ export function useSettings() {
     const [notificationPreferences, setNotificationPreferences] =
         useState<NotificationPreferences>(loadNotificationPreferences);
 
+    // Goi su dung
+    const [dailyUsage, setDailyUsage] = useState<DailyUsageResponse | null>(null);
+    const [currentSubscription, setCurrentSubscription] =
+        useState<CurrentSubscriptionResponse | null>(null);
+    const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
+    const [isCancelSubscriptionModalOpen, setIsCancelSubscriptionModalOpen] =
+        useState(false);
+    const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
+
     // ── Bảo mật & Tài khoản ──
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -63,6 +78,29 @@ export function useSettings() {
     });
 
     const [devices] = useState<DeviceInfo[]>([]);
+
+    const loadSubscriptionStatus = async () => {
+        setIsLoadingSubscription(true);
+        const [usageResult, subscriptionResult] = await Promise.allSettled([
+            profileApi.getDailyUsage(),
+            subscriptionApi.getCurrentSubscription(),
+        ]);
+
+        if (usageResult.status === "fulfilled") {
+            setDailyUsage(usageResult.value);
+            useFocusStore.getState().setDailyUsage({
+                dailyUsedMinutes: usageResult.value.dailyUsedMinute,
+                dailyLimitMinutes: usageResult.value.dailyLimitMinute,
+                unlimited: usageResult.value.unlimited,
+            });
+        }
+
+        if (subscriptionResult.status === "fulfilled") {
+            setCurrentSubscription(subscriptionResult.value);
+        }
+
+        setIsLoadingSubscription(false);
+    };
 
     useEffect(() => {
         Promise.all([
@@ -82,6 +120,10 @@ export function useSettings() {
             .catch(() => {
                 toast.error("Không thể tải cấu hình.");
             });
+    }, []);
+
+    useEffect(() => {
+        void loadSubscriptionStatus();
     }, []);
 
     const currentRuleType = appListTab === "whitelist" ? "WHITELIST" : "BLACKLIST";
@@ -252,6 +294,20 @@ export function useSettings() {
         });
     };
 
+    const handleCancelSubscription = async () => {
+        try {
+            setIsCancellingSubscription(true);
+            await subscriptionApi.cancelCurrentSubscription();
+            await loadSubscriptionStatus();
+            setIsCancelSubscriptionModalOpen(false);
+            toast.success("Da huy goi Pro. Ban co the nang cap lai bat cu luc nao.");
+        } catch {
+            toast.error("Khong the huy goi Pro. Vui long thu lai.");
+        } finally {
+            setIsCancellingSubscription(false);
+        }
+    };
+
     return {
         // i18n
         i18n,
@@ -291,6 +347,15 @@ export function useSettings() {
         handleNotificationPreferenceChange,
         handleNotificationPreferenceValueChange,
         handleNotificationGroupChange,
+
+        // Goi su dung
+        dailyUsage,
+        currentSubscription,
+        isLoadingSubscription,
+        isCancelSubscriptionModalOpen,
+        setIsCancelSubscriptionModalOpen,
+        isCancellingSubscription,
+        handleCancelSubscription,
 
         // Bảo mật & Tài khoản
         isPasswordModalOpen,

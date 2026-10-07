@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +53,13 @@ public class PersonalityServiceImpl implements PersonalityService {
         for (AppSeedProperties.PersonalitySeed seed : appSeedProperties.getPersonalities()) {
 
             // Nếu tính cách này đã tồn tại dưới DB rồi (isPresent) thì bỏ qua
-            if (personalityRepository.findByCode(seed.getCode()).isPresent()) {
+            Optional<Personality> existing = personalityRepository.findByCode(seed.getCode());
+            if (existing.isPresent()) {
+                Personality personality = existing.get();
+                personality.setName(seed.getName());
+                personality.setDescription(seed.getDescription());
+                personality.setPremium(seed.isPremium());
+                personalityRepository.save(personality);
                 continue;
             }
 

@@ -362,6 +362,11 @@ public class UserServiceImpl implements UserService {
         Personality personality = personalityRepository.findById(request.personalityId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
 
+        if (personality.isPremium()
+                && !subscriptionRepository.hasActiveProAccess(userId, Instant.now())) {
+            throw new BusinessException(ErrorCode.PERSONALITY_REQUIRES_PRO);
+        }
+
         user.setPersonality(personality);
         userRepository.save(user);
 

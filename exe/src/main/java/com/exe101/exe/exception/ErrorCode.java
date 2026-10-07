@@ -65,6 +65,7 @@ public enum ErrorCode {
     PERSONALITY_NOT_FOUND("PERSONALITY_001", HttpStatus.NOT_FOUND, "Personality not found"),
     PERSONALITY_CODE_ALREADY_EXISTS("PERSONALITY_002", HttpStatus.CONFLICT, "Personality code already exists"),
     PERSONALITY_DES_NOT_FOUND("PERSONALITY_003", HttpStatus.NOT_FOUND, "Personality description not found"),
+    PERSONALITY_REQUIRES_PRO("PERSONALITY_004", HttpStatus.FORBIDDEN, "This personality requires Pro"),
 
     // ===== LOCATION =====
     PROVINCE_NOT_FOUND("LOCATION_001", HttpStatus.NOT_FOUND, "Province not found"),

@@ -53,7 +53,7 @@ export default function ProfilePage() {
     : 0;
 
   return (
-    <div>
+    <div className="profile-page">
       <main className="main-content">
         <header className="mobile-header">
           <span className="material-symbols-outlined mobile-menu-icon">menu</span>
@@ -193,6 +193,7 @@ export default function ProfilePage() {
             </div>
 
             <button className="secondary-button" type="button" onClick={openProfileModal}>
+              <span className="material-symbols-outlined">edit</span>
               {t("profile.update_profile_btn")}
             </button>
           </section>
@@ -312,12 +313,10 @@ export default function ProfilePage() {
       >
         <div className={`modal-card ${isProfileModalOpen ? "modal-card-open" : ""}`}>
           <div className="modal-header">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-              <h3>{t("profile.update_profile_btn")}</h3>
-              <button className="icon-button" type="button" onClick={closeProfileModal}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
+            <h3>{t("profile.update_profile_btn")}</h3>
+            <button className="icon-button" type="button" onClick={closeProfileModal}>
+              <span className="material-symbols-outlined">close</span>
+            </button>
           </div>
 
           <div className="modal-body">

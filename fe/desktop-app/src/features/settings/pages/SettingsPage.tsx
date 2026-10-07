@@ -5,6 +5,7 @@ import { useSettings } from "../hooks/useSettings";
 import type {
   BooleanNotificationPreferenceKey,
 } from "@/features/notifications/utils/notificationPreferences";
+import type { CurrentSubscriptionResponse } from "@/features/upgrade/api/subscription.api";
 
 const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> = {
   INSPIRING: { icon: "emoji_objects", className: "ai-primary" },
@@ -16,6 +17,105 @@ const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> 
 };
 
 const DEFAULT_PERSONALITY_ICON = { icon: "smart_toy", className: "ai-primary" };
+const PRO_PERSONALITY_CODES = new Set(["STRICT", "MEAN", "GRUMPY"]);
+
+type PersonalityCopy = {
+  name: string;
+  description: string;
+};
+
+const PERSONALITY_COPY: Record<string, Record<string, PersonalityCopy>> = {
+  vi: {
+    INSPIRING: {
+      name: "Trợ lý truyền cảm hứng",
+      description: "Khích lệ, tích cực và giúp bạn giữ động lực học tập.",
+    },
+    SWEET: {
+      name: "Trợ lý dịu dàng",
+      description: "Luôn động viên, nhẹ nhàng và tích cực.",
+    },
+    STRICT: {
+      name: "Trợ lý kỷ luật",
+      description: "Nghiêm túc, thẳng thắn và giúp bạn bám sát mục tiêu.",
+    },
+    MEAN: {
+      name: "Trợ lý thử thách",
+      description: "Thách thức, sắc bén và thúc bạn vượt qua sự trì hoãn.",
+    },
+    GRUMPY: {
+      name: "Trợ lý khó tính",
+      description: "Cộc cằn, trực diện nhưng vẫn thật sự muốn giúp bạn tiến bộ.",
+    },
+    CALM: {
+      name: "Trợ lý điềm tĩnh",
+      description: "Bình tĩnh, cân bằng và giúp bạn tập trung ổn định.",
+    },
+    FRIEND: {
+      name: "Trợ lý thân thiện",
+      description: "Gần gũi, tự nhiên và đồng hành như một người bạn học.",
+    },
+  },
+  en: {
+    INSPIRING: {
+      name: "Inspiring Assistant",
+      description: "Encouraging, positive, and focused on keeping you motivated.",
+    },
+    SWEET: {
+      name: "Sweet Assistant",
+      description: "Always encouraging, gentle, and positive.",
+    },
+    STRICT: {
+      name: "Strict Assistant",
+      description: "Disciplined, straightforward, and goal-focused.",
+    },
+    MEAN: {
+      name: "Mean Assistant",
+      description: "Challenging, sharp, and pushes you past procrastination.",
+    },
+    GRUMPY: {
+      name: "Grumpy Assistant",
+      description: "Blunt and direct, but still genuinely helpful.",
+    },
+    CALM: {
+      name: "Calm Assistant",
+      description: "Steady, balanced, and helps you stay grounded.",
+    },
+    FRIEND: {
+      name: "Friendly Assistant",
+      description: "Warm, natural, and feels like a study companion.",
+    },
+  },
+};
+
+const getPersonalityCopy = (
+  option: { code?: string | null; name: string; description: string },
+  language: string,
+) => {
+  const rawCode = option.code || option.name;
+  const normalizedCode = rawCode
+    .replace(/assistant/gi, "")
+    .replace(/[^a-z0-9]+/gi, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase();
+  const fallbackCode = option.name
+    .replace(/assistant/gi, "")
+    .replace(/[^a-z0-9]+/gi, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase();
+  const copySet = language.startsWith("vi") ? PERSONALITY_COPY.vi : PERSONALITY_COPY.en;
+
+  return copySet[normalizedCode] ?? copySet[fallbackCode] ?? option;
+};
+
+const getPersonalityCode = (option: { code?: string | null; name?: string | null }) =>
+  (option.code || option.name || "")
+    .replace(/assistant/gi, "")
+    .replace(/[^a-z0-9]+/gi, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase();
+
+const isPremiumPersonality = (option: { code?: string | null; name?: string | null; isPremium?: boolean; premium?: boolean }) =>
+  option.isPremium === true || option.premium === true || PRO_PERSONALITY_CODES.has(getPersonalityCode(option));
 
 type ToggleSwitchProps = {
   enabled: boolean;
@@ -57,6 +157,27 @@ const NOTIFICATION_GROUPS: Array<{
     ],
   },
 ];
+
+const getSubscriptionExpiry = (
+  subscription: CurrentSubscriptionResponse | null,
+) =>
+  subscription?.endDate ??
+  subscription?.expiresAt ??
+  subscription?.expiredAt ??
+  subscription?.expiryDate ??
+  null;
+
+const formatSubscriptionDate = (value: string | null, language: string) => {
+  if (!value) return "Chưa có dữ liệu";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat(language === "en" ? "en-US" : "vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+};
 
 function ToggleSwitch({ disabled = false, enabled, onClick }: ToggleSwitchProps) {
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -109,6 +230,13 @@ export default function SettingsPage() {
     handleNotificationPreferenceChange,
     handleNotificationPreferenceValueChange,
     handleNotificationGroupChange,
+    dailyUsage,
+    currentSubscription,
+    isLoadingSubscription,
+    isCancelSubscriptionModalOpen,
+    setIsCancelSubscriptionModalOpen,
+    isCancellingSubscription,
+    handleCancelSubscription,
     isPasswordModalOpen,
     setIsPasswordModalOpen,
     isDeleteModalOpen,
@@ -124,9 +252,56 @@ export default function SettingsPage() {
     handleLogout,
     handleDeleteAccount,
   } = useSettings();
+  const isProPlan = dailyUsage?.unlimited === true;
+  const subscriptionExpiry = getSubscriptionExpiry(currentSubscription);
+  const planName =
+    currentSubscription?.name ??
+    currentSubscription?.plan ??
+    currentSubscription?.planCode ??
+    (isProPlan ? "Pro" : "Free");
+  const planStatus = currentSubscription?.status ?? (isProPlan ? "ACTIVE" : "FREE");
+
+  const renderPersonalityOption = (option: (typeof personalities)[number]) => {
+    const isPremium = isPremiumPersonality(option);
+    const isLocked = isPremium && !isProPlan;
+    const isActive = option.id === activePersonalityId && !isLocked;
+    const iconInfo =
+      PERSONALITY_ICON_MAP[option.code] ?? DEFAULT_PERSONALITY_ICON;
+    const copy = getPersonalityCopy(option, i18n.language);
+
+    return (
+      <button
+        key={option.id}
+        className={`ai-option ${isActive ? "ai-option-active" : ""} ${isPremium ? "ai-option-pro" : ""} ${isLocked ? "ai-option-locked" : ""}`}
+        type="button"
+        onClick={() => {
+          if (!isLocked) handleSelectPersonality(option.id);
+        }}
+        disabled={isLocked}
+      >
+        {isActive && <span className="active-tag">{t("settings.ai.active")}</span>}
+        {isPremium && !isActive && !isLocked && (
+          <span className="premium-tag">{t("settings.ai.premium")}</span>
+        )}
+        {isLocked && (
+          <span className="locked-tag">
+            <span className="material-symbols-outlined">lock</span>
+            Pro
+          </span>
+        )}
+        <span
+          className={`material-symbols-outlined icon-fill ai-icon ${iconInfo.className}`}
+        >
+          {iconInfo.icon}
+        </span>
+        <h4>{copy.name}</h4>
+        <p>{copy.description}</p>
+      </button>
+    );
+  };
 
   return (
-    <div>
+    <div className="settings-page">
       <main className="main-content">
         <header className="mobile-header">
           <span className="material-symbols-outlined mobile-menu-icon">menu</span>
@@ -147,6 +322,76 @@ export default function SettingsPage() {
             </div>
           </header>
 
+          <section className={`card grid-full subscription-card ${isProPlan ? "subscription-card-pro" : "subscription-card-free"}`}>
+            <div className="subscription-summary">
+              <div className={`subscription-plan-icon ${isProPlan ? "pro" : ""}`}>
+                <span className="material-symbols-outlined">
+                  {isProPlan ? "workspace_premium" : "person"}
+                </span>
+              </div>
+              <div className="subscription-copy">
+                <p className="subscription-eyebrow">Gói hiện tại</p>
+                <h3>{isLoadingSubscription ? "Đang tải..." : planName}</h3>
+                <span className={`subscription-status ${isProPlan ? "pro" : ""}`}>
+                  {isProPlan ? "Pro đang hoạt động" : "Free"}
+                </span>
+              </div>
+            </div>
+
+            <div className="subscription-details">
+              <div>
+                <span>Trạng thái</span>
+                <strong>{isLoadingSubscription ? "..." : planStatus}</strong>
+              </div>
+              <div>
+                <span>Giới hạn hôm nay</span>
+                <strong>
+                  {isProPlan
+                    ? "Không giới hạn"
+                    : `${dailyUsage?.dailyLimitMinute ?? 60} phút/ngày`}
+                </strong>
+              </div>
+              {isProPlan && (
+                <div>
+                  <span>Hết hạn gói</span>
+                  <strong>
+                    {isLoadingSubscription
+                      ? "..."
+                      : formatSubscriptionDate(subscriptionExpiry, i18n.language)}
+                  </strong>
+                </div>
+              )}
+            </div>
+
+            <div className="subscription-actions">
+              {isProPlan ? (
+                <div className="subscription-action-panel pro">
+                  <span className="material-symbols-outlined">verified</span>
+                  <div>
+                    <strong>Quyền lợi Pro đang bật</strong>
+                    <p>Không giới hạn thời gian và mở khóa phân tích nâng cao.</p>
+                  </div>
+                  <button
+                    className="danger-button subscription-cancel-button"
+                    type="button"
+                    onClick={() => setIsCancelSubscriptionModalOpen(true)}
+                    disabled={isLoadingSubscription}
+                  >
+                    Hủy gói
+                  </button>
+                </div>
+              ) : (
+                <div className="subscription-action-panel">
+                  <span className="material-symbols-outlined">rocket_launch</span>
+                  <div>
+                    <strong>Mở khóa Pro</strong>
+                    <p>Free có 60 phút mỗi ngày. Pro dùng không giới hạn và có phân tích nâng cao.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* ── Cấu hình AI đồng hành ── */}
           <section className="card grid-full">
             <div className="card-intro">
@@ -154,33 +399,7 @@ export default function SettingsPage() {
               <p>{t("settings.ai.description")}</p>
             </div>
 
-            <div className="ai-grid">
-              {personalities.map((option) => {
-                const isActive = option.id === activePersonalityId;
-                const iconInfo =
-                  PERSONALITY_ICON_MAP[option.code] ?? DEFAULT_PERSONALITY_ICON;
-
-                return (
-                  <article
-                    key={option.id}
-                    className={`ai-option ${isActive ? "ai-option-active" : ""}`}
-                    onClick={() => handleSelectPersonality(option.id)}
-                  >
-                    {isActive && <span className="active-tag">{t("settings.ai.active")}</span>}
-                    {option.isPremium && !isActive && (
-                      <span className="premium-tag">{t("settings.ai.premium")}</span>
-                    )}
-                    <span
-                      className={`material-symbols-outlined icon-fill ai-icon ${iconInfo.className}`}
-                    >
-                      {iconInfo.icon}
-                    </span>
-                    <h4>{option.name}</h4>
-                    <p>{option.description}</p>
-                  </article>
-                );
-              })}
-            </div>
+            <div className="ai-grid">{personalities.map(renderPersonalityOption)}</div>
 
             <div className="ai-address-form">
               <label>
@@ -658,6 +877,58 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Modal Xóa tài khoản ── */}
+      <div
+        className={`modal-overlay ${isCancelSubscriptionModalOpen ? "" : "hidden"}`}
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !isCancellingSubscription)
+            setIsCancelSubscriptionModalOpen(false);
+        }}
+      >
+        <div className={`modal-card ${isCancelSubscriptionModalOpen ? "modal-card-open" : ""}`}>
+          <div className="modal-header">
+            <h3>Hủy gói Pro?</h3>
+            <button
+              className="icon-button"
+              type="button"
+              onClick={() => setIsCancelSubscriptionModalOpen(false)}
+              disabled={isCancellingSubscription}
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <div className="delete-confirm">
+            <p>
+              Bạn có thể hủy gói bất cứ lúc nào. Sau khi hủy, tài khoản sẽ quay về
+              giới hạn Free theo chính sách hiện tại của hệ thống.
+            </p>
+            {isProPlan && (
+              <p className="subscription-cancel-expiry">
+                Hạn gói hiện tại: {formatSubscriptionDate(subscriptionExpiry, i18n.language)}
+              </p>
+            )}
+            <div className="modal-actions">
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => setIsCancelSubscriptionModalOpen(false)}
+                disabled={isCancellingSubscription}
+              >
+                Giữ gói Pro
+              </button>
+              <button
+                className="danger-button"
+                type="button"
+                onClick={handleCancelSubscription}
+                disabled={isCancellingSubscription}
+              >
+                {isCancellingSubscription ? "Đang hủy..." : "Xác nhận hủy"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div
         className={`modal-overlay ${isDeleteModalOpen ? "" : "hidden"}`}
         onClick={(e) => {

@@ -8,10 +8,11 @@ export interface PlanCardProps {
     onUpgradeClick: () => void;
 }
 
-export function PlanCard({ plan, isProActive, onUpgradeClick }: PlanCardProps) {
+export function PlanCard({ plan, isCurrentPlan, isProActive, onUpgradeClick }: PlanCardProps) {
     const { t } = useTranslation("common");
     const isFreePlan = plan.id === "free";
     const isProPlan = plan.id === "pro";
+    const isCurrent = isCurrentPlan || (isProPlan && isProActive);
 
     const buttonLabel = isFreePlan
         ? t("upgrade.plan_free_btn")
@@ -20,13 +21,24 @@ export function PlanCard({ plan, isProActive, onUpgradeClick }: PlanCardProps) {
             : plan.buttonLabel;
 
     return (
-        <div className={`plan-card ${plan.highlight ? "highlight" : ""}`}>
+        <div className={`plan-card ${plan.highlight ? "highlight" : ""} ${isCurrent ? "current" : ""}`}>
             {plan.highlight && <div className="plan-stripe" />}
-            {plan.highlight && <div className="popular-badge">{t("upgrade.plan_popular_badge")}</div>}
+            {isCurrent ? (
+                <div className="plan-status-badge">
+                    <span className="material-symbols-outlined">check_circle</span>
+                    {isProPlan ? t("upgrade.current_plan_pro") : t("upgrade.plan_free_btn")}
+                </div>
+            ) : plan.highlight ? (
+                <div className="popular-badge">{t("upgrade.plan_popular_badge")}</div>
+            ) : null}
 
             <div className="plan-content">
                 <div className="plan-header">
-                    <div className="plan-icon">{plan.name.charAt(0)}</div>
+                    <div className="plan-icon">
+                        <span className="material-symbols-outlined">
+                            {isProPlan ? "workspace_premium" : "person"}
+                        </span>
+                    </div>
                     <div>
                         <h3>{plan.name}</h3>
                         <p>{plan.tagline}</p>
@@ -43,14 +55,14 @@ export function PlanCard({ plan, isProActive, onUpgradeClick }: PlanCardProps) {
                 <div className="feature-list">
                     {plan.features.map((feature) => (
                         <div key={feature} className="feature-item">
-                            <span className="check-icon">✓</span>
+                            <span className="check-icon material-symbols-outlined">check</span>
                             <p>{feature}</p>
                         </div>
                     ))}
 
                     {plan.yearlyPrice && (
                         <div className="feature-item yearly-payment">
-                            <span className="check-icon">✓</span>
+                            <span className="check-icon material-symbols-outlined">check</span>
                             <p>
                                 <span className="old-price">{plan.yearlyOldPrice}</span>{" "}
                                 <span className="new-price">

@@ -25,7 +25,7 @@ export function PetToolbar({
     return (
         <section className="pet-toolbar">
             <div className="pet-search">
-                <span>⌕</span>
+                <span className="material-symbols-outlined">search</span>
                 <input
                     value={keyword}
                     onChange={(event) => onKeywordChange(event.target.value)}

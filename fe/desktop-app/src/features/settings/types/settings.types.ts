@@ -40,6 +40,7 @@ export interface PersonalityResponse {
     name: string;
     description: string;
     isPremium: boolean;
+    premium?: boolean;
 }
 
 export type RuleType = "WHITELIST" | "BLACKLIST";

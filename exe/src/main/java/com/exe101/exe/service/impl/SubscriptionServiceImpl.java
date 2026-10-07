@@ -74,6 +74,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    public SubscriptionResponse getCurrentSubscription(Long userId) {
+        Instant now = Instant.now();
+        return subscriptionRepository.findActivePremiumByUserId(userId, now)
+                .stream()
+                .findFirst()
+                .map(this::toSubscriptionResponse)
+                .orElse(null);
+    }
+
+    @Override
     @Transactional
     public SubscriptionResponse upgradeToPro(Long userId, String planCode) {
         SubscriptionPlan plan = subscriptionPlanRepository.findByCode(planCode)
@@ -112,6 +122,30 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         return toSubscriptionResponse(subscription);
     }
 
+    @Override
+    @Transactional
+    public SubscriptionResponse cancelCurrentSubscription(Long userId) {
+        Instant now = Instant.now();
+        List<Subscription> activeSubscriptions = subscriptionRepository.findActiveByUserIdForUpdate(userId)
+                .stream()
+                .filter(subscription -> isActivePremium(subscription, now))
+                .toList();
+
+        if (activeSubscriptions.isEmpty()) {
+            return null;
+        }
+
+        activeSubscriptions.forEach(subscription -> {
+            subscription.setActive(false);
+            if (subscription.getExpiresAt() == null || subscription.getExpiresAt().isAfter(now)) {
+                subscription.setExpiresAt(now);
+            }
+            subscriptionRepository.save(subscription);
+        });
+
+        return toSubscriptionResponse(activeSubscriptions.get(0));
+    }
+
     private SubscriptionPlanResponse toResponse(SubscriptionPlan plan) {
         return SubscriptionPlanResponse.builder()
                 .id(plan.getId())
@@ -128,9 +162,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .build();
     }
 
+    private boolean isActivePremium(Subscription subscription, Instant now) {
+        return subscription.isActive()
+                && ("PRO".equalsIgnoreCase(subscription.getPlan()) || "PREMIUM".equalsIgnoreCase(subscription.getPlan()))
+                && (subscription.getExpiresAt() == null || subscription.getExpiresAt().isAfter(now));
+    }
+
     private SubscriptionResponse toSubscriptionResponse(Subscription subscription) {
-        boolean unlimited = "PRO".equalsIgnoreCase(subscription.getPlan())
-                || "PREMIUM".equalsIgnoreCase(subscription.getPlan());
+        boolean unlimited = isActivePremium(subscription, Instant.now());
 
         return SubscriptionResponse.builder()
                 .id(subscription.getId())

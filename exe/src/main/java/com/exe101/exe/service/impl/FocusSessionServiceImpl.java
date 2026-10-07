@@ -128,6 +128,12 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                             appSeedProperties.getDefaultPersonalityCode()))
                     .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
         }
+        if (!hasProAccess && chosenPersonality.isPremium()) {
+            chosenPersonality = personalityRepository.findByCode(appSettingService.getString(
+                            AppSettingServiceImpl.DEFAULT_PERSONALITY_CODE,
+                            appSeedProperties.getDefaultPersonalityCode()))
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
+        }
 
         // 6. Tính toán quỹ thưởng giải lao (Cứ 25 phút học -> 5 phút nghỉ)
         int breakBankMinutes = (request.durationMinutes() / 25) * 5;

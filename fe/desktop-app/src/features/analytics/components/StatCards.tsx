@@ -9,7 +9,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
   return (
     <>
       {stats.map((stat) => (
-        <article className="stat-card" key={stat.title}>
+        <article className={`stat-card stat-${stat.tone}`} key={stat.title}>
           <div className="stat-top">
             <div className={`stat-icon ${stat.tone}`}>
               <span className="material-symbols-outlined">{stat.icon}</span>

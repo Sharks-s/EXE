@@ -12,7 +12,7 @@ const getPlans = (t: any): Plan[] => [
   {
     id: "free",
     name: "Free",
-    price: "",
+    price: "0đ",
     period: "",
     yearlyOldPrice: "",
     yearlyPrice: "",
@@ -118,23 +118,25 @@ export default function UpgradePage() {
           {t("upgrade.pricing_note")}
         </p>
 
-        <section className="faq-section">
-          <div className="faq-header">
-            <h2>{t("upgrade.faq_title")}</h2>
-            <p>{t("upgrade.faq_contact")}</p>
-          </div>
+        {faqItems.length > 0 && (
+          <section className="faq-section">
+            <div className="faq-header">
+              <h2>{t("upgrade.faq_title")}</h2>
+              <p>{t("upgrade.faq_contact")}</p>
+            </div>
 
-          <div className="faq-list">
-            {faqItems.map((item, index) => (
-              <FaqItemComponent
-                key={index}
-                item={item}
-                open={openFaq === index}
-                onToggle={() => setOpenFaq(openFaq === index ? null : index)}
-              />
-            ))}
-          </div>
-        </section>
+            <div className="faq-list">
+              {faqItems.map((item, index) => (
+                <FaqItemComponent
+                  key={index}
+                  item={item}
+                  open={openFaq === index}
+                  onToggle={() => setOpenFaq(openFaq === index ? null : index)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );

@@ -42,8 +42,18 @@ export function FocusTimeChart({
       <div className="chart-box">
         {chartPath ? (
           <svg className="chart-svg" preserveAspectRatio="none" viewBox="0 0 1000 300">
-            <path d={chartPath.area} fill="#483bfc" opacity="0.1" />
-            <path d={chartPath.line} fill="none" stroke="#483bfc" strokeWidth="4" />
+            <defs>
+              <linearGradient id="focusChartArea" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.24" />
+                <stop offset="100%" stopColor="#14b8a6" stopOpacity="0.04" />
+              </linearGradient>
+              <linearGradient id="focusChartLine" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#2563eb" />
+                <stop offset="100%" stopColor="#14b8a6" />
+              </linearGradient>
+            </defs>
+            <path d={chartPath.area} fill="url(#focusChartArea)" />
+            <path d={chartPath.line} fill="none" stroke="url(#focusChartLine)" strokeWidth="5" strokeLinecap="round" />
           </svg>
         ) : (
           <div className="chart-empty">{noFocusDataLabel}</div>

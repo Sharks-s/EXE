@@ -40,6 +40,7 @@ export function PetCard({
         <article
             className={[
                 "pet-card",
+                pet.premium ? "premium" : "",
                 pet.equipped ? "equipped" : "",
                 selected ? "selected" : "",
                 isLevelingUp ? "level-up" : "",
@@ -51,13 +52,15 @@ export function PetCard({
             <div className={`pet-card-cover ${theme}`}>
                 {pet.premium && (
                     <span className="premium-badge">
-                        ★ {t("common:pet.premium")}
+                        <span className="material-symbols-outlined icon-fill">workspace_premium</span>
+                        {t("common:pet.premium")}
                     </span>
                 )}
 
                 {pet.equipped && (
                     <span className="equipped-badge">
-                        ● {t("common:pet.equipped")}
+                        <span className="material-symbols-outlined icon-fill">check_circle</span>
+                        {t("common:pet.equipped")}
                     </span>
                 )}
 
@@ -107,7 +110,7 @@ export function PetCard({
                         {loading
                             ? t("common:pet.processing")
                             : pet.equipped
-                                ? `✓ ${t("common:pet.equipped")}`
+                                ? t("common:pet.equipped")
                                 : t("common:pet.equip")}
                     </button>
 
@@ -122,7 +125,7 @@ export function PetCard({
                         aria-label={t("common:pet.rename")}
                         title={t("common:pet.rename")}
                     >
-                        ✎
+                        <span className="material-symbols-outlined">edit</span>
                     </button>
 
                     <button
@@ -142,7 +145,7 @@ export function PetCard({
                                 })
                         }
                     >
-                        ↗
+                        <span className="material-symbols-outlined">arrow_upward</span>
                     </button>
                 </div>
             </div>

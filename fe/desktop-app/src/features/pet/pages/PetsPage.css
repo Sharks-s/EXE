@@ -1,12 +1,17 @@
-* {
+﻿* {
   box-sizing: border-box;
 }
 
 .pet-page {
   min-height: 100vh;
   overflow-x: hidden;
-  background: #fcf8ff;
+  background:
+    linear-gradient(180deg, #fbf8ff 0%, #f7fbff 46%, #f8fbf7 100%);
   color: #0f172a;
+}
+
+.pet-page .icon-fill {
+  font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 24;
 }
 
 .pet-shell {
@@ -19,28 +24,41 @@
 
 .pet-navbar {
   display: inline-flex;
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px;
   margin-bottom: 20px;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #ffffff;
-  border: 1px solid #e3ebfb;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  border: 1px solid #dde8f4;
+  box-shadow: 0 12px 28px rgba(30, 58, 138, 0.08);
 }
 
 .pet-navbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 0;
-  border-radius: 13px;
-  padding: 11px 22px;
-  background: transparent;
-  color: #64748b;
+  border-radius: 12px;
+  padding: 10px 20px;
+  background: #f8fafc;
+  color: #5c667a;
   font-weight: 800;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pet-navbar button .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.pet-navbar button:hover {
+  color: #1e40af;
+  background: #eff6ff;
 }
 
 .pet-navbar button.active {
   color: #ffffff;
-  background: linear-gradient(135deg, #7c5cff, #5f3deb);
-  box-shadow: 0 10px 18px rgba(124, 92, 255, 0.26);
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
 }
 
 .pet-stats {
@@ -51,30 +69,60 @@
 }
 
 .pet-stat-card {
+  position: relative;
   min-width: 0;
   min-height: 102px;
   padding: 22px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid #e3ebfb;
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid rgba(211, 224, 239, 0.85);
+  box-shadow: 0 18px 46px rgba(30, 58, 138, 0.08);
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
+.pet-stat-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: #2563eb;
+  content: "";
+}
+
+.pet-stat-card.stat-purple::before {
+  background: #2563eb;
+}
+
+.pet-stat-card.stat-green::before {
+  background: #10b981;
+}
+
+.pet-stat-card.stat-orange::before {
+  background: #f59e0b;
+}
+
+.pet-stat-card.stat-blue::before {
+  background: #6366f1;
+}
+
 .stat-icon {
-  width: 50px;
-  height: 50px;
+  width: 46px;
+  height: 46px;
   border-radius: 14px;
   display: grid;
   place-items: center;
-  font-size: 22px;
+  flex: 0 0 auto;
+}
+
+.stat-icon .material-symbols-outlined {
+  font-size: 23px;
 }
 
 .stat-icon.purple {
-  background: #f0ebff;
-  color: #7c5cff;
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .stat-icon.green {
@@ -94,22 +142,26 @@
 
 .pet-stat-card strong {
   display: block;
-  font-size: 25px;
-  line-height: 1.1;
+  color: #1a1b25;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 30px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pet-stat-card span {
   display: block;
-  margin-top: 4px;
-  color: #8b9bb0;
-  font-size: 14px;
-  font-weight: 700;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .pet-stat-card small {
   display: block;
   margin-top: 4px;
-  color: #22c55e;
+  color: #10b981;
   font-weight: 800;
 }
 
@@ -117,12 +169,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(128px, 150px) minmax(170px, 216px);
   gap: 12px;
-  padding: 14px 18px;
+  padding: 16px;
   margin-bottom: 24px;
   min-width: 0;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid #e3ebfb;
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid rgba(211, 224, 239, 0.85);
+  box-shadow: 0 18px 46px rgba(30, 58, 138, 0.08);
 }
 
 .pet-search {
@@ -133,9 +186,14 @@
   height: 40px;
   padding: 0 14px;
   border-radius: 13px;
-  border: 1px solid #d8e4fb;
-  background: #ffffff;
+  border: 1px solid #dbeafe;
+  background: #f8fafc;
   color: #94a3b8;
+}
+
+.pet-search .material-symbols-outlined {
+  font-size: 18px;
+  color: #2563eb;
 }
 
 .pet-search input {
@@ -154,8 +212,8 @@
   height: 40px;
   padding: 0 14px;
   border-radius: 13px;
-  border: 1px solid #d8e4fb;
-  background: #ffffff;
+  border: 1px solid #dbeafe;
+  background: #f8fafc;
   color: #475569;
   font-weight: 700;
   outline: 0;
@@ -176,9 +234,10 @@
   padding: 24px;
   border-radius: 18px;
   background: #ffffff;
-  border: 1px solid #e3ebfb;
+  border: 1px solid rgba(211, 224, 239, 0.85);
   color: #64748b;
   font-weight: 700;
+  box-shadow: 0 18px 46px rgba(30, 58, 138, 0.08);
 }
 
 .pet-content {
@@ -187,19 +246,23 @@
 
 .pet-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 292px));
   gap: clamp(14px, 1.8vw, 20px);
+  justify-content: start;
+  align-items: start;
   min-width: 0;
 }
 
 .pet-card {
   position: relative;
+  width: 100%;
+  max-width: 292px;
   min-width: 0;
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 22px;
   background: #ffffff;
-  border: 1px solid #e4ecfa;
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(211, 224, 239, 0.9);
+  box-shadow: 0 18px 46px rgba(30, 58, 138, 0.08);
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -209,12 +272,26 @@
 
 .pet-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 22px 42px rgba(15, 23, 42, 0.12);
+  border-color: #bfdbfe;
+  box-shadow: 0 24px 54px rgba(30, 58, 138, 0.14);
 }
 
 .pet-card.selected,
 .pet-card.equipped {
-  border: 2px solid #22c55e;
+  border: 2px solid #10b981;
+}
+
+.pet-card.premium {
+  border-color: #c7d2fe;
+}
+
+.pet-card.premium::after {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, #2563eb, #14b8a6);
+  content: "";
+  z-index: 2;
 }
 
 .pet-card.level-up,
@@ -243,7 +320,7 @@
   background:
     radial-gradient(circle at 24% 30%, rgba(255, 255, 255, 0.95) 0 2px, transparent 3px),
     radial-gradient(circle at 70% 22%, rgba(255, 221, 87, 0.95) 0 3px, transparent 4px),
-    radial-gradient(circle at 82% 58%, rgba(124, 92, 255, 0.65) 0 3px, transparent 4px),
+    radial-gradient(circle at 82% 58%, rgba(37, 99, 235, 0.65) 0 3px, transparent 4px),
     radial-gradient(circle at 34% 76%, rgba(34, 197, 94, 0.7) 0 3px, transparent 4px);
   opacity: 0;
   transform: scale(0.8) rotate(0deg);
@@ -258,9 +335,9 @@
   z-index: 8;
   padding: 7px 12px;
   color: #ffffff;
-  background: linear-gradient(135deg, #7c5cff, #22c55e);
+  background: linear-gradient(135deg, #2563eb, #22c55e);
   border-radius: 999px;
-  box-shadow: 0 14px 30px rgba(124, 92, 255, 0.3);
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.28);
   font-size: 11px;
   font-weight: 1000;
   letter-spacing: 0.08em;
@@ -279,9 +356,9 @@
   }
   28% {
     box-shadow:
-      0 0 0 4px rgba(124, 92, 255, 0.18),
+      0 0 0 4px rgba(37, 99, 235, 0.18),
       0 0 0 9px rgba(34, 197, 94, 0.13),
-      0 26px 60px rgba(124, 92, 255, 0.24);
+      0 26px 60px rgba(37, 99, 235, 0.22);
   }
   100% {
     box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
@@ -353,6 +430,7 @@
   height: 146px;
   display: grid;
   place-items: center;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.72);
 }
 
 .theme-pink {
@@ -379,25 +457,33 @@
 .equipped-badge,
 .level-badge {
   position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   line-height: 1;
+}
+
+.premium-badge .material-symbols-outlined,
+.equipped-badge .material-symbols-outlined {
+  font-size: 14px;
 }
 
 .premium-badge {
   top: 12px;
   right: 12px;
-  padding: 6px 11px;
-  background: #f59e0b;
+  padding: 7px 10px;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
   color: #ffffff;
 }
 
 .equipped-badge {
   top: 12px;
   right: 12px;
-  padding: 6px 11px;
-  background: #22c55e;
+  padding: 7px 10px;
+  background: #10b981;
   color: #ffffff;
 }
 
@@ -406,7 +492,8 @@
   bottom: 12px;
   padding: 7px 12px;
   background: #ffffff;
-  color: #ef4444;
+  color: #2563eb;
+  box-shadow: 0 8px 18px rgba(30, 58, 138, 0.1);
 }
 
 .pet-image-box {
@@ -416,7 +503,7 @@
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.46);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 18px 36px rgba(30, 58, 138, 0.14);
   overflow: hidden;
 }
 
@@ -438,6 +525,7 @@
   overflow: hidden;
   margin: 0;
   font-size: 18px;
+  font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -459,7 +547,7 @@
 .level-line div {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #ec4899, #f59e0b, #7c5cff);
+  background: linear-gradient(90deg, #2563eb, #14b8a6);
 }
 
 .pet-card-body small {
@@ -486,26 +574,34 @@
 .equip-btn {
   border: 0;
   color: #ffffff;
-  background: linear-gradient(135deg, #ec4899, #fb7185);
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
 }
 
 .equipped-btn {
-  color: #22c55e;
+  color: #047857;
   background: #dcfce7;
+  box-shadow: none;
 }
 
 .icon-btn {
-  border: 1px solid #d8e4fb;
-  background: #ffffff;
-  color: #94a3b8;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dbeafe;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.icon-btn .material-symbols-outlined {
+  font-size: 19px;
 }
 
 .purple-icon {
-  color: #7c5cff;
-  background: #f7f3ff;
+  color: #2563eb;
+  background: #eff6ff;
 }
 
 .pet-card-actions button:disabled,
@@ -526,10 +622,10 @@
   box-sizing: border-box;
   min-height: 480px;
   padding: 32px;
-  border-radius: 24px;
+  border-radius: 22px;
   background: #ffffff;
-  border: 2px solid #22c55e;
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(211, 224, 239, 0.9);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
   z-index: 61;
 }
 
@@ -657,7 +753,7 @@
 .detail-level-line div {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #f59e0b, #fb7185);
+  background: linear-gradient(90deg, #2563eb, #14b8a6);
 }
 
 .detail-level-box small {
@@ -694,7 +790,7 @@
   padding: 13px 16px;
   border-radius: 14px;
   background: #dcfce7;
-  color: #22c55e;
+  color: #047857;
   text-align: center;
   font-weight: 900;
 }
@@ -773,9 +869,9 @@
 }
 
 .detail-actions button:first-child {
-  color: #7c5cff;
-  border: 1px solid #ddd6fe;
-  background: #f7f3ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
 }
 
 .detail-actions button:last-child {
@@ -851,7 +947,7 @@
 
 .rename-modal-heading p {
   margin: 0;
-  color: #7c5cff;
+  color: #2563eb;
   font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
@@ -889,8 +985,8 @@
 }
 
 .rename-modal-field input:focus {
-  border-color: #7c5cff;
-  box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
 .rename-modal-error {
@@ -924,9 +1020,9 @@
 
 .rename-modal-actions button:last-child {
   border: 0;
-  background: linear-gradient(135deg, #7c5cff, #5f3deb);
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
   color: #ffffff;
-  box-shadow: 0 14px 28px rgba(124, 92, 255, 0.22);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.2);
 }
 
 .rename-modal-actions button:disabled {
@@ -943,11 +1039,11 @@
 .shop-empty-card {
   width: min(520px, 100%);
   padding: 34px;
-  border-radius: 24px;
+  border-radius: 22px;
   background: #ffffff;
-  border: 1px solid #e3ebfb;
+  border: 1px solid rgba(211, 224, 239, 0.85);
   text-align: center;
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 46px rgba(30, 58, 138, 0.08);
 }
 
 .shop-empty-card h2 {
@@ -964,7 +1060,7 @@
   border: 0;
   border-radius: 14px;
   padding: 13px 24px;
-  background: linear-gradient(135deg, #7c5cff, #5f3deb);
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
   color: #ffffff;
   font-weight: 900;
 }
@@ -996,7 +1092,7 @@
   }
 
   .pet-grid {
-    grid-template-columns: repeat(2, minmax(230px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 292px));
   }
 }
 
@@ -1036,6 +1132,10 @@
     grid-template-columns: 1fr;
   }
 
+  .pet-card {
+    max-width: none;
+  }
+
   .pet-navbar {
     width: 100%;
     display: grid;
@@ -1052,10 +1152,10 @@
 .shop-header {
   margin-bottom: 20px;
   padding: 22px;
-  border-radius: 20px;
+  border-radius: 22px;
   background: #ffffff;
-  border: 1px solid #e3ebfb;
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(211, 224, 239, 0.85);
+  box-shadow: 0 18px 46px rgba(30, 58, 138, 0.08);
 }
 
 .shop-header h2 {
@@ -1079,10 +1179,10 @@
 
 .shop-pet-card {
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 22px;
   background: #ffffff;
-  border: 1px solid #e4ecfa;
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(211, 224, 239, 0.9);
+  box-shadow: 0 18px 46px rgba(30, 58, 138, 0.08);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
@@ -1091,8 +1191,8 @@
 
 .shop-pet-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 22px 42px rgba(15, 23, 42, 0.12);
-  border-color: #c7d2fe;
+  box-shadow: 0 24px 54px rgba(30, 58, 138, 0.14);
+  border-color: #bfdbfe;
 }
 
 .shop-pet-cover {
@@ -1138,7 +1238,7 @@
 }
 
 .shop-meta strong {
-  color: #7c5cff;
+  color: #2563eb;
 }
 
 .shop-price {
@@ -1167,10 +1267,10 @@
   margin-top: 16px;
   border: 0;
   border-radius: 13px;
-  background: linear-gradient(135deg, #7c5cff, #5f3deb);
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
   color: #ffffff;
   font-weight: 900;
-  box-shadow: 0 12px 24px rgba(124, 92, 255, 0.25);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
 }
 
 .shop-pet-body button:hover {
@@ -1186,14 +1286,14 @@
 
 .shop-pet-body .shop-preview-button {
   margin-top: 10px;
-  color: #5f3deb;
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
+  color: #14b8a6;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   box-shadow: none;
 }
 
 .shop-pet-body .shop-preview-button:hover {
-  background: #ede9fe;
+  background: #dbeafe;
   filter: none;
 }
 
@@ -1232,7 +1332,7 @@
 .shop-modal-header p,
 .shop-confirm-pet p {
   margin: 0 0 4px;
-  color: #7c5cff;
+  color: #2563eb;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -1282,7 +1382,7 @@
   padding: 12px;
   text-align: center;
   background: #f8fafc;
-  border: 1px solid #e3ebfb;
+  border: 1px solid #fde68a;
   border-radius: 18px;
 }
 
@@ -1360,8 +1460,8 @@
 
 .shop-confirm-actions button:last-child {
   color: #ffffff;
-  background: linear-gradient(135deg, #7c5cff, #5f3deb);
-  box-shadow: 0 12px 24px rgba(124, 92, 255, 0.25);
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
 }
 
 .shop-confirm-actions button:disabled {

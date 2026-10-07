@@ -38,6 +38,17 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
             """)
     Set<Long> findActivePremiumUserIds(@Param("userIds") List<Long> userIds, @Param("now") Instant now);
 
+    @Query("""
+            SELECT s
+            FROM Subscription s
+            WHERE s.user.id = :userId
+              AND s.isActive = true
+              AND upper(s.plan) in ('PRO', 'PREMIUM')
+              AND (s.expiresAt is null or s.expiresAt > :now)
+            ORDER BY s.expiresAt DESC
+            """)
+    List<Subscription> findActivePremiumByUserId(@Param("userId") Long userId, @Param("now") Instant now);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Subscription s WHERE s.user.id = :userId AND s.isActive = true ORDER BY s.expiresAt DESC")
     List<Subscription> findActiveByUserIdForUpdate(@Param("userId") Long userId);

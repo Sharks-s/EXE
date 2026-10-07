@@ -10,5 +10,9 @@ public interface SubscriptionService {
 
     List<SubscriptionPlanResponse> getActivePlans();
 
+    SubscriptionResponse getCurrentSubscription(Long userId);
+
     SubscriptionResponse upgradeToPro(Long userId, String planCode);
+
+    SubscriptionResponse cancelCurrentSubscription(Long userId);
 }

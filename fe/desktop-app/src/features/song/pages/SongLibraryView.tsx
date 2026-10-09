@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSongStore } from "../stores/songStore";
 import { useSongPlayerContext } from "./SongPlayerContext";
 import { scanMusicFolderService } from "../services/scanMusicFolderService";
+import { seedSystemSongsService } from "../services/seedSystemSongsService";
 import "./SongLibraryView.css";
 
 function formatTime(seconds: number): string {
@@ -39,8 +40,25 @@ export default function SongLibraryView() {
   const [isScanning, setIsScanning] = useState(false);
 
   useEffect(() => {
-    fetchSongs();
-  }, [fetchSongs]);
+    let isMounted = true;
+
+    async function loadSongs() {
+      await fetchSongs();
+
+      const currentSongs = useSongStore.getState().songs;
+      if (isMounted && currentSongs.length === 0) {
+        setSongs(await seedSystemSongsService());
+      }
+    }
+
+    loadSongs().catch((error) => {
+      console.error("[SongLibraryView] Lỗi tải danh sách nhạc:", error);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchSongs, setSongs]);
 
   const handleScanFolder = async () => {
     try {

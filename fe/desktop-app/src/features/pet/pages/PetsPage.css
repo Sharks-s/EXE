@@ -103,6 +103,10 @@
   background: #f59e0b;
 }
 
+.pet-stat-card.stat-orange {
+  overflow: visible;
+}
+
 .pet-stat-card.stat-blue::before {
   background: #6366f1;
 }
@@ -156,6 +160,93 @@
   color: #64748b;
   font-size: 12px;
   font-weight: 800;
+}
+
+.pet-stat-card .pet-point-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: visible;
+}
+
+.pet-point-help {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid #fed7aa;
+  border-radius: 50%;
+  background: #fff7ed;
+  color: #f59e0b;
+  font-size: 12px;
+  font-weight: 1000;
+  line-height: 1;
+  cursor: help;
+}
+
+.pet-point-help-popover {
+  position: absolute;
+  right: -8px;
+  top: calc(100% + 10px);
+  z-index: 20;
+  width: min(300px, calc(100vw - 48px));
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #fde68a;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #475569;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.pet-point-help-popover::before {
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid #fde68a;
+  border-top: 1px solid #fde68a;
+  background: #ffffff;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.pet-point-help-popover strong {
+  display: block;
+  overflow: visible;
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.25;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.pet-point-help-popover span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pet-point-help:hover .pet-point-help-popover,
+.pet-point-help:focus-visible .pet-point-help-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .pet-stat-card small {

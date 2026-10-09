@@ -78,6 +78,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
                     from Subscription s
                     join fetch s.user u
                     where s.isActive = true
+                      and upper(s.plan) in ('PRO', 'PREMIUM')
                       and (s.expiresAt is null or s.expiresAt > :now)
                       and (:keyword is null or :keyword = ''
                            or lower(u.email) like lower(concat('%', :keyword, '%'))
@@ -89,6 +90,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
                     from Subscription s
                     join s.user u
                     where s.isActive = true
+                      and upper(s.plan) in ('PRO', 'PREMIUM')
                       and (s.expiresAt is null or s.expiresAt > :now)
                       and (:keyword is null or :keyword = ''
                            or lower(u.email) like lower(concat('%', :keyword, '%'))

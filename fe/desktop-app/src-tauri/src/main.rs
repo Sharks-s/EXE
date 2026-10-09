@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::{Manager, Position, PhysicalPosition};
+use tauri::{Emitter, Manager, Position, PhysicalPosition};
 use tauri_plugin_store::StoreExt;
 use active_win_pos_rs::get_active_window;
 use std::fs;
@@ -44,6 +44,14 @@ fn toggle_windows_to_session(app_handle: tauri::AppHandle) -> Result<(), String>
     let bubble_window = app_handle.get_webview_window("widget-bubble")
         .ok_or_else(|| "Không tìm thấy cấu hình cửa sổ 'widget-bubble'".to_string())?;
 
+    main_window.set_skip_taskbar(false).map_err(|e| e.to_string())?;
+    widget_window.set_skip_taskbar(false).map_err(|e| e.to_string())?;
+    bubble_window.set_skip_taskbar(true).map_err(|e| e.to_string())?;
+    if let Some(widget_taskbar_state) = app_handle.try_state::<WidgetTaskbarState>() {
+        if let Ok(mut last_widget_show) = widget_taskbar_state.0.lock() {
+            *last_widget_show = Instant::now();
+        }
+    }
     main_window.hide().map_err(|e| e.to_string())?;
     widget_window.show().map_err(|e| e.to_string())?;
     widget_window.set_always_on_top(true).map_err(|e| e.to_string())?;
@@ -53,6 +61,52 @@ fn toggle_windows_to_session(app_handle: tauri::AppHandle) -> Result<(), String>
 }
 
 // Chỉ khi Frontend gọi, Rust mới kiểm tra ứng dụng đang mở
+#[tauri::command]
+fn restore_main_window(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let main_window = app_handle.get_webview_window("main")
+        .ok_or_else(|| "Khong tim thay cua so chinh 'main'".to_string())?;
+
+    main_window.set_skip_taskbar(false).map_err(|e| e.to_string())?;
+    main_window.show().map_err(|e| e.to_string())?;
+    let _ = main_window.set_focus();
+
+    if let Some(widget_window) = app_handle.get_webview_window("widget") {
+        widget_window.hide().map_err(|e| e.to_string())?;
+        widget_window.set_skip_taskbar(true).map_err(|e| e.to_string())?;
+    }
+
+    if let Some(bubble_window) = app_handle.get_webview_window("widget-bubble") {
+        bubble_window.hide().map_err(|e| e.to_string())?;
+        bubble_window.set_skip_taskbar(true).map_err(|e| e.to_string())?;
+    }
+
+    let _ = app_handle.emit("widget-active-state", serde_json::json!({ "active": false }));
+
+    Ok(())
+}
+
+fn is_cursor_over_window(window: &tauri::WebviewWindow) -> bool {
+    let cursor = match window.cursor_position() {
+        Ok(position) => position,
+        Err(_) => return false,
+    };
+    let position = match window.outer_position() {
+        Ok(position) => position,
+        Err(_) => return false,
+    };
+    let size = match window.outer_size() {
+        Ok(size) => size,
+        Err(_) => return false,
+    };
+
+    let left = position.x as f64;
+    let top = position.y as f64;
+    let right = left + size.width as f64;
+    let bottom = top + size.height as f64;
+
+    cursor.x >= left && cursor.x <= right && cursor.y >= top && cursor.y <= bottom
+}
+
 #[tauri::command]
 fn get_active_window_info() -> Result<ActiveWindowInfo, String> {
     if let Ok(active_window) = get_active_window() {
@@ -154,6 +208,7 @@ use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 
 struct SidecarState(Mutex<Option<CommandChild>>);
+struct WidgetTaskbarState(Mutex<Instant>);
 
 static SIDECAR_CLEANED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -297,6 +352,7 @@ fn main() {
 .plugin(tauri_plugin_oauth::init())
         .invoke_handler(tauri::generate_handler![
             toggle_windows_to_session,
+            restore_main_window,
             get_active_window_info,
             back_to_widget,
             scan_music_folder,
@@ -307,6 +363,7 @@ fn main() {
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
+            app.manage(WidgetTaskbarState(Mutex::new(Instant::now())));
 
             // Tự động chạy Python bot local khi app khởi động
             println!("[Sidecar] Đang khởi chạy focusbuddy-bot...");
@@ -385,25 +442,48 @@ fn main() {
                 let last_move = Arc::new(Mutex::new(Instant::now()));
 
                 widget_window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::Moved(position) = event {
-                        *last_move.lock().unwrap() = Instant::now();
-                        let (x, y) = (position.x, position.y);
-                        let app_handle = app_handle.clone();
-                        let last_move_ref = last_move.clone();
+                    match event {
+                        tauri::WindowEvent::Moved(position) => {
+                            *last_move.lock().unwrap() = Instant::now();
+                            let (x, y) = (position.x, position.y);
+                            let app_handle = app_handle.clone();
+                            let last_move_ref = last_move.clone();
 
-                        std::thread::spawn(move || {
-                            std::thread::sleep(Duration::from_millis(300));
-                            if last_move_ref.lock().unwrap().elapsed() >= Duration::from_millis(300) {
-                                let _ = save_widget_position(app_handle.clone(), x, y);
-                                // Đặt lại bubble theo vị trí widget mới, chạy trên main thread
-                                let _ = app_handle.run_on_main_thread({
-                                    let app_handle = app_handle.clone();
-                                    move || {
-                                        let _ = reposition_bubble(app_handle);
-                                    }
+                            std::thread::spawn(move || {
+                                std::thread::sleep(Duration::from_millis(300));
+                                if last_move_ref.lock().unwrap().elapsed() >= Duration::from_millis(300) {
+                                    let _ = save_widget_position(app_handle.clone(), x, y);
+                                    // Đặt lại bubble theo vị trí widget mới, chạy trên main thread
+                                    let _ = app_handle.run_on_main_thread({
+                                        let app_handle = app_handle.clone();
+                                        move || {
+                                            let _ = reposition_bubble(app_handle);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        tauri::WindowEvent::Focused(true) => {
+                            let outside_widget = app_handle
+                                .get_webview_window("widget")
+                                .map(|window| !is_cursor_over_window(&window))
+                                .unwrap_or(true);
+
+                            let should_restore = outside_widget && app_handle
+                                .try_state::<WidgetTaskbarState>()
+                                .and_then(|state| state.0.lock().ok().map(|last| last.elapsed()))
+                                .map(|elapsed| elapsed >= Duration::from_millis(700))
+                                .unwrap_or(true);
+
+                            if should_restore {
+                                let app_handle = app_handle.clone();
+                                let restore_app_handle = app_handle.clone();
+                                let _ = app_handle.run_on_main_thread(move || {
+                                    let _ = restore_main_window(restore_app_handle);
                                 });
                             }
-                        });
+                        }
+                        _ => {}
                     }
                 });
             }

@@ -1,5 +1,6 @@
 // features/focus-session/hooks/useSessionCloseGuard.ts
 import { useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { focusApi } from "../api/focus.api";
 import { useFocusStore } from "../stores/focusStore";
@@ -32,11 +33,7 @@ export function useSessionCloseGuard({
             event.preventDefault();
 
             try {
-                const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
-                const main = await WebviewWindow.getByLabel("main");
-                const widget = await WebviewWindow.getByLabel("widget");
-                await main?.show();
-                await widget?.hide();
+                await invoke("restore_main_window");
 
                 useFocusStore.getState().setIsClosing(true);
 

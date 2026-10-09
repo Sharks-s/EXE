@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useFocusStore } from "../stores/focusStore";
 import { focusApi } from "../api/focus.api";
+import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
-import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { usePointsStore } from "@/features/points";
 
 import { useCameraViolationWatch } from "./useCameraViolationWatch";
@@ -422,12 +422,7 @@ export function useFocusSession() {
   };
 
   const restoreMainWindow = async () => {
-    const main = await WebviewWindow.getByLabel("main");
-    const widget = await WebviewWindow.getByLabel("widget");
-    if (main && widget) {
-      await main.show();
-      await widget.hide();
-    }
+    await invoke("restore_main_window");
   };
 
   const handleEndSession = async (isAborted: boolean) => {
@@ -514,10 +509,7 @@ export function useFocusSession() {
 
       stopCameraWatch();
 
-      const mainWindow = await WebviewWindow.getByLabel("main");
-      const widgetWindow = await WebviewWindow.getByLabel("widget");
-      await mainWindow?.show();
-      await widgetWindow?.hide();
+      await restoreMainWindow();
       await emit("widget-active-state", { active: false });
     } catch (err) {
       console.error("[useFocusSession] Lỗi khi bắt đầu nghỉ giải lao:", err);

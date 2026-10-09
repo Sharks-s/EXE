@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { listen, emit } from "@tauri-apps/api/event";
-import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { invoke } from "@tauri-apps/api/core";
 
 
@@ -144,15 +144,9 @@ export default function WidgetWindow() {
 
   // ── CLICK VÀO CHÚ KHỈ → QUAY LẠI DASHBOARD ──
   const handleReturnToDashboard = async () => {
-    const mainWindow = await WebviewWindow.getByLabel("main");
-    const widgetWindow = await WebviewWindow.getByLabel("widget");
-    const bubbleWindow = await WebviewWindow.getByLabel("widget-bubble");
-    if (!mainWindow || !widgetWindow) return;
     try {
-      await mainWindow.show();
+      await invoke("restore_main_window");
       await emit("widget-active-state", { active: false });
-      await widgetWindow?.hide();
-      await bubbleWindow?.hide();
     } catch (err) {
       console.error(err);
     }
@@ -162,7 +156,7 @@ export default function WidgetWindow() {
     dragStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
     didDragRef.current = false;
 
-    if (e.buttons === 1) {
+    if (e.button === 0) {
       try {
         await getCurrentWebviewWindow().startDragging();
         didDragRef.current = true; // startDragging() chỉ thực sự move nếu user kéo tay
@@ -180,9 +174,14 @@ export default function WidgetWindow() {
     const dt = Date.now() - dragStartRef.current.time;
     dragStartRef.current = null;
 
-    if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD && dt < CLICK_TIME_MAX) {
+    if (
+      e.button === 2 &&
+      dx < DRAG_THRESHOLD &&
+      dy < DRAG_THRESHOLD &&
+      dt < CLICK_TIME_MAX
+    ) {
       await handleReturnToDashboard();
-    } else {
+    } else if (e.button === 0 && (dx >= DRAG_THRESHOLD || dy >= DRAG_THRESHOLD)) {
       // Vừa kéo xong -> báo Rust lưu vị trí + reposition bubble ngay (không chờ debounce 300ms)
       try {
         await invoke("reposition_bubble");
@@ -190,6 +189,11 @@ export default function WidgetWindow() {
         console.error(err);
       }
     }
+  };
+
+  const handleContextMenu = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await handleReturnToDashboard();
   };
 
   return (
@@ -210,6 +214,7 @@ export default function WidgetWindow() {
         ref={canvasRef}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
+        onContextMenu={handleContextMenu}
         width={160}
         height={160}
         style={{ width: 130, height: 130, background: "transparent", cursor: "pointer" }}

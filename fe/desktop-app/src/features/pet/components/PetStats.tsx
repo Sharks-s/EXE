@@ -52,7 +52,43 @@ export function PetStats({
                 </div>
                 <div>
                     <strong>{currentPoints ?? 0}</strong>
-                    <span>{t("common:pet.focus_points", { defaultValue: "Focus Points" })}</span>
+                    <span className="pet-point-label">
+                        {t("common:pet.focus_points", { defaultValue: "Focus Points" })}
+                        <button
+                            className="pet-point-help"
+                            type="button"
+                            aria-label={t("common:pet.focus_points_help_label", {
+                                defaultValue: "Cách kiếm Focus Points",
+                            })}
+                        >
+                            !
+                            <span className="pet-point-help-popover" role="tooltip">
+                                <strong>
+                                    {t("common:pet.focus_points_help_title", {
+                                        defaultValue: "Cách kiếm Focus Points",
+                                    })}
+                                </strong>
+                                <span>
+                                    {t("common:pet.focus_points_help_session", {
+                                        defaultValue:
+                                            "Hoàn thành phiên tập trung: 15 phút +5, 30 phút +10, 60 phút trở lên +20.",
+                                    })}
+                                </span>
+                                <span>
+                                    {t("common:pet.focus_points_help_achievement", {
+                                        defaultValue:
+                                            "Mở khóa thành tựu và mốc streak sẽ nhận thêm điểm thưởng.",
+                                    })}
+                                </span>
+                                <span>
+                                    {t("common:pet.focus_points_help_abort", {
+                                        defaultValue:
+                                            "Từ bỏ hoặc hủy phiên sẽ không nhận điểm phiên đó.",
+                                    })}
+                                </span>
+                            </span>
+                        </button>
+                    </span>
 
                     <small>
                         {t("common:pet.point_balance", {

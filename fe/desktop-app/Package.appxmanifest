@@ -14,7 +14,7 @@
   <Identity
     Name="FocusBuddy.FocusBuddy"
     Publisher="CN=4943F204-464D-4385-B3BD-F6C26A5C4DCD"
-    Version="0.1.1.0" />
+    Version="0.1.2.0" />
 
   <Properties>
     <DisplayName>Focus Buddy</DisplayName>

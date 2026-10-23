@@ -17,3 +17,8 @@ export interface CameraStartResponse {
   ok: boolean;
   message: string;
 }
+
+export interface CameraDevice {
+  index: number;
+  name: string;
+}

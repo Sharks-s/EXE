@@ -10,6 +10,7 @@ import com.exe101.exe.exception.ErrorCode;
 import com.exe101.exe.mapper.PersonalityMapper;
 import com.exe101.exe.model.entity.Personality;
 import com.exe101.exe.repository.PersonalityRepository;
+import com.exe101.exe.repository.UserRepository;
 import com.exe101.exe.service.PersonalityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,13 +28,21 @@ import java.util.Optional;
 public class PersonalityServiceImpl implements PersonalityService {
 
     private final PersonalityRepository personalityRepository;
+    private final UserRepository userRepository;
     private final PersonalityMapper personalityMapper;
     private final AppSeedProperties appSeedProperties;
 
     @Override
     public List<PersonalityResponse> getAll() {
-        return personalityRepository.findAll()
+        if (appSeedProperties.getPersonalities() == null) {
+            return List.of();
+        }
+
+        return appSeedProperties.getPersonalities()
                 .stream()
+                .map(AppSeedProperties.PersonalitySeed::getCode)
+                .map(personalityRepository::findByCodeIgnoreCase)
+                .flatMap(Optional::stream)
                 .map(personalityMapper::toResponse)
                 .toList();
     }
@@ -74,6 +85,19 @@ public class PersonalityServiceImpl implements PersonalityService {
 
             personalityRepository.save(p);
         }
+
+        migrateUnavailableUserPersonalities();
+    }
+
+    private void migrateUnavailableUserPersonalities() {
+        Set<String> availableCodes = appSeedProperties.getPersonalities().stream()
+                .map(AppSeedProperties.PersonalitySeed::getCode)
+                .collect(Collectors.toSet());
+        Personality defaultPersonality = personalityRepository
+                .findByCodeIgnoreCase(appSeedProperties.getDefaultPersonalityCode())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
+
+        userRepository.replaceUnavailablePersonalities(defaultPersonality, availableCodes);
     }
 
     @Override

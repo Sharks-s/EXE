@@ -10,8 +10,6 @@ interface ScannedSong {
 export async function seedSystemSongsService(): Promise<SongResponse[]> {
     const scannedSongs = await invoke<ScannedSong[]>("scan_system_sounds_folder");
 
-    if (scannedSongs.length === 0) return [];
-
     return songApi.seedSystemSongs({
         songs: scannedSongs.map((s) => ({
             filePath: s.file_path,

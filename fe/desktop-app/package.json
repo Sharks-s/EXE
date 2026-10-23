@@ -7,8 +7,13 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri",
-    "build:app": "tauri build && node scripts/rename-installer.js"
+    "tauri": "node scripts/tauri-with-rename.js",
+    "build:app": "npm run tauri build",
+    "msix:cert": "winapp cert generate --if-exists skip",
+    "msix:stage": "node scripts/stage-msix.js",
+    "pack:msix": "tauri build --no-bundle && npm run msix:stage && winapp package .\\msix-dist --manifest .\\Package.appxmanifest --exe desktop-app.exe --cert .\\devcert.pfx",
+    "pack:msix:store": "tauri build --no-bundle && npm run msix:stage && winapp package .\\msix-dist --manifest .\\Package.appxmanifest --exe desktop-app.exe --no-sign --output .\\FocusBuddy_Store_x64.msix",
+    "msix:install-cert": "winapp cert install .\\devcert.pfx"
   },
   "dependencies": {
     "@fabianlars/tauri-plugin-oauth": "^2.1.0",
@@ -31,6 +36,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@microsoft/winappcli": "^0.7.1",
     "@tauri-apps/cli": "^2.12.0",
     "@types/node": "^26.4.1",
     "@types/react": "^19.1.8",

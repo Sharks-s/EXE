@@ -15,12 +15,14 @@ type HealthViolationType = Extract<ViolationType, "TOO_CLOSE" | "BAD_POSTURE" | 
 
 interface UseCameraViolationWatchParams {
     sessionId: number | null;
+    enabled: boolean;
     onPenaltyViolation: (type: PenaltyViolationType, occurrenceInScan: number) => void;
     onHealthViolation: (type: HealthViolationType) => void;
 }
 
 export function useCameraViolationWatch({
     sessionId,
+    enabled,
     onPenaltyViolation,
     onHealthViolation,
 }: UseCameraViolationWatchParams) {
@@ -38,6 +40,8 @@ export function useCameraViolationWatch({
 
     // Reset toàn bộ ref khi session đổi (mount lại)
     useEffect(() => {
+        if (!enabled) return;
+
         isCameraStartedRef.current = false;
         observeWindowSecondsRef.current = 0;
         lastCameraOffAtRef.current = 0;
@@ -52,14 +56,14 @@ export function useCameraViolationWatch({
             cameraApi.stop().catch(() => { });
             isCameraStartedRef.current = false;
         };
-    }, [sessionId]);
+    }, [sessionId, enabled]);
 
     /**
      * Gọi mỗi giây từ interval chính bên ngoài (hook cha).
      * currentElapsed: tổng giây đã học thực tế (đã trừ break) của session.
      */
     const tick = async (currentElapsed: number, isPaused: boolean) => {
-        if (!sessionId || isPaused) return;
+        if (!enabled || !sessionId || isPaused) return;
 
         // ── Bật cam định kỳ (sau khi tắt, chờ đủ 3 phút) ──
         if (
@@ -71,10 +75,11 @@ export function useCameraViolationWatch({
             distractCounterRef.current = 0;
             currentViolationRef.current = null;
 
-            cameraApi.start().catch((err) => {
-                console.error("[useCameraViolationWatch] Lỗi khởi động Cam:", err);
+            const started = await cameraApi.start();
+            if (!started) {
+                console.error("[useCameraViolationWatch] Không thể khởi động camera.");
                 isCameraStartedRef.current = false;
-            });
+            }
             return;
         }
 

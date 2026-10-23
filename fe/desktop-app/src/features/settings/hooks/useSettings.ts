@@ -24,6 +24,12 @@ import {
     type BooleanNotificationPreferenceKey,
     type NotificationPreferences,
 } from "@/features/notifications/utils/notificationPreferences";
+import { cameraApi } from "@/features/focus-session/api/cameraApi";
+import type { CameraDevice } from "@/features/focus-session/types/focus-camera.types";
+import {
+    getPreferredCameraIndex,
+    savePreferredCameraIndex,
+} from "@/features/focus-session/utils/cameraPreference";
 
 export type AppListTab = "whitelist" | "blacklist";
 
@@ -53,6 +59,12 @@ export function useSettings() {
     // ── Thông báo ──
     const [warningWindowEnabled, setWarningWindowEnabled] = useState(true);
     const [soundReminderEnabled, setSoundReminderEnabled] = useState(false);
+    const [cameraEnabled, setCameraEnabled] = useState(false);
+    const [isCameraSettingLoading, setIsCameraSettingLoading] = useState(true);
+    const [isSavingCameraSetting, setIsSavingCameraSetting] = useState(false);
+    const [cameraDevices, setCameraDevices] = useState<CameraDevice[]>([]);
+    const [selectedCameraIndex, setSelectedCameraIndex] = useState<number | null>(null);
+    const [isLoadingCameraDevices, setIsLoadingCameraDevices] = useState(false);
     const [notificationPreferences, setNotificationPreferences] =
         useState<NotificationPreferences>(loadNotificationPreferences);
 
@@ -107,8 +119,9 @@ export function useSettings() {
             profileApi.getMyProfile(),
             settingsApi.getPersonalities(),
             settingsApi.getMyAppRules(),
+            settingsApi.getUserSettings(),
         ])
-            .then(([profile, personalityList, ruleList]) => {
+            .then(([profile, personalityList, ruleList, userSettings]) => {
                 setSelfAddress(profile.aiSelfAddress ?? "");
                 setUserAddress(profile.aiUserAddress ?? "");
                 setActivePersonalityId(
@@ -116,15 +129,54 @@ export function useSettings() {
                 );
                 setPersonalities(personalityList);
                 setAppRules(ruleList);
+                setCameraEnabled(userSettings.cameraEnabled);
             })
             .catch(() => {
                 toast.error("Không thể tải cấu hình.");
-            });
+            })
+            .finally(() => setIsCameraSettingLoading(false));
     }, []);
 
     useEffect(() => {
         void loadSubscriptionStatus();
     }, []);
+
+    useEffect(() => {
+        if (!cameraEnabled) {
+            setCameraDevices([]);
+            setSelectedCameraIndex(null);
+            return;
+        }
+
+        let cancelled = false;
+        setIsLoadingCameraDevices(true);
+
+        cameraApi.getDevices()
+            .then((availableDevices) => {
+                if (cancelled) return;
+
+                setCameraDevices(availableDevices);
+                if (availableDevices.length === 0) {
+                    setSelectedCameraIndex(null);
+                    return;
+                }
+
+                const savedIndex = getPreferredCameraIndex();
+                const selectedDevice = availableDevices.find(
+                    (device) => device.index === savedIndex,
+                ) ?? availableDevices[0];
+
+                setSelectedCameraIndex(selectedDevice.index);
+                savePreferredCameraIndex(selectedDevice.index);
+            })
+            .finally(() => {
+                if (!cancelled) setIsLoadingCameraDevices(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [cameraEnabled]);
 
     const currentRuleType = appListTab === "whitelist" ? "WHITELIST" : "BLACKLIST";
     const currentList = appRules.filter((r) => r.ruleType === currentRuleType);
@@ -257,6 +309,29 @@ export function useSettings() {
         }
     };
 
+    const handleCameraEnabledChange = async () => {
+        if (isSavingCameraSetting || isCameraSettingLoading) return;
+
+        const nextValue = !cameraEnabled;
+        setCameraEnabled(nextValue);
+        try {
+            setIsSavingCameraSetting(true);
+            const updated = await settingsApi.updateCameraEnabled(nextValue);
+            setCameraEnabled(updated.cameraEnabled);
+            toast.success("Đã cập nhật quyền sử dụng camera.");
+        } catch {
+            setCameraEnabled(!nextValue);
+            toast.error("Không thể cập nhật quyền sử dụng camera.");
+        } finally {
+            setIsSavingCameraSetting(false);
+        }
+    };
+
+    const handleCameraDeviceChange = (cameraIndex: number) => {
+        setSelectedCameraIndex(cameraIndex);
+        savePreferredCameraIndex(cameraIndex);
+    };
+
     const handleNotificationPreferenceChange = (
         key: BooleanNotificationPreferenceKey,
     ) => {
@@ -343,6 +418,14 @@ export function useSettings() {
         setWarningWindowEnabled,
         soundReminderEnabled,
         setSoundReminderEnabled,
+        cameraEnabled,
+        isCameraSettingLoading,
+        isSavingCameraSetting,
+        handleCameraEnabledChange,
+        cameraDevices,
+        selectedCameraIndex,
+        isLoadingCameraDevices,
+        handleCameraDeviceChange,
         notificationPreferences,
         handleNotificationPreferenceChange,
         handleNotificationPreferenceValueChange,

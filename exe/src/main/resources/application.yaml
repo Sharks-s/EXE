@@ -102,7 +102,7 @@ app:
 
   seed:
     default-pet-code: "MONKI"
-    default-personality-code: "SWEET"
+    default-personality-code: "BASIC"
     daily-free-usage: 60
     default-cycle-minutes: 5
     subscription-plans:
@@ -137,21 +137,21 @@ app:
         active: true
         display-order: 3
     personalities:
-      - code: "SWEET"
-        name: "Sweet Assistant"
-        description: "Always encouraging, gentle, and positive."
+      - code: "BASIC"
+        name: "Basic Personality"
+        description: "Balanced, clear, and supportive without an exaggerated persona."
         premium: false
-      - code: "STRICT"
-        name: "Strict Assistant"
-        description: "Disciplined, straightforward, and unyielding."
-        premium: true
-      - code: "MEAN"
-        name: "Mean Assistant"
-        description: "Challenging, provocative, and roasts your ego mercilessly."
+      - code: "SWEET"
+        name: "Sweet Personality"
+        description: "Warm, gentle, affectionate, and always encouraging."
         premium: true
       - code: "GRUMPY"
-        name: "Grumpy Assistant"
-        description: "Blunt, impatient, and brutally direct, but still genuinely helpful."
+        name: "Grumpy Personality"
+        description: "Demanding, blunt, and strict, but always focused on helping the user improve."
+        premium: true
+      - code: "FUNNY"
+        name: "Funny Personality"
+        description: "Playful, witty, and humorous while keeping the user focused on the task."
         premium: true
     pets:
       - code: "MONKI"
@@ -531,18 +531,6 @@ app:
     model: "google/gemini-2.5-flash"
     timeout-seconds: 10
     max-tokens: 300
-
-  momo:
-    partner-code: ${MOMO_PARTNER_CODE:MOMO}
-    access-key: ${MOMO_ACCESS_KEY:F8BBA842ECF85}
-    secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX08PD3vg6EkVlz}
-    endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
-    query-endpoint: ${MOMO_QUERY_ENDPOINT:https://payment.momo.vn/v2/gateway/api/query}
-    redirect-url: ${MOMO_REDIRECT_URL:https://focusbuddy-api-lw5a.onrender.com/payments/momo/redirect}
-    ipn-url: ${MOMO_IPN_URL:https://focusbuddy-api-lw5a.onrender.com/payments/momo/ipn}
-    request-type: ${MOMO_REQUEST_TYPE:payWithMethod}
-    partner-name: ${MOMO_PARTNER_NAME:Focus Buddy}
-    store-id: ${MOMO_STORE_ID:FocusBuddyStore}
 
   sepay:
     merchant-id: ${SEPAY_MERCHANT_ID:}

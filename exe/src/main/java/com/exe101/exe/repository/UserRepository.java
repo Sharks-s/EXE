@@ -1,11 +1,13 @@
 package com.exe101.exe.repository;
 
 import com.exe101.exe.dto.response.AdminUserListItem;
+import com.exe101.exe.model.entity.Personality;
 import com.exe101.exe.model.entity.User;
 import com.exe101.exe.model.enums.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,6 +16,7 @@ import org.springframework.data.jpa.repository.Lock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 
 @Repository
@@ -88,6 +91,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") Long id);
+
+    @Modifying
+    @Query("""
+            update User u
+            set u.personality = :replacement
+            where u.personality is not null
+              and u.personality.code not in :availableCodes
+            """)
+    int replaceUnavailablePersonalities(
+            @Param("replacement") Personality replacement,
+            @Param("availableCodes") Set<String> availableCodes
+    );
 
     List<User> findByCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant from, Instant to);
 }

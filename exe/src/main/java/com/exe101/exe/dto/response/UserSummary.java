@@ -1,5 +1,6 @@
 package com.exe101.exe.dto.response;
 
+import com.exe101.exe.model.enums.UserGender;
 import lombok.*;
 
 import java.time.Instant;
@@ -17,6 +18,7 @@ public class UserSummary {
     private String fullName;
     private String avatarUrl;
     private String phoneNumber;
+    private UserGender gender;
     private LocalDate dateOfBirth;
     private String addressLine;
     private Integer provinceCode;

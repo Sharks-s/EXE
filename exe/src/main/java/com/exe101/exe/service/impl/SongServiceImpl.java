@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -86,19 +90,36 @@ public class SongServiceImpl implements SongService {
     @Transactional
     public List<SongResponse> seedSystemSongs(Long userId, ScanFolderRequest request) {
         User user = userService.findById(userId);
+        List<Song> existingSystemSongs = songRepository.findByUserIdAndIsSystemTrue(userId);
+        Map<String, Song> existingSongsByPath = existingSystemSongs.stream()
+                .collect(Collectors.toMap(Song::getFilePath, Function.identity()));
+        Set<String> scannedPaths = request.songs().stream()
+                .map(ScanFolderRequest.SongItem::filePath)
+                .collect(Collectors.toSet());
+
+        List<Song> removedSongs = existingSystemSongs.stream()
+                .filter(song -> !scannedPaths.contains(song.getFilePath()))
+                .toList();
+        if (!removedSongs.isEmpty()) {
+            songRepository.deleteAll(removedSongs);
+        }
 
         int nextOrderIndex = songRepository.findMaxOrderIndexByUserId(userId)
                 .map(max -> max + 1)
                 .orElse(0);
 
         for (ScanFolderRequest.SongItem item : request.songs()) {
-            boolean alreadyExists = songRepository.existsByUserIdAndFilePath(userId, item.filePath());
-            if (alreadyExists) continue;
+            Song existingSong = existingSongsByPath.get(item.filePath());
+            if (existingSong != null) {
+                existingSong.setFileName(stripFileExtension(item.fileName()));
+                songRepository.save(existingSong);
+                continue;
+            }
 
             Song song = Song.builder()
                     .user(user)
                     .filePath(item.filePath())
-                    .fileName(stripFileExtension(item.fileName()))  // ← sửa dòng này
+                    .fileName(stripFileExtension(item.fileName()))
                     .orderIndex(nextOrderIndex)
                     .isEnabled(true)
                     .isSystem(true)

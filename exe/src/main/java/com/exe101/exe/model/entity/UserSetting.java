@@ -14,7 +14,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"user", "personality"})
+@ToString(exclude = "user")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class UserSetting {
 
@@ -29,7 +29,7 @@ public class UserSetting {
 
     @Column(name = "camera_enabled", nullable = false)
     @Builder.Default
-    private boolean cameraEnabled = true;
+    private boolean cameraEnabled = false;
 
     @Version
     private Long version;

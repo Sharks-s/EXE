@@ -1,5 +1,6 @@
 package com.exe101.exe.dto.request;
 
+import com.exe101.exe.model.enums.FocusMode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +14,8 @@ public record CreateSessionRequest(
 
         @NotNull(message = "{validation.session.duration.notNull}")
         @Min(value = 1, message = "{validation.session.duration.min}")
-        Integer durationMinutes
+        Integer durationMinutes,
+
+        FocusMode focusMode
 ) {
 }

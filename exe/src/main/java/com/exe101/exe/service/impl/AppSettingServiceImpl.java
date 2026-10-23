@@ -33,8 +33,7 @@ public class AppSettingServiceImpl implements AppSettingService {
     public void seedDefaultSettings() {
         seed(DEFAULT_PET_CODE, appSeedProperties.getDefaultPetCode(), AppSettingValueType.STRING,
                 "Default pet code assigned to new users.", "app.seed", true);
-        seed(DEFAULT_PERSONALITY_CODE, appSeedProperties.getDefaultPersonalityCode(), AppSettingValueType.STRING,
-                "Default personality code used when a user has none.", "app.seed", true);
+        seedDefaultPersonalitySetting();
         seed(DAILY_FREE_USAGE, String.valueOf(appSeedProperties.getDailyFreeUsage()), AppSettingValueType.NUMBER,
                 "Daily free usage limit in minutes.", "usage", true);
         seed(DEFAULT_CYCLE_MINUTES, String.valueOf(appSeedProperties.getDefaultCycleMinutes()), AppSettingValueType.NUMBER,
@@ -102,6 +101,24 @@ public class AppSettingServiceImpl implements AppSettingService {
                 .category(category)
                 .editable(editable)
                 .build());
+    }
+
+    private void seedDefaultPersonalitySetting() {
+        String defaultCode = appSeedProperties.getDefaultPersonalityCode();
+        appSettingRepository.findByKey(DEFAULT_PERSONALITY_CODE).ifPresentOrElse(setting -> {
+            if (setting.getValue().equals(setting.getDefaultValue())) {
+                setting.setValue(defaultCode);
+            }
+            setting.setDefaultValue(defaultCode);
+            appSettingRepository.save(setting);
+        }, () -> seed(
+                DEFAULT_PERSONALITY_CODE,
+                defaultCode,
+                AppSettingValueType.STRING,
+                "Default personality code used when a user has none.",
+                "app.seed",
+                true
+        ));
     }
 
     private void validateValue(AppSettingValueType type, String value) {

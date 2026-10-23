@@ -1,6 +1,7 @@
 package com.exe101.exe.controller;
 
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
+import com.exe101.exe.dto.request.CompleteOnboardingRequest;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.UpdateAiAddressRequest;
 import com.exe101.exe.dto.request.UpdateUserPersonalityRequest;
@@ -54,6 +55,16 @@ public class UserController {
     ) {
         return ApiResponse.success(
                 userMapper.toSummary(userService.completeBasicProfile(userDetails.getId(), request))
+        );
+    }
+
+    @PutMapping("/onboarding")
+    public ApiResponse<UserSummary> completeOnboarding(
+            @Valid @RequestBody CompleteOnboardingRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ApiResponse.success(
+                userMapper.toSummary(userService.completeOnboarding(userDetails.getId(), request))
         );
     }
 

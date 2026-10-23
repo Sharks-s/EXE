@@ -14,6 +14,7 @@ class FaceDetector:
         self._lock = threading.Lock()
         self._is_running = False
         self._thread: threading.Thread | None = None
+        self._current_device_index: int = 0
 
         self._face_mesh = mp.solutions.face_mesh.FaceMesh(
             static_image_mode=False,
@@ -28,19 +29,57 @@ class FaceDetector:
 
     # ── Camera control ─────────────────────────────────
 
-    def start(self) -> bool:
+    @staticmethod
+    def list_devices(max_devices: int = 5) -> list[dict]:
+        """Liệt kê các camera có sẵn trên hệ thống."""
+        devices = []
+        for i in range(max_devices):
+            cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
+            try:
+                if cap.isOpened():
+                    devices.append({"index": i, "name": f"Camera {i + 1}"})
+            finally:
+                cap.release()
+        return devices
+
+    def start(self, device_index: int = 0) -> bool:
         with self._lock:
             if self._is_running:
-                return True
+                # Nếu đang chạy camera khác → stop trước rồi đổi
+                if self._current_device_index != device_index:
+                    self._need_restart = True
+                else:
+                    return True
+
+            if self._need_restart if hasattr(self, '_need_restart') else False:
+                self._need_restart = False
+                # Giải phóng camera cũ
+                if self._cap is not None:
+                    self._is_running = False
+                    cap_old = self._cap
+                    self._cap = None
+                    thread_old = self._thread
+                    self._thread = None
+                    # Release ngoài lock
+                    try:
+                        cap_old.release()
+                    except:
+                        pass
+                    if thread_old and thread_old.is_alive():
+                        try:
+                            thread_old.join(timeout=1.0)
+                        except:
+                            pass
 
             if self._cap is None:
                 # Dùng CAP_DSHOW trên Windows giúp khởi động camera nhanh hơn
-                cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+                cap = cv2.VideoCapture(device_index, cv2.CAP_DSHOW)
                 if not cap.isOpened():
                     return False
                 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
                 self._cap = cap
+                self._current_device_index = device_index
 
             self._is_running = True
             self._thread = threading.Thread(target=self._loop, daemon=True)

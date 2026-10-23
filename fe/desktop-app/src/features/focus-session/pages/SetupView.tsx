@@ -15,9 +15,19 @@ import { useTranslation } from "react-i18next";
 import { useFocusStore } from "../stores/focusStore";
 import { getBuddyMessage } from "../utils/buddyMessage";
 import { getPetExperienceProgress } from "@/features/pet/utils/petExperience";
+import { settingsApi } from "@/features/settings";
+import { startFocusSessionService } from "../services/focus.service";
+import { isDailyLimitExceededError } from "@/utils/api-error-code";
+import type { FocusMode } from "../types/focus.types";
 
 
-const goals = ["Coding", "Assignment", "Study", "Meeting", "Writing"];
+const goals = [
+  { value: "Coding", translationKey: "coding" },
+  { value: "Assignment", translationKey: "assignment" },
+  { value: "Study", translationKey: "study" },
+  { value: "Meeting", translationKey: "meeting" },
+  { value: "Writing", translationKey: "writing" },
+] as const;
 const presets = [5, 25, 50, 90, 120];
 const MAX_DURATION_MINUTES = 240;
 
@@ -59,8 +69,9 @@ type SetupViewProps = {
 
 export function SetupView({ onNavigate }: SetupViewProps) {
   const { t } = useTranslation("common");
-  const [duration, setDuration] = useState(50);
-  const [selectedPreset, setSelectedPreset] = useState(50);
+  const [duration, setDuration] = useState(25);
+  const [selectedPreset, setSelectedPreset] = useState(25);
+  const [focusMode, setFocusMode] = useState<FocusMode>("STANDARD");
   const [selectedGoal, setSelectedGoal] = useState("Coding");
   const [customGoal, setCustomGoal] = useState("");
   const [isCameraSetupOpen, setIsCameraSetupOpen] = useState(false);
@@ -76,7 +87,10 @@ export function SetupView({ onNavigate }: SetupViewProps) {
     [customGoal, selectedGoal],
   );
 
-  const breakRewardMinutes = useMemo(() => Math.floor(duration / 5), [duration]);
+  const breakRewardMinutes = useMemo(
+    () => focusMode === "POMODORO" ? 30 : Math.floor(duration / 25) * 5,
+    [duration, focusMode],
+  );
   const breakRewardProgress = useMemo(
     () => Math.min((duration / MAX_DURATION_MINUTES) * 100, 100),
     [duration],
@@ -170,17 +184,35 @@ export function SetupView({ onNavigate }: SetupViewProps) {
   const handleDurationChange = (value: number) => {
     setDuration(value);
     setSelectedPreset(0);
+    setFocusMode("STANDARD");
   };
 
   const handlePresetClick = (value: number) => {
     setDuration(value);
     setSelectedPreset(value);
+    setFocusMode("STANDARD");
+  };
+
+  const handlePomodoroClick = () => {
+    setDuration(100);
+    setSelectedPreset(0);
+    setFocusMode("POMODORO");
   };
 
   const handleStart = async () => {
     if (!focusGoal) return;
 
     setIsCheckingDailyLimit(true);
+    let cameraEnabled: boolean;
+    try {
+      const userSettings = await settingsApi.getUserSettings();
+      cameraEnabled = userSettings.cameraEnabled;
+    } catch {
+      toast.error("Không thể tải cấu hình camera. Vui lòng thử lại.");
+      setIsCheckingDailyLimit(false);
+      return;
+    }
+
     try {
       const usage = await profileApi.getDailyUsage();
       if (
@@ -190,12 +222,30 @@ export function SetupView({ onNavigate }: SetupViewProps) {
       ) {
         useFocusStore.getState().showUpgradeNudge();
         toast.error(t("focusSession.setup.daily_limit_message"));
+        setIsCheckingDailyLimit(false);
         return;
       }
+    } catch {}
 
+    if (cameraEnabled) {
       setIsCameraSetupOpen(true);
-    } catch {
-      setIsCameraSetupOpen(true);
+      setIsCheckingDailyLimit(false);
+      return;
+    }
+
+    try {
+      await startFocusSessionService({
+        goal: focusGoal,
+        durationMinutes: duration,
+        focusMode,
+      });
+    } catch (error) {
+      if (isDailyLimitExceededError(error)) {
+        useFocusStore.getState().showUpgradeNudge();
+        toast.error(t("focusSession.setup.daily_limit_message"));
+      } else {
+        toast.error(t("focusSession.cameraSetup.start_error"));
+      }
     } finally {
       setIsCheckingDailyLimit(false);
     }
@@ -243,18 +293,18 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                     <div className="goal-row" key={rowIndex}>
                       {row.map((goal) => (
                         <button
-                          key={goal}
+                          key={goal.value}
                           type="button"
-                          className={`goal-chip ${selectedGoal === goal && !customGoal.trim()
+                          className={`goal-chip ${selectedGoal === goal.value && !customGoal.trim()
                             ? "active"
                             : ""
                             }`}
                           onClick={() => {
-                            setSelectedGoal(goal);
+                            setSelectedGoal(goal.value);
                             setCustomGoal("");
                           }}
                         >
-                          {goal}
+                          {t(`dashboard.presets.${goal.translationKey}`)}
                         </button>
                       ))}
                     </div>
@@ -311,13 +361,20 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                   <button
                     key={preset}
                     type="button"
-                    className={`preset-btn ${selectedPreset === preset ? "active" : ""
-                      }`}
+                    className={`preset-btn ${selectedPreset === preset && focusMode === "STANDARD" ? "active" : ""}`}
                     onClick={() => handlePresetClick(preset)}
                   >
                     {preset}p
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className={`preset-btn pomodoro-preset ${focusMode === "POMODORO" ? "active" : ""}`}
+                  onClick={handlePomodoroClick}
+                >
+                  <span>{t("focusSession.setup.pomodoro_label")}</span>
+                  <small>{t("focusSession.setup.pomodoro_cycle")}</small>
+                </button>
               </div>
             </section>
 
@@ -447,6 +504,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
         <CameraSetupModal
           goal={focusGoal}
           durationMinutes={duration}
+          focusMode={focusMode}
           onClose={() => setIsCameraSetupOpen(false)}
         />
       )}

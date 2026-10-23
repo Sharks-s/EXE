@@ -1,6 +1,7 @@
 package com.exe101.exe.dto.response;
 
 import com.exe101.exe.model.enums.SessionStatus;
+import com.exe101.exe.model.enums.FocusMode;
 
 import java.time.Instant;
 import java.util.List;
@@ -9,6 +10,8 @@ public record FocusSessionResponse(
         Long id,
         String goal,
         Integer plannedDuration,
+        FocusMode focusMode,
+        Integer completedCycles,
         Integer actualDuration,
         Integer totalRewardPool,
         Integer potentialReward,

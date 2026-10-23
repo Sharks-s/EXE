@@ -8,16 +8,14 @@ import type {
 import type { CurrentSubscriptionResponse } from "@/features/upgrade/api/subscription.api";
 
 const PERSONALITY_ICON_MAP: Record<string, { icon: string; className: string }> = {
-  INSPIRING: { icon: "emoji_objects", className: "ai-primary" },
+  BASIC: { icon: "smart_toy", className: "ai-primary" },
   SWEET: { icon: "volunteer_activism", className: "ai-primary" },
-  STRICT: { icon: "gavel", className: "ai-red" },
-  MEAN: { icon: "local_fire_department", className: "ai-red" },
-  CALM: { icon: "spa", className: "ai-green" },
-  FRIEND: { icon: "diversity_1", className: "ai-purple" },
+  GRUMPY: { icon: "gavel", className: "ai-red" },
+  FUNNY: { icon: "sentiment_very_satisfied", className: "ai-purple" },
 };
 
 const DEFAULT_PERSONALITY_ICON = { icon: "smart_toy", className: "ai-primary" };
-const PRO_PERSONALITY_CODES = new Set(["STRICT", "MEAN", "GRUMPY"]);
+const PRO_PERSONALITY_CODES = new Set(["SWEET", "GRUMPY", "FUNNY"]);
 
 type PersonalityCopy = {
   name: string;
@@ -26,63 +24,39 @@ type PersonalityCopy = {
 
 const PERSONALITY_COPY: Record<string, Record<string, PersonalityCopy>> = {
   vi: {
-    INSPIRING: {
-      name: "Trợ lý truyền cảm hứng",
-      description: "Khích lệ, tích cực và giúp bạn giữ động lực học tập.",
+    BASIC: {
+      name: "Tính cách cơ bản",
+      description: "Cân bằng, rõ ràng và hỗ trợ bạn tập trung một cách tự nhiên.",
     },
     SWEET: {
-      name: "Trợ lý dịu dàng",
-      description: "Luôn động viên, nhẹ nhàng và tích cực.",
-    },
-    STRICT: {
-      name: "Trợ lý kỷ luật",
-      description: "Nghiêm túc, thẳng thắn và giúp bạn bám sát mục tiêu.",
-    },
-    MEAN: {
-      name: "Trợ lý thử thách",
-      description: "Thách thức, sắc bén và thúc bạn vượt qua sự trì hoãn.",
+      name: "Tính cách ngọt ngào",
+      description: "Ấm áp, dịu dàng và luôn khích lệ bạn bằng lời nói dễ thương.",
     },
     GRUMPY: {
-      name: "Trợ lý khó tính",
-      description: "Cộc cằn, trực diện nhưng vẫn thật sự muốn giúp bạn tiến bộ.",
+      name: "Tính cách khó tính",
+      description: "Nghiêm khắc, thẳng thắn và thúc bạn bám sát mục tiêu.",
     },
-    CALM: {
-      name: "Trợ lý điềm tĩnh",
-      description: "Bình tĩnh, cân bằng và giúp bạn tập trung ổn định.",
-    },
-    FRIEND: {
-      name: "Trợ lý thân thiện",
-      description: "Gần gũi, tự nhiên và đồng hành như một người bạn học.",
+    FUNNY: {
+      name: "Tính cách hài hước",
+      description: "Vui nhộn, dí dỏm và giúp việc tập trung bớt căng thẳng.",
     },
   },
   en: {
-    INSPIRING: {
-      name: "Inspiring Assistant",
-      description: "Encouraging, positive, and focused on keeping you motivated.",
+    BASIC: {
+      name: "Basic Personality",
+      description: "Balanced, clear, and naturally supportive while you focus.",
     },
     SWEET: {
-      name: "Sweet Assistant",
-      description: "Always encouraging, gentle, and positive.",
-    },
-    STRICT: {
-      name: "Strict Assistant",
-      description: "Disciplined, straightforward, and goal-focused.",
-    },
-    MEAN: {
-      name: "Mean Assistant",
-      description: "Challenging, sharp, and pushes you past procrastination.",
+      name: "Sweet Personality",
+      description: "Warm, gentle, and always encouraging with affectionate words.",
     },
     GRUMPY: {
-      name: "Grumpy Assistant",
-      description: "Blunt and direct, but still genuinely helpful.",
+      name: "Grumpy Personality",
+      description: "Strict, direct, and determined to keep you on target.",
     },
-    CALM: {
-      name: "Calm Assistant",
-      description: "Steady, balanced, and helps you stay grounded.",
-    },
-    FRIEND: {
-      name: "Friendly Assistant",
-      description: "Warm, natural, and feels like a study companion.",
+    FUNNY: {
+      name: "Funny Personality",
+      description: "Playful and witty, making focus sessions feel less stressful.",
     },
   },
 };
@@ -226,6 +200,14 @@ export default function SettingsPage() {
     setWarningWindowEnabled,
     soundReminderEnabled,
     setSoundReminderEnabled,
+    cameraEnabled,
+    isCameraSettingLoading,
+    isSavingCameraSetting,
+    handleCameraEnabledChange,
+    cameraDevices,
+    selectedCameraIndex,
+    isLoadingCameraDevices,
+    handleCameraDeviceChange,
     notificationPreferences,
     handleNotificationPreferenceChange,
     handleNotificationPreferenceValueChange,
@@ -446,18 +428,18 @@ export default function SettingsPage() {
                 className={`language-option ${i18n.language === "vi" ? "language-option-active" : ""}`}
                 onClick={() => handleChangeLanguage("vi")}
               >
-                <span className="language-flag">🇻🇳</span>
+                <span className="language-flag">VN</span>
                 <span>{t("settings.language.vi")}</span>
                 {i18n.language === "vi" && (
                   <span className="material-symbols-outlined check-icon">check_circle</span>
                 )}
               </button>
-              <button
+              <button 
                 type="button"
                 className={`language-option ${i18n.language === "en" ? "language-option-active" : ""}`}
                 onClick={() => handleChangeLanguage("en")}
               >
-                <span className="language-flag">🇬🇧</span>
+                <span className="language-flag">EN</span>
                 <span>English</span>
                 {i18n.language === "en" && (
                   <span className="material-symbols-outlined check-icon">check_circle</span>
@@ -474,6 +456,51 @@ export default function SettingsPage() {
             </div>
 
             <div className="toggle-list">
+              <div className="toggle-row">
+                <div>
+                  <p>{t("settings.focus.camera")}</p>
+                  <small>{t("settings.focus.camera_desc")}</small>
+                </div>
+                <ToggleSwitch
+                  enabled={cameraEnabled}
+                  disabled={isCameraSettingLoading || isSavingCameraSetting}
+                  onClick={handleCameraEnabledChange}
+                />
+              </div>
+
+              {cameraEnabled && (
+                <div className="camera-device-setting">
+                  <div>
+                    <p>{t("settings.focus.camera_device")}</p>
+                    <small>{t("settings.focus.camera_device_desc")}</small>
+                  </div>
+
+                  {isLoadingCameraDevices ? (
+                    <span className="camera-device-status">
+                      {t("settings.focus.camera_device_loading")}
+                    </span>
+                  ) : cameraDevices.length > 0 && selectedCameraIndex !== null ? (
+                    <select
+                      value={selectedCameraIndex}
+                      onChange={(event) =>
+                        handleCameraDeviceChange(Number(event.target.value))
+                      }
+                      aria-label={t("settings.focus.camera_device")}
+                    >
+                      {cameraDevices.map((device) => (
+                        <option key={device.index} value={device.index}>
+                          {device.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="camera-device-status camera-device-error">
+                      {t("settings.focus.camera_device_empty")}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className="toggle-row">
                 <div>
                   <p>{t("settings.focus.warning_window")}</p>

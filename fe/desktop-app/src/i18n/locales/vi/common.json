@@ -54,47 +54,38 @@
       "writing": "Viết báo cáo"
     },
     "assistants": {
-      "sweet": "Ngọt Ngào",
-      "strict": "Tổng Tài",
-      "mean": "Mỏ Hỗn"
+      "basic": "Cơ bản",
+      "sweet": "Ngọt ngào",
+      "grumpy": "Khó tính",
+      "funny": "Hài hước"
     },
     "buddy_messages": {
       "no_pet": "Trang bị một thú cưng để có bạn đồng hành trong phiên tập trung.",
       "today_focus": " Hôm nay bạn đã có {{minutes}} phút tập trung rồi.",
+      "BASIC": [
+        "{{petName}} đã sẵn sàng. Bắt đầu {{durationMinutes}} phút cho {{focusGoal}} nhé.{{todayFocusText}}",
+        "Mục tiêu hiện tại là {{focusGoal}}. {{petName}} sẽ đồng hành cùng bạn đến hết phiên.",
+        "Bắt đầu tập trung nào. Cứ hoàn thành {{focusGoal}} từng bước một."
+      ],
       "SWEET": [
         "{{petName}} sẽ ở đây cổ vũ bạn nhé. Bắt đầu {{durationMinutes}} phút cho {{focusGoal}} thật êm nào.{{todayFocusText}}",
         "{{petName}} tin bạn làm được. Cứ đi từng bước nhỏ với {{focusGoal}} thôi.",
         "Nhẹ nhàng vào việc nào, {{petName}} đang canh giữ sự tập trung cho bạn."
       ],
-      "STRICT": [
+      "GRUMPY": [
         "{{petName}} đã sẵn sàng. {{durationMinutes}} phút tới chỉ dành cho {{focusGoal}}, không lan man.",
         "Vào chế độ tập trung. {{petName}} sẽ nhắc bạn giữ đúng cam kết với {{focusGoal}}.",
         "Mục tiêu đã rõ: {{focusGoal}}. Bắt đầu ngay, hoàn thành trước rồi nghỉ sau."
       ],
-      "MEAN": [
-        "{{petName}} đang nhìn đấy. Đừng để {{focusGoal}} lại bị trì hoãn thêm nữa.",
-        "{{durationMinutes}} phút không quá dài đâu. {{petName}} mong bạn đừng làm nó khó hơn cần thiết.",
-        "Nếu đã chọn {{focusGoal}} thì làm tới nơi tới chốn. {{petName}} sẽ để mắt tới bạn."
-      ],
-      "CALM": [
-        "{{petName}} ở bên bạn. Hít thở một nhịp, rồi bắt đầu {{focusGoal}} thật chậm và chắc.",
-        "Cứ giữ nhịp ổn định. {{petName}} sẽ đồng hành trong {{durationMinutes}} phút tiếp theo.",
-        "Không cần vội. Chỉ cần quay lại với {{focusGoal}}, từng phút một."
-      ],
-      "FRIEND": [
-        "{{petName}} vào team với bạn hôm nay. Mình cùng xử lý {{focusGoal}} nhé.",
-        "Có {{petName}} ngồi cạnh rồi. Làm {{durationMinutes}} phút, xong mình nghỉ một chút.",
-        "{{focusGoal}} nghe có vẻ ổn đó. {{petName}} sẽ đi cùng bạn đến hết phiên."
-      ],
-      "INSPIRING": [
-        "{{petName}} đang sẵn sàng đồng hành. Biến {{durationMinutes}} phút này thành một bước tiến thật đẹp nào.",
-        "Hôm nay bắt đầu bằng {{focusGoal}}. {{petName}} tin đây sẽ là một phiên đáng giá.",
-        "Một phiên tập trung tốt có thể đổi cả ngày. {{petName}} sẽ đi cùng bạn."
+      "FUNNY": [
+        "{{petName}} đã bật chế độ nghiêm túc... được ba giây rồi. Giờ xử lý {{focusGoal}} thôi!",
+        "{{durationMinutes}} phút cho {{focusGoal}} nhé, đủ ngắn để não chưa kịp viện cớ đâu.",
+        "{{petName}} giữ cửa, bạn xử lý {{focusGoal}}. Không cho sự trì hoãn lẻn vào!"
       ]
     }
   },
   "sidebar": {
-    "dashboard": "Bảng điều khiển",
+    "dashboard": "Phiên tập trung",
     "analytics": "Thống kê",
     "settings": "Cài đặt",
     "profile": "Hồ sơ cá nhân",
@@ -185,6 +176,12 @@
     "focus": {
       "title": "Phiên tập trung",
       "description": "Cài đặt cảnh báo giám sát AI trong lúc bạn đang học.",
+      "camera": "Cho phép sử dụng camera",
+      "camera_desc": "Bật căn chỉnh và quét tư thế, xao nhãng trong phiên tập trung.",
+      "camera_device": "Camera sử dụng",
+      "camera_device_desc": "Chọn camera tích hợp hoặc camera gắn ngoài cho các phiên tập trung.",
+      "camera_device_loading": "Đang tìm camera...",
+      "camera_device_empty": "Không tìm thấy camera khả dụng.",
       "warning_window": "Hiện cửa sổ cảnh báo",
       "warning_window_desc": "Bật popup Warning khi AI phát hiện bạn xao nhãng.",
       "sound_reminder": "Âm thanh nhắc nhở",
@@ -322,8 +319,10 @@
       "minutes_short": "phút",
       "slider_min": "5 phút",
       "slider_max": "240 phút",
+      "pomodoro_label": "Pomodoro",
+      "pomodoro_cycle": "4 vòng: 25 phút tập trung · nghỉ 5 phút · nghỉ dài 15 phút",
       "reward_title": "+{{minutes}} phút nghỉ",
-      "reward_desc": "Cứ 5 phút tập trung được 1 phút nghỉ",
+      "reward_desc": "Thời gian nghỉ được cấp sau mỗi chu kỳ 25 phút tập trung",
       "start_button": "Bắt đầu phiên",
       "stats_title": "Thống kê",
       "stats_aria": "Mở trang thống kê",
@@ -405,6 +404,15 @@
     "cameraSetup": {
       "back": "Quay lại",
       "title": "Căn chỉnh camera",
+      "permission_title": "Quyền sử dụng camera",
+      "permission_heading": "Bạn có muốn sử dụng camera không?",
+      "permission_desc": "Camera giúp AI nhận biết tư thế và xao nhãng trong phiên tập trung. Bạn có thể chọn camera tích hợp hoặc camera gắn ngoài ở bước tiếp theo.",
+      "permission_privacy": "Camera chỉ hoạt động trong phiên tập trung và hình ảnh được xử lý cục bộ trên máy.",
+      "allow_camera": "Cho phép và chọn camera",
+      "continue_without_camera": "Tiếp tục không dùng camera",
+      "select_camera": "Chọn camera",
+      "loading_devices": "Đang tìm camera trên thiết bị...",
+      "no_devices": "Không tìm thấy camera khả dụng. Hãy kiểm tra kết nối thiết bị.",
       "starting_camera": "Đang khởi động camera...",
       "stream_error": "Luồng hình bị gián đoạn hoặc thiết bị đang bận, thử lại giúp mình nhé.",
       "no_face": "Không tìm thấy khuôn mặt",

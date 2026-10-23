@@ -7,10 +7,21 @@ import type {
     PersonalityResponse,
     AppRuleResponse,
     CreateAppRuleRequest,
-    ChangeLanguageRequest
+    ChangeLanguageRequest,
+    UserSettingResponse
 } from "../types/settings.types";
 
 export const settingsApi = {
+    getUserSettings: () =>
+        api
+            .get<ApiResponse<UserSettingResponse>>("/users/me/settings")
+            .then((r) => r.data.data),
+
+    updateCameraEnabled: (cameraEnabled: boolean) =>
+        api
+            .patch<ApiResponse<UserSettingResponse>>("/users/me/settings/camera", { cameraEnabled })
+            .then((r) => r.data.data),
+
     // PUT /users/me/ai-address
     updateAiAddress: (data: UpdateAiAddressRequest) =>
         api

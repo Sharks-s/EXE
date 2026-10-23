@@ -1,28 +1,32 @@
-import { focusApi } from "../api/focus.api";
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
+import { useSongStore } from "@/features/song";
+import { tauriStore } from "@/lib/tauriStore";
+import { focusApi } from "../api/focus.api";
+import { useFocusStore } from "../stores/focusStore";
 import type {
   CreateSessionRequest,
   FocusSessionResponse,
 } from "../types/focus.types";
-import { cameraApi } from "../api/cameraApi";
-import { useSongStore } from "@/features/song";
-
 
 export async function startFocusSessionService(
   data: CreateSessionRequest,
+  beforeWindowToggle?: () => void | Promise<void>,
 ): Promise<FocusSessionResponse> {
-  // 1. Khởi tạo phiên dưới DB PostgreSQL qua Spring Boot
   const sessionData = await focusApi.createSession(data);
 
-  // 2. Đánh thức OpenCV Camera của Python Bot ngầm
-  await cameraApi.start();
+  await useFocusStore.getState().initializeSessionConfig(sessionData);
+  await tauriStore.set("active_session", sessionData);
 
-  // 3. Gọi Tauri Core ẩn Main Window và đưa Widget Window lên
+  const { currentPet } = useFocusStore.getState();
+  if (currentPet) {
+    await emit("widget-pet-update", { petCode: currentPet.code });
+  }
+
+  await beforeWindowToggle?.();
   await invoke("toggle_windows_to_session");
-
-  // 4. Ngừng nhạc đang nghe thử ở tab quản lý (nếu có), lấy lại danh sách mới nhất
-  //    từ BE và tự động phát bài đầu tiên đã tích trong session
-  useSongStore.getState().startSessionPlayback();
+  await emit("widget-active-state", { active: true });
+  await useSongStore.getState().startSessionPlayback();
 
   return sessionData;
 }

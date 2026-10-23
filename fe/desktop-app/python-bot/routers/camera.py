@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from typing import Optional
 import time
 import asyncio
 
@@ -23,12 +24,28 @@ class StatusResponse(BaseModel):
     checks: dict   # face_centered, close_enough, lighting_ok, shoulders_visible
     all_pass: bool
 
+class CameraDevice(BaseModel):
+    index: int
+    name: str
+
+class DevicesResponse(BaseModel):
+    devices: list[CameraDevice]
+
+class StartRequest(BaseModel):
+    device_index: Optional[int] = 0
+
 # ── Endpoints ──────────────────────────────────────────
 
+@router.get("/devices", response_model=DevicesResponse)
+def list_cameras():
+    """Liệt kê các camera có sẵn trên hệ thống."""
+    devices = face_detector.list_devices()
+    return DevicesResponse(devices=devices)
+
 @router.post("/start", response_model=StartResponse)
-def start_camera():
+def start_camera(body: StartRequest = StartRequest()):
     """FE gọi khi user bấm 'Chuẩn bị tập trung'."""
-    success = face_detector.start()
+    success = face_detector.start(device_index=body.device_index)
     if not success:
         raise HTTPException(
             status_code=503,

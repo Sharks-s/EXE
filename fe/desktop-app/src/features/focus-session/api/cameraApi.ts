@@ -2,16 +2,29 @@ import { pyApi } from "@/lib/axios-py";
 import {
   CameraStatusResponse,
   CameraStartResponse,
+  CameraDevice,
 } from "../types/focus-camera.types";
 
 export const cameraApi = {
-  async start(): Promise<boolean> {
+  async start(deviceIndex?: number): Promise<boolean> {
     try {
-      const res = await pyApi.post<CameraStartResponse>("/bot/camera/start");
+      const res = await pyApi.post<CameraStartResponse>("/bot/camera/start", {
+        device_index: deviceIndex ?? 0,
+      });
       return res.data.ok;
     } catch (error) {
       console.error("Failed to start camera:", error);
       return false;
+    }
+  },
+
+  async getDevices(): Promise<CameraDevice[]> {
+    try {
+      const res = await pyApi.get<{ devices: CameraDevice[] }>("/bot/camera/devices");
+      return res.data.devices;
+    } catch (error) {
+      console.error("Failed to list camera devices:", error);
+      return [];
     }
   },
 

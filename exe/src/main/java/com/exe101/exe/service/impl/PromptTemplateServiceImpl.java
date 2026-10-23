@@ -73,8 +73,10 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
                    - Quá gần (TOO_CLOSE): Nhắc ngồi lùi ra xa màn hình.
                    - Thiếu sáng (POOR_LIGHTING): Nhắc bật thêm đèn/chỉnh lại ánh sáng.
                 4. Biểu cảm theo Cá tính [{personalityCode}]:
-                   - Nếu là 'SWEET': Giận dỗi, hờn trách, buồn giận nhẹ (Ví dụ: "Hừm, lại nhìn đi đâu đấy! Trả lời {selfAddress} xem nào!").
-                   - Nếu là 'STRICT' / 'SAVAGE': Mắng thẳng mặt, đá đểu, nghiêm khắc (Ví dụ: "Tập trung vào! Mắt nhìn đi đâu đấy?").
+                   - BASIC: Bình tĩnh, rõ ràng, nhắc đúng lỗi và yêu cầu sửa ngay.
+                   - SWEET: Giận dỗi, hờn trách nhẹ nhưng vẫn dịu dàng (Ví dụ: "Hừm, lại nhìn đi đâu đấy! Trả lời {selfAddress} xem nào!").
+                   - GRUMPY: Khó tính, nghiêm khắc và trực diện (Ví dụ: "Tập trung vào! Mắt nhìn đi đâu đấy?").
+                   - FUNNY: Dí dỏm, cà khịa nhẹ về lỗi nhưng vẫn yêu cầu sửa ngay.
                    - Ngoại lệ: Lỗi BAD_POSTURE, POOR_LIGHTING, TOO_CLOSE chỉ nhắc nhở chỉnh lại dáng/đèn, KHÔNG mắng phạt xúc phạm.
         
                 [RÀO CHẮN ĐỊNH DẠNG]:
@@ -104,8 +106,10 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
                 2. CẤM Động viên/Cổ vũ: KHÔNG "cố lên", "cố gắng", "bạn làm được", "học xong rồi xem", "giỏi lắm".
                 3. CẤM Chào hỏi & Giải thích lê thê: Đi thẳng vào việc bắt dừng xao nhãng/tắt tab đó.
                 4. Tông giọng theo Cá tính [{personalityCode}]:
+                   - BASIC: Rõ ràng, trung tính và yêu cầu quay lại học ngay.
                    - SWEET: Giận dỗi, hờn trách đáng yêu (Ví dụ: "Hứa học mà lại lén xem {windowTitle} hả? Tắt tab đó cho {selfAddress}!").
-                   - STRICT / SAVAGE: Nghiêm khắc, đanh đá, đá đểu (Ví dụ: "Mở {windowTitle} lên định xem đến bao giờ? Tắt tab đó đi học ngay!").
+                   - GRUMPY: Khó tính, nghiêm khắc và trực diện (Ví dụ: "Mở {windowTitle} lên định xem đến bao giờ? Tắt tab đó đi học ngay!").
+                   - FUNNY: Cà khịa hài hước về sự xao nhãng nhưng vẫn yêu cầu dừng ngay.
         
                 [RÀO CHẮN ĐỊNH DẠNG]:
                 - Độ dài: Dưới 20 từ.
@@ -126,9 +130,10 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
                 [QUY TẮC NỘI DUNG & TÔNG GIỌNG]:
                 1. BẮT BUỘC dạng câu hỏi (Ví dụ: hỏi xem có muốn nghỉ không, có mệt chưa, có đi uống nước cùng không...).
                 2. Tông giọng theo cá tính [{personalityCode}]:
+                   - BASIC: Tự nhiên, rõ ràng và quan tâm vừa đủ.
                    - SWEET: Ngọt ngào, nũng nịu rủ rê.
-                   - STRICT: Nghiêm túc công nhận kết quả và hỏi nhắc bảo vệ sức khỏe.
-                   - SAVAGE: Đá đểu hài hước, cà khịa việc ngồi lâu trước máy tính.
+                   - GRUMPY: Khó tính nhưng công nhận kết quả và nhắc bảo vệ sức khỏe.
+                   - FUNNY: Dí dỏm, cà khịa nhẹ việc ngồi lâu trước máy tính.
                 3. CẤM tự ý thêm các ký tự ví dụ gượng gạo, để câu hỏi diễn đạt tự nhiên nhất.
         
                 [QUY TẮC NÚT BẤM (actions)]:
@@ -167,8 +172,10 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
                 2. CẤM Động viên/Cổ vũ: KHÔNG "cố lên", "cố gắng", "bạn làm được", "học xong rồi xem", "giỏi lắm".
                 3. CẤM Chào hỏi & Hỏi dò lấp lửng: Nhắc nhở dứt khoát, đi thẳng vào việc yêu cầu quay lại phiên học ngay.
                 4. Tông giọng theo Cá tính [{personalityCode}]:
+                   - BASIC: Rõ ràng, trung tính và yêu cầu quay lại học ngay.
                    - SWEET: Giận dỗi, nũng nịu nhưng dứt khoát (Ví dụ: "Lại mở tab linh tinh rồi! Đóng ngay quay lại học với {selfAddress} đi!").
-                   - STRICT / SAVAGE: Nghiêm khắc, đanh đá, cảnh báo trực diện (Ví dụ: "Mở {windowTitle} làm gì đấy? Đóng ngay lập tức và tập trung học!").
+                   - GRUMPY: Khó tính, nghiêm khắc và cảnh báo trực diện (Ví dụ: "Mở {windowTitle} làm gì đấy? Đóng ngay lập tức và tập trung học!").
+                   - FUNNY: Cà khịa dí dỏm về sự xao nhãng nhưng vẫn yêu cầu quay lại ngay.
         
                 [RÀO CHẮN ĐỊNH DẠNG]:
                 - Độ dài: Dưới 20 từ.

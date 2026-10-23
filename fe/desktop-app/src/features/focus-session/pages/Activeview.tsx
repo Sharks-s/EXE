@@ -94,8 +94,10 @@ function ActiveViewContent() {
   const cycleProgress = Math.min(cycleElapsed / cycleSeconds, 1);
   const cycleRemaining = Math.max(cycleSeconds - cycleElapsed, 0);
 
-  const currentCycle = Math.floor(session.accumulatedReward / 5) + 1;
-  const totalCycles = Math.floor(session.plannedDuration / 25);
+  const totalCycles = session.focusMode === "POMODORO"
+    ? 4
+    : Math.floor(session.plannedDuration / 25);
+  const currentCycle = Math.min((session.completedCycles ?? 0) + 1, totalCycles);
   const bankProgress = Math.min(
     session.accumulatedReward / session.totalRewardPool,
     1,

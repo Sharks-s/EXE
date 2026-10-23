@@ -3,6 +3,7 @@ package com.exe101.exe.service.impl;
 import com.exe101.exe.config.AppSeedProperties;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
+import com.exe101.exe.dto.request.CompleteOnboardingRequest;
 import com.exe101.exe.dto.request.UpdateAiAddressRequest;
 import com.exe101.exe.dto.request.UpdateUserPersonalityRequest;
 import com.exe101.exe.dto.request.ChangeLanguageRequest;
@@ -28,6 +29,7 @@ import com.exe101.exe.repository.WardRepository;
 import com.exe101.exe.service.ImageService;
 import com.exe101.exe.service.AppSettingService;
 import com.exe101.exe.service.UserIdentityService;
+import com.exe101.exe.service.UserSettingService;
 import com.exe101.exe.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -60,6 +62,7 @@ public class UserServiceImpl implements UserService {
     private final UserIdentityService userIdentityService;
     private final AppSeedProperties appSeedProperties;
     private final AppSettingService appSettingService;
+    private final UserSettingService userSettingService;
 
     @Override
     public User createLocalUser(String email) {
@@ -248,10 +251,36 @@ public class UserServiceImpl implements UserService {
         if (request.personalityId() != null) {
             Personality personality = personalityRepository.findById(request.personalityId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
+            validatePersonalityAccess(userId, personality);
             user.setPersonality(personality);
         }
 
         user.setProfileCompleted(getMissingRequiredFields(user).isEmpty());
+        userRepository.save(user);
+
+        return findByIdWithRoles(userId);
+    }
+
+    @Override
+    @Transactional
+    public User completeOnboarding(Long userId, CompleteOnboardingRequest request) {
+        CompleteBasicProfileRequest profileRequest = new CompleteBasicProfileRequest(
+                request.fullName(),
+                request.gender(),
+                request.dateOfBirth(),
+                null,
+                request.phoneNumber(),
+                request.addressLine(),
+                request.provinceCode(),
+                request.wardCode()
+        );
+
+        completeBasicProfile(userId, profileRequest);
+        updateUserPersonality(userId, new UpdateUserPersonalityRequest(request.personalityId()));
+        userSettingService.updateCameraEnabled(userId, request.cameraEnabled());
+
+        User user = findById(userId);
+        user.setOnboardingCompleted(true);
         userRepository.save(user);
 
         return findByIdWithRoles(userId);
@@ -295,6 +324,7 @@ public class UserServiceImpl implements UserService {
         user.setAvatarUrl(null);
         user.setAvatarPublicId(null);
         user.setProfileCompleted(false);
+        user.setOnboardingCompleted(false);
         user.setPhoneNumber(null);
         user.setGender(null);
         user.setDateOfBirth(null);
@@ -362,10 +392,7 @@ public class UserServiceImpl implements UserService {
         Personality personality = personalityRepository.findById(request.personalityId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND));
 
-        if (personality.isPremium()
-                && !subscriptionRepository.hasActiveProAccess(userId, Instant.now())) {
-            throw new BusinessException(ErrorCode.PERSONALITY_REQUIRES_PRO);
-        }
+        validatePersonalityAccess(userId, personality);
 
         user.setPersonality(personality);
         userRepository.save(user);
@@ -421,6 +448,20 @@ public class UserServiceImpl implements UserService {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private void validatePersonalityAccess(Long userId, Personality personality) {
+        boolean isAvailable = appSeedProperties.getPersonalities() != null
+                && appSeedProperties.getPersonalities().stream()
+                .anyMatch(seed -> seed.getCode().equalsIgnoreCase(personality.getCode()));
+        if (!isAvailable) {
+            throw new BusinessException(ErrorCode.PERSONALITY_NOT_FOUND);
+        }
+
+        if (personality.isPremium()
+                && !subscriptionRepository.hasActiveProAccess(userId, Instant.now())) {
+            throw new BusinessException(ErrorCode.PERSONALITY_REQUIRES_PRO);
+        }
     }
 
     private void resetDailyUsageIfNeeded(User user, Instant now) {

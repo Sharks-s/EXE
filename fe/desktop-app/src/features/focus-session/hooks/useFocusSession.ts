@@ -10,6 +10,7 @@ import { useCameraViolationWatch } from "./useCameraViolationWatch";
 import { useAppViolationWatch } from "./useAppViolationWatch";
 import { useBotAction } from "./useBotAction";
 import { useSessionCloseGuard } from "./useSessionCloseGuard";
+import { settingsApi } from "@/features/settings";
 import {
   getApiErrorCode,
   isDailyLimitExceededError,
@@ -38,6 +39,7 @@ export function useFocusSession() {
   const [isEnding, setIsEnding] = useState<boolean>(false);
   const [isPromptActive, setIsPromptActive] = useState<boolean>(false);
   const [isBreaking, setIsBreaking] = useState<boolean>(false);
+  const [cameraMonitoringEnabled, setCameraMonitoringEnabled] = useState(false);
   const [breakRemaining, setBreakRemaining] = useState<number>(0);
   const [promptCountdown, setPromptCountdown] = useState<number>(
     PROMPT_DURATION_SECONDS,
@@ -54,6 +56,7 @@ export function useFocusSession() {
   const breakRemainingRef = useRef<number>(0);
   const lastHeartbeatMinuteMarkRef = useRef<number>(0);
   const hasWarnedFinalStretchRef = useRef<boolean>(false);
+  const finalPomodoroBreakPendingRef = useRef<boolean>(false);
   const downtimeMsRef = useRef<number>(0);
   const violationQueueRef = useRef<Promise<void>>(Promise.resolve());
 
@@ -75,8 +78,28 @@ export function useFocusSession() {
     breakRemaining,
   });
 
+  useEffect(() => {
+    let cancelled = false;
+    setCameraMonitoringEnabled(false);
+
+    if (!session?.id) return;
+
+    settingsApi.getUserSettings()
+      .then((settings) => {
+        if (!cancelled) setCameraMonitoringEnabled(settings.cameraEnabled);
+      })
+      .catch(() => {
+        if (!cancelled) setCameraMonitoringEnabled(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.id]);
+
   const { tick: tickCameraWatch, stopCamera: stopCameraWatch } = useCameraViolationWatch({
     sessionId: session?.id ?? null,
+    enabled: cameraMonitoringEnabled,
     onPenaltyViolation: (type) => {
       handleViolation(type, "Camera Tracker", `Vi phạm camera: ${type}`, "penalty", "bubble");
     },
@@ -231,6 +254,10 @@ export function useFocusSession() {
     promptStartedAtRef.current = null;
     lastHeartbeatMinuteMarkRef.current = Math.floor(initialElapsedSeconds / 60);
     hasWarnedFinalStretchRef.current = false;
+    finalPomodoroBreakPendingRef.current =
+      sessionRef.current.focusMode === "POMODORO" &&
+      (sessionRef.current.completedCycles ?? 0) >= 4 &&
+      wasBreakingWhenClosed;
     isBreakingRef.current = wasBreakingWhenClosed;
     isPromptActiveRef.current = false;
     breakRemainingRef.current = wasBreakingWhenClosed ? (sessionRef.current.breakRemainingSecondsAtClose ?? 0) : 0;
@@ -312,12 +339,17 @@ export function useFocusSession() {
       ) {
         try {
           const updatedSession = await focusApi.completeCycle(latestSession.id);
+          sessionRef.current = updatedSession;
           syncSession(updatedSession);
 
           const secondsLeftInSession =
             latestSession.plannedDuration * 60 - currentElapsed;
+          const isFinalPomodoroCycle =
+            updatedSession.focusMode === "POMODORO" &&
+            (updatedSession.completedCycles ?? 0) >= 4;
 
-          if (secondsLeftInSession > 0) {
+          if (secondsLeftInSession > 0 || isFinalPomodoroCycle) {
+            finalPomodoroBreakPendingRef.current = isFinalPomodoroCycle;
             const startedAtMs = Date.now();
             promptStartedAtRef.current = startedAtMs;
             isPromptActiveRef.current = true;
@@ -361,6 +393,7 @@ export function useFocusSession() {
           }
 
           breakSecondsSinceLastCycleRef.current = 0;
+          if (isFinalPomodoroCycle) return;
         } catch (err) {
           console.error("[useFocusSession] Lỗi hoàn thành cycle:", err);
         }
@@ -382,7 +415,10 @@ export function useFocusSession() {
         });
       }
       // ── Đủ giờ session -> tự động kết thúc ──
-      if (currentElapsed >= latestSession.plannedDuration * 60) {
+      if (
+        currentElapsed >= latestSession.plannedDuration * 60 &&
+        !finalPomodoroBreakPendingRef.current
+      ) {
         handleEndSession(false);
         return;
       }
@@ -404,6 +440,10 @@ export function useFocusSession() {
           setPromptCountdown(PROMPT_DURATION_SECONDS);
           promptStartedAtRef.current = null;
           emit("tauri-break-prompt", { isOpen: false });
+          if (finalPomodoroBreakPendingRef.current) {
+            finalPomodoroBreakPendingRef.current = false;
+            handleEndSession(false);
+          }
         } else {
           setPromptCountdown(remaining);
         }
@@ -474,6 +514,10 @@ export function useFocusSession() {
       isVisible: false,
       action: undefined,
     });
+    if (finalPomodoroBreakPendingRef.current) {
+      finalPomodoroBreakPendingRef.current = false;
+      handleEndSession(false);
+    }
   };
 
   const handleAcceptBreak = async () => {
@@ -540,13 +584,20 @@ export function useFocusSession() {
         latestSession.id,
         minutesUsed,
       );
+      sessionRef.current = updatedSession;
       syncSession(updatedSession);
 
       isBreakingRef.current = false;
       setIsBreaking(false);
       setBreakRemaining(0);
       breakRemainingRef.current = 0;
+      breakSecondsSinceLastCycleRef.current = 0;
       initialBreakMinutesRef.current = 0;
+
+      if (finalPomodoroBreakPendingRef.current) {
+        finalPomodoroBreakPendingRef.current = false;
+        await handleEndSession(false);
+      }
     } catch (err) {
       console.error("[useFocusSession] Lỗi khi quay lại phiên học:", err);
     }

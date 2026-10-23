@@ -23,7 +23,8 @@ export const NON_PENALTY_VIOLATION_TYPES: ViolationType[] = [
   "TOO_CLOSE",
 ];
 
-export type AssistantPersonality = "SWEET" | "STRICT" | "MEAN";
+export type AssistantPersonality = "BASIC" | "SWEET" | "GRUMPY" | "FUNNY";
+export type FocusMode = "STANDARD" | "POMODORO";
 
 export type PresetGoalKey =
   | "coding"
@@ -37,6 +38,7 @@ export type PresetGoalKey =
 export interface CreateSessionRequest {
   goal: string;
   durationMinutes: number;
+  focusMode?: FocusMode;
 }
 
 export interface ViolationRequest {
@@ -59,6 +61,8 @@ export interface FocusSessionResponse {
   id: number;
   goal: string;
   plannedDuration: number;
+  focusMode: FocusMode | null;
+  completedCycles: number | null;
   actualDuration: number | null;
   totalRewardPool: number;
   potentialReward: number;

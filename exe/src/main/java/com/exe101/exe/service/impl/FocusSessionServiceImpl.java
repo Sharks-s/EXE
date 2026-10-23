@@ -18,6 +18,7 @@ import com.exe101.exe.mapper.FocusSessionMapper;
 import com.exe101.exe.model.enums.SessionStatus;
 import com.exe101.exe.model.enums.PointTransactionType;
 import com.exe101.exe.model.enums.NotificationType;
+import com.exe101.exe.model.enums.FocusMode;
 import com.exe101.exe.repository.FocusSessionRepository;
 import com.exe101.exe.repository.PersonalityRepository;
 import com.exe101.exe.service.result.AiCallResult;
@@ -73,6 +74,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     public FocusSessionResponse createSession(CreateSessionRequest request, Long userId) {
 
         Instant now = Instant.now();
+        FocusMode focusMode = request.focusMode() != null ? request.focusMode() : FocusMode.STANDARD;
+        int plannedDuration = focusMode == FocusMode.POMODORO ? 100 : request.durationMinutes();
         // 1. Xử lý và dọn dẹp các phiên IN_PROGRESS cũ bị kẹt
         List<FocusSession> activeSessions = focusSessionRepository
                 .findByUserIdAndStatus(userId, SessionStatus.IN_PROGRESS);
@@ -97,7 +100,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         boolean hasProAccess = hasActiveProAccess(userId, now);
 
         if (!hasProAccess) {
-            if (exceedsDailyUsageLimit(user, request.durationMinutes())) {
+            if (exceedsDailyUsageLimit(user, plannedDuration)) {
                 notificationService.create(
                         userId,
                         NotificationType.DAILY_LIMIT_REACHED,
@@ -120,7 +123,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 .orElseGet(() -> userPetRepository.findDefaultPetByUserId(userId)
                         .orElseThrow(() -> new BusinessException(ErrorCode.DEFAULT_PET_NOT_FOUND)));
 
-        // 5. Lấy cá tính cấu hình sẵn của User, nếu không có thì dùng cá tính mặc định "SWEET"
+        // 5. Lấy cá tính cấu hình sẵn của User, nếu không có thì dùng cá tính mặc định
         Personality chosenPersonality = user.getPersonality();
         if (chosenPersonality == null) {
             chosenPersonality = personalityRepository.findByCode(appSettingService.getString(
@@ -136,7 +139,9 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         }
 
         // 6. Tính toán quỹ thưởng giải lao (Cứ 25 phút học -> 5 phút nghỉ)
-        int breakBankMinutes = (request.durationMinutes() / 25) * 5;
+        int breakBankMinutes = focusMode == FocusMode.POMODORO
+                ? 30
+                : (plannedDuration / 25) * 5;
 
         // 7. Tạo và lưu phiên học mới
         FocusSession session = FocusSession.builder()
@@ -144,7 +149,9 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 .personality(chosenPersonality)
                 .userPet(activePet)
                 .goal(request.goal())
-                .plannedDuration(request.durationMinutes())
+                .plannedDuration(plannedDuration)
+                .focusMode(focusMode)
+                .completedCycles(0)
                 .totalRewardPool(breakBankMinutes)
                 .potentialReward(breakBankMinutes)
                 .accumulatedReward(0)
@@ -189,11 +196,18 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.setLastCycleAt(baseTime.plus(25, ChronoUnit.MINUTES));
 
         // Dịch chuyển dòng tiền thưởng giải lao
-        int amountToMove = Math.min(appSettingService.getInt(
-                AppSettingServiceImpl.DEFAULT_CYCLE_MINUTES,
-                appSeedProperties.getDefaultCycleMinutes()), session.getPotentialReward());
-        session.setPotentialReward(session.getPotentialReward() - amountToMove);
+        int completedCycles = session.getCompletedCycles() != null ? session.getCompletedCycles() : 0;
+        int cycleReward = session.getFocusMode() == FocusMode.POMODORO && completedCycles == 3
+                ? 15
+                : appSettingService.getInt(
+                        AppSettingServiceImpl.DEFAULT_CYCLE_MINUTES,
+                        appSeedProperties.getDefaultCycleMinutes());
+        int amountToMove = session.getFocusMode() == FocusMode.POMODORO
+                ? cycleReward
+                : Math.min(cycleReward, session.getPotentialReward());
+        session.setPotentialReward(Math.max(session.getPotentialReward() - amountToMove, 0));
         session.setAccumulatedReward(session.getAccumulatedReward() + amountToMove);
+        session.setCompletedCycles(completedCycles + 1);
 
 //        // Cộng dồn hạn mức ngày cho User
 //        User user = userService.findById(userId);
@@ -365,7 +379,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         int violationCount = savedSession.getViolations() != null ? savedSession.getViolations().size() : 0;
 
-        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "SWEET";
+        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "BASIC";
         String pName = session.getUserPet() != null ? session.getUserPet().getCustomName() : "Khỉ";
         String pPet = session.getUserPet() != null ? session.getUserPet().getPet().getName() : "Khỉ";
         String language = "vi"; //tạm
@@ -472,6 +486,9 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         // Cộng dồn vào thời gian pause tổng để loại trừ khỏi thời gian học thực tế
         session.setPausedMinutes(session.getPausedMinutes() + minutesConsumed);
         session.setPausedSeconds(session.getPausedSeconds() + secondsConsumed);
+        if (session.getLastCycleAt() != null) {
+            session.setLastCycleAt(session.getLastCycleAt().plusSeconds(secondsConsumed));
+        }
 
         // Giải phóng trạng thái nghỉ
         session.setPausedAt(null);
@@ -489,7 +506,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
             throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
         }
 
-        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "SWEET";
+        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "BASIC";
         String pName = session.getUserPet() != null ? session.getUserPet().getCustomName() : "Khỉ";
         String pPet = session.getUserPet() != null ? session.getUserPet().getPet().getName() : "Khỉ";
         String language = "vi"; //tạm
@@ -593,7 +610,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     private FocusSessionResponse withCloseState(FocusSessionResponse response, FocusSession session) {
         Integer elapsed = session.getElapsedSecondsAtClose();
         return new FocusSessionResponse(
-                response.id(), response.goal(), response.plannedDuration(), response.actualDuration(),
+                response.id(), response.goal(), response.plannedDuration(), response.focusMode(),
+                response.completedCycles(), response.actualDuration(),
                 response.totalRewardPool(), response.potentialReward(), response.accumulatedReward(),
                 response.status(), response.startedAt(), response.endedAt(), response.completedAt(),
                 response.activeSeconds(), response.distractionCount(), response.distractionSeconds(), response.userPetId(),
@@ -718,7 +736,7 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 session, ViolationType.ENTERTAINMENT, safeAppName, safeWindowTitle, 1);
         int violationCount = savedSession.getViolations() != null ? savedSession.getViolations().size() : 0;
 
-        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "SWEET";
+        String pCode = session.getPersonality() != null ? session.getPersonality().getCode() : "BASIC";
         String pName = session.getUserPet() != null ? session.getUserPet().getCustomName() : "Khỉ";
         String pPet = session.getUserPet() != null ? session.getUserPet().getPet().getName() : "Khỉ";
         String personalityInstruction = personalityService.getPersonalityDescriptionByCode(pCode);

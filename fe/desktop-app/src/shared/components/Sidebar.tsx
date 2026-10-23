@@ -319,7 +319,7 @@ export default function Sidebar({
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         <NavItem
           page="dashboard"
-          label={t("sidebar.dashboard", { defaultValue: "Bảng điều khiển" })}
+          label={t("sidebar.dashboard", { defaultValue: "Phiên tập trung" })}
           icon={icons.dashboard}
           currentPage={currentPage}
           onNavigate={onNavigate}

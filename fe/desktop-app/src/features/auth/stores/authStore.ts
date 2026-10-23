@@ -24,6 +24,7 @@ interface AuthState {
   isInitializing: boolean;
   isLoading: boolean;
   error: string | null;
+  setUser: (user: User) => void;
 
   // Actions
   bootstrap: () => Promise<void>;
@@ -59,6 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isInitializing: true,
   isLoading: false,
   error: null,
+  setUser: (user) => set({ user }),
 
   isAuthenticated: () => !!get().user,
 

@@ -54,43 +54,34 @@
       "writing": "Writing"
     },
     "assistants": {
-      "sweet": "SWEET",
-      "strict": "STRICT",
-      "mean": "SAVAGE"
+      "basic": "Basic",
+      "sweet": "Sweet",
+      "grumpy": "Grumpy",
+      "funny": "Funny"
     },
 
     "buddy_messages": {
       "no_pet": "Equip a pet to have a companion during your focus session.",
       "today_focus": " You have focused for {{minutes}} minutes today.",
+      "BASIC": [
+        "{{petName}} is ready. Let's begin {{durationMinutes}} minutes of {{focusGoal}}.{{todayFocusText}}",
+        "The current goal is {{focusGoal}}. {{petName}} will stay with you until the session ends.",
+        "Time to focus. Complete {{focusGoal}} one step at a time."
+      ],
       "SWEET": [
         "{{petName}} will be here cheering for you. Let's start {{durationMinutes}} minutes for {{focusGoal}} gently.{{todayFocusText}}",
         "{{petName}} believes in you. Just take small steps with {{focusGoal}}.",
         "Let's get into it softly, {{petName}} is guarding your focus."
       ],
-      "STRICT": [
+      "GRUMPY": [
         "{{petName}} is ready. The next {{durationMinutes}} minutes are strictly for {{focusGoal}}, no wandering.",
         "Focus mode on. {{petName}} will remind you to stick to your commitment to {{focusGoal}}.",
         "The goal is clear: {{focusGoal}}. Start now, finish first, then rest."
       ],
-      "MEAN": [
-        "{{petName}} is watching. Don't let {{focusGoal}} be delayed any longer.",
-        "{{durationMinutes}} minutes isn't too long. {{petName}} expects you not to make it harder than necessary.",
-        "If you chose {{focusGoal}}, see it through. {{petName}} will keep an eye on you."
-      ],
-      "CALM": [
-        "{{petName}} is with you. Take a breath, then start {{focusGoal}} slowly and steadily.",
-        "Keep a steady pace. {{petName}} will accompany you for the next {{durationMinutes}} minutes.",
-        "No need to rush. Just return to {{focusGoal}}, one minute at a time."
-      ],
-      "FRIEND": [
-        "{{petName}} is teaming up with you today. Let's tackle {{focusGoal}} together.",
-        "With {{petName}} by your side. Let's do {{durationMinutes}} minutes, then take a break.",
-        "{{focusGoal}} sounds good. {{petName}} will stick with you until the end of the session."
-      ],
-      "INSPIRING": [
-        "{{petName}} is ready to accompany you. Make these {{durationMinutes}} minutes a beautiful step forward.",
-        "Starting today with {{focusGoal}}. {{petName}} believes this will be a worthwhile session.",
-        "A good focus session can change your whole day. {{petName}} will go with you."
+      "FUNNY": [
+        "{{petName}} has been serious for three whole seconds. Now let's handle {{focusGoal}}!",
+        "{{durationMinutes}} minutes for {{focusGoal}}—too short for your brain to invent an excuse.",
+        "{{petName}} guards the door while you handle {{focusGoal}}. No procrastination allowed!"
       ]
     }
   },
@@ -186,6 +177,12 @@
     "focus": {
       "title": "Focus session",
       "description": "Configure AI monitoring alerts while you are studying.",
+      "camera": "Allow camera access",
+      "camera_desc": "Enable camera setup and posture or distraction scans during focus sessions.",
+      "camera_device": "Camera device",
+      "camera_device_desc": "Choose a built-in or external camera for focus sessions.",
+      "camera_device_loading": "Looking for cameras...",
+      "camera_device_empty": "No available camera was found.",
       "warning_window": "Show warning window",
       "warning_window_desc": "Show a warning popup when AI detects distraction.",
       "sound_reminder": "Sound reminder",
@@ -323,8 +320,10 @@
       "minutes_short": "mins",
       "slider_min": "5 mins",
       "slider_max": "240 mins",
+      "pomodoro_label": "Pomodoro",
+      "pomodoro_cycle": "4 rounds: 25 min focus · 5 min break · 15 min long break",
       "reward_title": "+{{minutes}} mins break",
-      "reward_desc": "Earn 1 min of break for every 5 mins focused",
+      "reward_desc": "Break time is awarded after each 25-minute focus cycle",
       "start_button": "Start Session",
       "stats_title": "Statistics",
       "stats_aria": "Open statistics page",
@@ -406,6 +405,15 @@
     "cameraSetup": {
       "back": "Back",
       "title": "Camera Alignment",
+      "permission_title": "Camera Access",
+      "permission_heading": "Would you like to use a camera?",
+      "permission_desc": "The camera helps AI detect posture and distractions during focus sessions. You can choose a built-in or external camera next.",
+      "permission_privacy": "The camera only runs during focus sessions, and images are processed locally on your device.",
+      "allow_camera": "Allow and choose camera",
+      "continue_without_camera": "Continue without camera",
+      "select_camera": "Choose camera",
+      "loading_devices": "Looking for available cameras...",
+      "no_devices": "No available camera was found. Check the device connection.",
       "starting_camera": "Starting camera...",
       "stream_error": "Video stream interrupted or device is busy, please try again.",
       "no_face": "No face detected",

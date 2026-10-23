@@ -1,28 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useCameraSetup } from "../hooks/useCameraSetup";
 import { useFocusStore } from "../stores/focusStore";
-import { focusApi } from "../api/focus.api";
 import { cameraApi } from "../api/cameraApi";
-import { tauriStore } from "@/lib/tauriStore";
 import { isDailyLimitExceededError } from "@/utils/api-error-code";
+import { startFocusSessionService } from "../services/focus.service";
+import { settingsApi } from "@/features/settings";
 
 import { CheckItem } from "./CheckItemProps";
+import type { FocusMode } from "../types/focus.types";
 
 interface CameraSetupModalProps {
   goal: string;
   durationMinutes: number;
+  focusMode: FocusMode;
   onClose: () => void;
 }
 
 export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
   goal,
   durationMinutes,
+  focusMode,
   onClose,
 }) => {
   const { t } = useTranslation("common");
+  const [hasCameraConsent, setHasCameraConsent] = useState(false);
 
   // Vì SetupView render cưỡng bức bằng toán tử &&, nên mặc định mở ra là isOpen = true
   const {
@@ -31,7 +34,13 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
     isLoading,
     canProceed,
     streamUrl,
-  } = useCameraSetup(true);
+    // Camera selection
+    devices,
+    selectedDeviceIndex,
+    isLoadingDevices,
+    hasNoDevices,
+    changeDevice,
+  } = useCameraSetup(hasCameraConsent);
 
   const [streamError, setStreamError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +52,10 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
   }, []);
 
   useEffect(() => {
+    setStreamError(null);
+  }, [selectedDeviceIndex]);
+
+  useEffect(() => {
     document.body.classList.add("camera-modal-open");
     return () => {
       document.body.classList.remove("camera-modal-open");
@@ -50,49 +63,29 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
   }, []);
 
   const { pitch = 0, yaw = 0, face_detected = false, checks } = status || {};
-  const activeError = hookError || streamError || submitError;
+  const activeError = hasNoDevices
+    ? t("focusSession.cameraSetup.no_devices")
+    : hookError || streamError || submitError;
   const passedCount = checks ? Object.values(checks).filter(Boolean).length : 0;
 
   // ── LUỒNG XỬ LÝ KÍCH HOẠT CHUẨN: PYTHON TRƯỚC -> BACKEND SAU ──
-  const handleStartFocus = async () => {
-    if (!canProceed) return;
+  const handleStartFocus = async (withoutCamera = false) => {
+    if (!withoutCamera && !canProceed) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      // BƯỚC 1: Gọi thẳng API Backend tạo Session
-      const newSession = await focusApi.createSession({
+      if (withoutCamera) {
+        await settingsApi.updateCameraEnabled(false).catch(() => undefined);
+      }
+      await startFocusSessionService({
         goal: goal,
         durationMinutes: durationMinutes,
+        focusMode,
+      }, async () => {
+        onClose();
+        await new Promise((resolve) => setTimeout(resolve, 100));
       });
-
-      // BƯỚC 2: Lưu Session vào Store
-      await useFocusStore.getState().initializeSessionConfig(newSession);
-      await tauriStore.set("active_session", newSession);
-
-      // BƯỚC 2.5: Báo cho Widget biết pet nào đang active
-      const { currentPet } = useFocusStore.getState();
-      console.log("[CameraSetupModal] currentPet before emit:", currentPet);
-      if (currentPet) {
-        const { emit } = await import("@tauri-apps/api/event");
-        await emit("widget-pet-update", {
-          petCode: currentPet.code,
-        });
-      }
-
-      // BƯỚC 3: Đóng modal an toàn trước.
-      // Khi onClose() chạy -> isOpen thành false -> Hook tự dọn dẹp, tự tắt cam ngầm chuẩn chỉ!
-      onClose();
-
-      // Chờ nhẹ 100ms cho luồng tắt cam của Hook thực thi êm xuôi
-      await new Promise((r) => setTimeout(r, 100));
-
-      // BƯỚC 4: Gọi Rust Tauri hoán đổi sang cửa sổ Widget
-      await invoke("toggle_windows_to_session");
-
-      // BƯỚC 5: Báo cho Bubble biết Widget đang active — để bubble được phép hiện
-      const { emit } = await import("@tauri-apps/api/event");
-      await emit("widget-active-state", { active: true });
     } catch (err: any) {
       console.error("[Start Focus Error]:", err);
       if (isDailyLimitExceededError(err)) {
@@ -127,17 +120,76 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
             {t("focusSession.cameraSetup.back")}
           </button>
           <h3 className="text-sm font-medium text-zinc-100">
-            {t("focusSession.cameraSetup.title")}
+            {t(hasCameraConsent
+              ? "focusSession.cameraSetup.title"
+              : "focusSession.cameraSetup.permission_title")}
           </h3>
           <span className="text-xs text-zinc-500 w-[60px] text-right">
-            {passedCount}/4
+            {hasCameraConsent ? `${passedCount}/4` : ""}
           </span>
         </div>
 
-        <div className="p-4 space-y-4">
+        {!hasCameraConsent ? (
+          <div className="p-6 text-center space-y-4">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-blue-500/15 text-blue-400">
+              <span className="material-symbols-outlined text-3xl">photo_camera</span>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-base font-semibold text-zinc-100">
+                {t("focusSession.cameraSetup.permission_heading")}
+              </h4>
+              <p className="text-sm leading-6 text-zinc-400">
+                {t("focusSession.cameraSetup.permission_desc")}
+              </p>
+            </div>
+            <div className="flex items-start gap-2 rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 text-left text-xs leading-5 text-zinc-400">
+              <span className="material-symbols-outlined mt-0.5 text-base text-green-400">shield</span>
+              <span>{t("focusSession.cameraSetup.permission_privacy")}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 space-y-4">
+          {/* Camera device selector */}
+          {devices.length > 0 && (
+            <label className="block space-y-2">
+              <span className="flex items-center gap-2 text-xs font-medium text-zinc-300">
+                <i
+                  className="ti ti-camera"
+                  style={{ fontSize: 16 }}
+                  aria-hidden="true"
+                />
+                {t("focusSession.cameraSetup.select_camera")}
+              </span>
+              <select
+                value={selectedDeviceIndex}
+                onChange={(e) => changeDevice(Number(e.target.value))}
+                disabled={isLoadingDevices || isSubmitting}
+                className="w-full text-xs bg-zinc-900 border border-zinc-700 text-zinc-200 rounded-lg px-3 py-2 outline-none focus:border-green-500 transition-colors disabled:opacity-50 cursor-pointer appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 10px center",
+                  paddingRight: "28px",
+                }}
+              >
+                {devices.map((device) => (
+                  <option key={device.index} value={device.index}>
+                    {device.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {isLoadingDevices && (
+            <p className="text-center text-xs text-zinc-400 animate-pulse">
+              {t("focusSession.cameraSetup.loading_devices")}
+            </p>
+          )}
+
           {/* Video stream hiển thị */}
           <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center">
-            {isLoading ? (
+            {isLoadingDevices || isLoading || (!status && !activeError) ? (
               <span className="text-xs text-zinc-400 animate-pulse">
                 {t("focusSession.cameraSetup.starting_camera")}
               </span>
@@ -152,7 +204,8 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
               </div>
             ) : (
               <img
-                src={streamUrl}
+                key={selectedDeviceIndex}
+                src={`${streamUrl}?device=${selectedDeviceIndex}`}
                 className="w-full h-full object-cover"
                 alt="Live camera stream"
                 onError={() =>
@@ -211,33 +264,57 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
               hint={t("focusSession.cameraSetup.hint_shoulders")}
             />
           </div>
-        </div>
+          </div>
+        )}
 
         {/* Footer chứa nút bấm hành động */}
         <div className="sticky bottom-0 px-4 py-3 bg-[#1e1e1e] border-t border-zinc-800">
-          <button
-            disabled={!canProceed || isSubmitting}
-            onClick={handleStartFocus}
-            className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${canProceed && !isSubmitting
+          {!hasCameraConsent ? (
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => setHasCameraConsent(true)}
+                className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold text-sm hover:bg-blue-400 transition disabled:opacity-50"
+              >
+                {t("focusSession.cameraSetup.allow_camera")}
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => handleStartFocus(true)}
+                className="w-full py-2.5 rounded-xl text-zinc-400 text-sm hover:bg-zinc-800 hover:text-zinc-200 transition disabled:opacity-50"
+              >
+                {isSubmitting
+                  ? t("focusSession.cameraSetup.starting_session")
+                  : t("focusSession.cameraSetup.continue_without_camera")}
+              </button>
+            </div>
+          ) : (
+            <button
+              disabled={!canProceed || isSubmitting}
+              onClick={() => handleStartFocus(false)}
+              className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${canProceed && !isSubmitting
                 ? "bg-green-500 text-black hover:bg-green-400 cursor-pointer"
                 : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
               }`}
-          >
-            {isSubmitting ? (
-              <>
-                <i
-                  className="ti ti-loader-2 animate-spin"
-                  style={{ fontSize: 16 }}
-                  aria-hidden="true"
-                />
-                {t("focusSession.cameraSetup.starting_session")}
-              </>
-            ) : canProceed ? (
-              t("focusSession.cameraSetup.ready_button")
-            ) : (
-              t("focusSession.cameraSetup.incomplete_button")
-            )}
-          </button>
+            >
+              {isSubmitting ? (
+                <>
+                  <i
+                    className="ti ti-loader-2 animate-spin"
+                    style={{ fontSize: 16 }}
+                    aria-hidden="true"
+                  />
+                  {t("focusSession.cameraSetup.starting_session")}
+                </>
+              ) : canProceed ? (
+                t("focusSession.cameraSetup.ready_button")
+              ) : (
+                t("focusSession.cameraSetup.incomplete_button")
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>,

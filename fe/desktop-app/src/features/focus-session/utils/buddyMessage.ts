@@ -28,7 +28,7 @@ export const getBuddyMessage = (
     return t("dashboard.buddy_messages.no_pet");
   }
 
-  const normalizedPersonality = (personalityCode || "INSPIRING").toUpperCase();
+  const normalizedPersonality = (personalityCode || "BASIC").toUpperCase();
   const dailySeed = new Date().toISOString().slice(0, 10);
   const seed = `${dailySeed}-${normalizedPersonality}-${petName}-${focusGoal}-${durationMinutes}`;
   
@@ -45,7 +45,7 @@ export const getBuddyMessage = (
     todayFocusText,
   }) as string[];
 
-  const defaultMessages = t(`dashboard.buddy_messages.INSPIRING`, {
+  const defaultMessages = t(`dashboard.buddy_messages.BASIC`, {
     returnObjects: true,
     petName,
     focusGoal,

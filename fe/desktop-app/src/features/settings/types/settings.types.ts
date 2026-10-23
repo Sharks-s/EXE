@@ -59,3 +59,7 @@ export interface CreateAppRuleRequest {
 export interface ChangeLanguageRequest {
     language: string;
 }
+
+export interface UserSettingResponse {
+    cameraEnabled: boolean;
+}

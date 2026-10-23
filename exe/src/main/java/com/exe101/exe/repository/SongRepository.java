@@ -12,6 +12,8 @@ public interface SongRepository extends JpaRepository<Song, Long> {
 
     List<Song> findByUserIdOrderByOrderIndexAsc(Long userId);
 
+    List<Song> findByUserIdAndIsSystemTrue(Long userId);
+
     boolean existsByUserIdAndFilePath(Long userId, String filePath);
     
     @Query("SELECT MAX(s.orderIndex) FROM Song s WHERE s.user.id = :userId")

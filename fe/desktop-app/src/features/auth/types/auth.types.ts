@@ -4,6 +4,7 @@ export interface User {
   fullName: string;
   avatarUrl?: string;
   phoneNumber?: string;
+  gender?: "MALE" | "FEMALE" | "OTHER";
   dateOfBirth?: string;
   addressLine?: string;
   provinceCode?: number;

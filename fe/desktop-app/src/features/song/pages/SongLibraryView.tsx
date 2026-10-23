@@ -23,7 +23,7 @@ function MaterialIcon({ name, filled = false }: { name: string; filled?: boolean
 
 export default function SongLibraryView() {
   const { t } = useTranslation("common");
-  const { songs, fetchSongs, setSongs, toggleEnabled, deleteSong } = useSongStore();
+  const { songs, setSongs, toggleEnabled, deleteSong } = useSongStore();
   const {
     audioRef,
     currentSong,
@@ -43,12 +43,8 @@ export default function SongLibraryView() {
     let isMounted = true;
 
     async function loadSongs() {
-      await fetchSongs();
-
-      const currentSongs = useSongStore.getState().songs;
-      if (isMounted && currentSongs.length === 0) {
-        setSongs(await seedSystemSongsService());
-      }
+      const synchronizedSongs = await seedSystemSongsService();
+      if (isMounted) setSongs(synchronizedSongs);
     }
 
     loadSongs().catch((error) => {
@@ -58,7 +54,7 @@ export default function SongLibraryView() {
     return () => {
       isMounted = false;
     };
-  }, [fetchSongs, setSongs]);
+  }, [setSongs]);
 
   const handleScanFolder = async () => {
     try {

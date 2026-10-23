@@ -2,6 +2,7 @@ package com.exe101.exe.service;
 
 
 import com.exe101.exe.dto.request.CompleteBasicProfileRequest;
+import com.exe101.exe.dto.request.CompleteOnboardingRequest;
 import com.exe101.exe.dto.request.ChangePasswordRequest;
 import com.exe101.exe.dto.request.UpdateAiAddressRequest;
 import com.exe101.exe.dto.request.UpdateUserPersonalityRequest;
@@ -35,6 +36,8 @@ public interface UserService {
     DailyUsageResponse getDailyUsage(Long userId);
 
     User completeBasicProfile(Long userId, CompleteBasicProfileRequest request);
+
+    User completeOnboarding(Long userId, CompleteOnboardingRequest request);
 
     User updateAvatar(Long userId, MultipartFile avatar);
 

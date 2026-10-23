@@ -1,6 +1,7 @@
 package com.exe101.exe.model.entity;
 
 import com.exe101.exe.model.enums.SessionStatus;
+import com.exe101.exe.model.enums.FocusMode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -45,6 +46,15 @@ public class FocusSession {
 
     @Column(name = "planned_duration")
     private Integer plannedDuration;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "focus_mode", length = 20)
+    @Builder.Default
+    private FocusMode focusMode = FocusMode.STANDARD;
+
+    @Column(name = "completed_cycles")
+    @Builder.Default
+    private Integer completedCycles = 0;
 
     @Column(name = "actual_duration")
     private Integer actualDuration;

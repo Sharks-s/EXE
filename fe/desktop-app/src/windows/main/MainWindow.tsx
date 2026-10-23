@@ -15,10 +15,11 @@ import { FeedbackPage } from "@/features/feedback";
 import Sidebar, { type Page } from "@/shared/components/Sidebar";
 import { toast } from "@/shared/store/toastStore";
 import { tauriStore } from "@/lib/tauriStore";
+import { OnboardingPage } from "@/features/onboarding";
 
 
 export default function MainWindow() {
-  const { bootstrap, isInitializing, isAuthenticated } = useAuthStore();
+  const { bootstrap, isInitializing, isAuthenticated, user } = useAuthStore();
   const { session } = useFocusStore();
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
   const [isCheckingActiveSession, setIsCheckingActiveSession] = useState(true);
@@ -88,7 +89,7 @@ export default function MainWindow() {
 
   useEffect(() => {
     async function checkActiveSession() {
-      if (isInitializing || !isAuthenticated()) {
+      if (isInitializing || !isAuthenticated() || !user?.onboardingCompleted) {
         setIsCheckingActiveSession(false);
         return;
       }
@@ -105,13 +106,15 @@ export default function MainWindow() {
       }
     }
     checkActiveSession();
-  }, [isInitializing, isAuthenticated]);
+  }, [isInitializing, isAuthenticated, user?.onboardingCompleted]);
 
   // Đang check session → không render gì để tránh flash
   if (isInitializing || isCheckingActiveSession) return null;
 
   // Chưa đăng nhập → Auth page
   if (!isAuthenticated()) return <Auth />;
+
+  if (!user?.onboardingCompleted) return <OnboardingPage />;
 
   // Đã đăng nhập → Dashboard
   return (

@@ -457,6 +457,46 @@
     font-size: 12px;
 }
 
+.camera-device-setting {
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #dbeafe;
+    border-radius: 13px;
+}
+
+.camera-device-setting p {
+    margin: 0;
+    color: #0f172a;
+    font-weight: 800;
+}
+
+.camera-device-setting small,
+.camera-device-status {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.camera-device-setting select {
+    width: 100%;
+    padding: 10px 36px 10px 12px;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+}
+
+.camera-device-setting select:focus {
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+}
+
+.camera-device-error {
+    color: #dc2626;
+}
+
 .toggle-switch {
     position: relative;
     flex: 0 0 auto;

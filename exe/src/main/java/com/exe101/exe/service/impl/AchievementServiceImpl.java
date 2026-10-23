@@ -454,7 +454,7 @@ public class AchievementServiceImpl implements AchievementService {
         }
 
         int breakFundAverage90Progress = breakFundAverage90Progress(breakFundRatios);
-        boolean usedAllPersonalities = personalityCodes.containsAll(Set.of("SWEET", "STRICT", "MEAN", "GRUMPY"));
+        boolean usedAllPersonalities = personalityCodes.containsAll(Set.of("BASIC", "SWEET", "GRUMPY", "FUNNY"));
 
         return new SessionAchievementMetrics(
                 perfect,

@@ -37,6 +37,9 @@ dist-ssr/
 src-tauri/target/
 src-tauri/gen/
 src-tauri/bin/
+msix-dist/
+*.msix
+devcert.pfx
 
 # Environment files (Security)
 .env

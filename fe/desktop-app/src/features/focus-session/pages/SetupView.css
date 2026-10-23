@@ -611,6 +611,22 @@ input {
   box-shadow: 0 4px 12px rgba(72, 59, 252, 0.1);
 }
 
+.pomodoro-preset {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pomodoro-preset small {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: 0.75;
+}
+
 .reward-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

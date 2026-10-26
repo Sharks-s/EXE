@@ -20,7 +20,7 @@ export function BestHoursCard({
   const displayItems = items.length ? items : [{ hour: fallbackBestHour, focusMinutes: 0, sessions: 0 }];
 
   return (
-    <article className="info-card">
+    <article className="info-card" data-tutorial="analytics-best-hours">
       <h2>{title}</h2>
       {displayItems.map((item, index) => (
         <div className="progress-group" key={`${item.hour}-${index}`}>

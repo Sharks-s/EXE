@@ -32,7 +32,7 @@ export function HeatmapCard({
   onChangeCalendarMonth,
 }: HeatmapCardProps) {
   return (
-    <article className="heatmap-card">
+    <article className="heatmap-card" data-tutorial="analytics-heatmap">
       <div className="heatmap-header">
         <h2>{title}</h2>
         <div className="calendar-controls" aria-label={monthSelectLabel}>

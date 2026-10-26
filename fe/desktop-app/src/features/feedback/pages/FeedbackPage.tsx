@@ -140,7 +140,7 @@ export default function FeedbackPage() {
             </div>
           </header>
 
-          <section className="feedback-summary-card grid-full">
+          <section className="feedback-summary-card grid-full" data-tutorial="feedback-summary">
             <div className="feedback-summary-copy">
               <span className="feedback-kicker">{t("feedback.summary.kicker")}</span>
               <h2>{t("feedback.summary.title")}</h2>
@@ -163,7 +163,7 @@ export default function FeedbackPage() {
             </div>
           </section>
 
-          <section className="feedback-panel feedback-compose-panel feedback-grid-left">
+          <section className="feedback-panel feedback-compose-panel feedback-grid-left" data-tutorial="feedback-compose">
             <div className="feedback-section-heading">
               <span className="feedback-section-icon">
                 <span className="material-symbols-outlined">edit_square</span>
@@ -329,7 +329,7 @@ export default function FeedbackPage() {
             </form>
           </section>
 
-          <aside className="feedback-panel feedback-history-panel feedback-grid-right">
+          <aside className="feedback-panel feedback-history-panel feedback-grid-right" data-tutorial="feedback-history">
             <div className="feedback-section-heading feedback-history-heading">
               <span className="feedback-section-icon">
                 <span className="material-symbols-outlined">history</span>

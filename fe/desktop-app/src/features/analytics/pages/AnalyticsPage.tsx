@@ -17,11 +17,12 @@ import "./AnalyticsPage.css";
 type ProLockedCardProps = {
   title: string;
   description: string;
+  tutorial?: string;
 };
 
-function ProLockedCard({ title, description }: ProLockedCardProps) {
+function ProLockedCard({ title, description, tutorial }: ProLockedCardProps) {
   return (
-    <article className="info-card pro-locked-card">
+    <article className="info-card pro-locked-card" data-tutorial={tutorial}>
       <div className="pro-locked-icon">
         <span className="material-symbols-outlined">lock</span>
       </div>
@@ -110,6 +111,7 @@ export default function AnalyticsPage() {
 
         <section
           className="bento-grid"
+          data-tutorial="analytics-overview"
           aria-label={t("analytics.overview_label", { defaultValue: "Thong ke tong quan" })}
         >
           <StatCards stats={displayedStats} isLoading={analytics.isLoading} />
@@ -152,6 +154,7 @@ export default function AnalyticsPage() {
             />
           ) : (
             <ProLockedCard
+              tutorial="analytics-heatmap"
               title={t("analytics.heatmap_title", { defaultValue: "Tan suat tap trung" })}
               description="Nâng cấp Pro để xem heatmap theo tháng và nhận diện nhịp tập trung dài hạn."
             />
@@ -254,7 +257,7 @@ export default function AnalyticsPage() {
             </>
           ) : (
             <>
-              <article className="info-card basic-history-card">
+              <article className="info-card basic-history-card" data-tutorial="analytics-basic-history">
                 <h2>{t("analytics.session_history_title", { defaultValue: "Lich su phien" })}</h2>
                 <div className="basic-history-list">
                   {isSessionHistoryLoading ? (
@@ -286,6 +289,7 @@ export default function AnalyticsPage() {
               </article>
 
               <ProLockedCard
+                tutorial="analytics-pro-insights"
                 title={t("analytics.best_hours_title", { defaultValue: "Gio hieu qua nhat" })}
                 description="Pro phân tích khung giờ học hiệu quả nhất để gợi ý chiến lược tập trung cá nhân hóa."
               />

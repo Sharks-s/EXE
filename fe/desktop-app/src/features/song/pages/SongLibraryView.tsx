@@ -105,7 +105,7 @@ export default function SongLibraryView() {
           </div>
         </header>
 
-        <section className="music-player-card">
+        <section className="music-player-card" data-tutorial="music-player">
           <div className="music-record-wrap" aria-hidden="true">
             <div className={`music-record ${isPlaying ? "is-playing" : ""}`}>
               <span className="music-record-ring">
@@ -198,7 +198,7 @@ export default function SongLibraryView() {
         </section>
 
         <div className="music-library-grid">
-          <section className="music-panel music-library-panel">
+          <section className="music-panel music-library-panel" data-tutorial="music-library">
             <div className="music-panel-header">
               <div className="music-panel-title">
                 <span className="music-panel-icon library-icon"><MaterialIcon name="library_music" /></span>
@@ -308,7 +308,7 @@ export default function SongLibraryView() {
             </div>
           </section>
 
-          <section className="music-panel music-playlist-panel">
+          <section className="music-panel music-playlist-panel" data-tutorial="music-playlist">
             <div className="music-panel-header">
               <div className="music-panel-title">
                 <span className="music-panel-icon playlist-icon"><MaterialIcon name="queue_music" /></span>

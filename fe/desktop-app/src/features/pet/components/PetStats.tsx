@@ -17,7 +17,7 @@ export function PetStats({
     const { t } = useTranslation("common");
 
     return (
-        <section className="pet-stats">
+        <section className="pet-stats" data-tutorial="pet-stats">
             <div className="pet-stat-card stat-purple">
                 <div className="stat-icon purple">
                     <span className="material-symbols-outlined icon-fill">pets</span>

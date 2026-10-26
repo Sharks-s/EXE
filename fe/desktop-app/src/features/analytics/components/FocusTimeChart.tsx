@@ -25,7 +25,7 @@ export function FocusTimeChart({
   formatMinutes,
 }: FocusTimeChartProps) {
   return (
-    <article className="focus-chart-card">
+    <article className="focus-chart-card" data-tutorial="analytics-focus-chart">
       <div className="card-header">
         <h2>{title}</h2>
         <div className="best-day-badge">

@@ -138,6 +138,7 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       isResumeConfirmPending: false,
       aiMessages: [],
       violatingCache: new Set<string>(),
+      dailyUsage: null,
     });
   },
 

@@ -108,6 +108,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
         {/* Header — luôn cố định, có nút back rõ ràng */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-[#1e1e1e] border-b border-zinc-800">
           <button
+            data-tutorial="camera-back"
             onClick={onClose}
             disabled={isSubmitting}
             className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition disabled:opacity-50"
@@ -134,7 +135,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-blue-500/15 text-blue-400">
               <span className="material-symbols-outlined text-3xl">photo_camera</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2" data-tutorial="camera-permission">
               <h4 className="text-base font-semibold text-zinc-100">
                 {t("focusSession.cameraSetup.permission_heading")}
               </h4>
@@ -273,6 +274,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
             <div className="space-y-2">
               <button
                 type="button"
+                data-tutorial-choice="with-camera"
                 disabled={isSubmitting}
                 onClick={() => setHasCameraConsent(true)}
                 className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold text-sm hover:bg-blue-400 transition disabled:opacity-50"
@@ -281,6 +283,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
               </button>
               <button
                 type="button"
+                data-tutorial-choice="without-camera"
                 disabled={isSubmitting}
                 onClick={() => handleStartFocus(true)}
                 className="w-full py-2.5 rounded-xl text-zinc-400 text-sm hover:bg-zinc-800 hover:text-zinc-200 transition disabled:opacity-50"
@@ -292,6 +295,7 @@ export const CameraSetupModal: React.FC<CameraSetupModalProps> = ({
             </div>
           ) : (
             <button
+              data-tutorial="camera-ready"
               disabled={!canProceed || isSubmitting}
               onClick={() => handleStartFocus(false)}
               className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${canProceed && !isSubmitting

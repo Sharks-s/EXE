@@ -1542,6 +1542,113 @@
     border-color: #2563eb;
 }
 
+/* Language and focus preferences */
+.settings-page .preference-card {
+    padding: 26px;
+    background: radial-gradient(circle at 100% 0, rgba(45, 212, 191, 0.1), transparent 32%), #fff;
+}
+
+.settings-page .preference-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 22px;
+}
+
+.settings-page .preference-card-heading > div,
+.settings-page .setting-row-copy { min-width: 0; }
+.settings-page .preference-card-heading p { margin-bottom: 0; }
+
+.settings-page .preference-heading-icon {
+    display: grid;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    place-items: center;
+    color: #0f766e;
+    background: linear-gradient(135deg, #ccfbf1, #dbeafe);
+    border: 1px solid #99f6e4;
+    border-radius: 14px;
+    font-size: 24px;
+}
+
+.settings-page .language-options {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.settings-page .language-option {
+    min-height: 76px;
+    padding: 15px 16px;
+}
+
+.settings-page .language-flag {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    color: #475569;
+    background: #fff;
+    border: 1px solid #dbeafe;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.settings-page .language-option-active .language-flag {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
+    border-color: transparent;
+}
+
+.settings-page .preference-toggle-row,
+.settings-page .camera-device-setting {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 13px;
+    min-height: 78px;
+    padding: 14px;
+}
+
+.settings-page .setting-row-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    color: #0f766e;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    font-size: 21px;
+}
+
+.settings-page .camera-device-setting select,
+.settings-page .camera-device-status {
+    grid-column: 3;
+    max-width: 230px;
+}
+
+.settings-page .camera-device-error {
+    padding: 7px 10px;
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 9px;
+    font-size: 11px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .settings-page .camera-device-setting { grid-template-columns: 42px minmax(0, 1fr); }
+    .settings-page .camera-device-setting select,
+    .settings-page .camera-device-status {
+        grid-column: 2;
+        width: 100%;
+        max-width: none;
+    }
+}
+
 .settings-page .notification-settings-layout { gap: 16px; }
 
 .settings-page .notification-group,

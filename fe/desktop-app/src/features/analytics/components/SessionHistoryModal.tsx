@@ -117,7 +117,7 @@ export function SessionHistoryModal({
           </div>
         </div>
 
-        <div className="analytics-history-detail-panel">
+        <div className="analytics-history-detail-panel" data-tutorial="analytics-history-detail">
           {selectedSession && selectedReview ? (
             <>
               <div className="history-detail-header">

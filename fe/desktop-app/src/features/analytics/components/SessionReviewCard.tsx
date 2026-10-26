@@ -29,7 +29,7 @@ export function SessionReviewCard({
   formatMinutes,
 }: SessionReviewCardProps) {
   return (
-    <article className="info-card session-review-card">
+    <article className="info-card session-review-card" data-tutorial="analytics-session-review">
       <div className="session-review-header">
         <div>
           <h2>{title}</h2>

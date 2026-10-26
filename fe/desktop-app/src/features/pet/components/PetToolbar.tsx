@@ -23,7 +23,7 @@ export function PetToolbar({
     const { t } = useTranslation();
 
     return (
-        <section className="pet-toolbar">
+        <section className="pet-toolbar" data-tutorial="pet-toolbar">
             <div className="pet-search">
                 <span className="material-symbols-outlined">search</span>
                 <input

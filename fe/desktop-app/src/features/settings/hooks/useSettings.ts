@@ -58,7 +58,6 @@ export function useSettings() {
 
     // ── Thông báo ──
     const [warningWindowEnabled, setWarningWindowEnabled] = useState(true);
-    const [soundReminderEnabled, setSoundReminderEnabled] = useState(false);
     const [cameraEnabled, setCameraEnabled] = useState(false);
     const [isCameraSettingLoading, setIsCameraSettingLoading] = useState(true);
     const [isSavingCameraSetting, setIsSavingCameraSetting] = useState(false);
@@ -416,8 +415,6 @@ export function useSettings() {
         // Thông báo
         warningWindowEnabled,
         setWarningWindowEnabled,
-        soundReminderEnabled,
-        setSoundReminderEnabled,
         cameraEnabled,
         isCameraSettingLoading,
         isSavingCameraSetting,

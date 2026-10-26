@@ -24,7 +24,7 @@ export function ViolationsCard({
   minutesDeductedLabel,
 }: ViolationsCardProps) {
   return (
-    <article className="info-card violations-card">
+    <article className="info-card violations-card" data-tutorial="analytics-violations">
       <div className="violation-header">
         <h2>{title}</h2>
         <span>{penaltyLabel}</span>

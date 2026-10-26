@@ -23,6 +23,7 @@ export function PetNavbar({ activeTab, onChangeTab }: PetNavbarProps) {
 
             <button
                 type="button"
+                data-tutorial="pet-shop"
                 className={activeTab === "shop" ? "active" : ""}
                 onClick={() => onChangeTab("shop")}
             >

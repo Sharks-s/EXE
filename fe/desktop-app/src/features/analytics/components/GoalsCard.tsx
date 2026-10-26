@@ -10,7 +10,7 @@ type GoalsCardProps = {
 
 export function GoalsCard({ title, emptyLabel, items, sessionsCountLabel, formatMinutes }: GoalsCardProps) {
   return (
-    <article className="info-card">
+    <article className="info-card" data-tutorial="analytics-goals">
       <h2>{title}</h2>
       <div className="goal-list">
         {items.length ? (

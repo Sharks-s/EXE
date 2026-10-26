@@ -22,6 +22,7 @@ export type Page =
 interface SidebarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
+  onOpenTutorial: () => void;
   isLocked?: boolean;
 }
 
@@ -213,6 +214,7 @@ function NavItem({
 
   return (
     <button
+      data-tutorial={`nav-${page}`}
       onClick={() => onNavigate(page)}
       disabled={disabled}
       title={
@@ -242,6 +244,7 @@ function NavItem({
 export default function Sidebar({
   currentPage,
   onNavigate,
+  onOpenTutorial,
   isLocked = false,
 }: SidebarProps) {
   const { t } = useTranslation("common");
@@ -252,8 +255,13 @@ export default function Sidebar({
   );
 
   const focusStoreDailyUsage = useFocusStore((s) => s.dailyUsage);
+  const activeFocusSession = useFocusStore((s) => s.session);
 
-  const effectiveDailyUsage: DailyUsageResponse = focusStoreDailyUsage
+  // Heartbeat usage chỉ là nguồn realtime trong lúc một phiên đang chạy.
+  // Ngoài phiên, dùng response mới nhất từ /users/me/daily-usage để tránh
+  // cache Free cũ che mất trạng thái Pro vừa được kích hoạt.
+  const effectiveDailyUsage: DailyUsageResponse =
+    activeFocusSession && focusStoreDailyUsage
     ? {
       dailyUsedMinute: focusStoreDailyUsage.dailyUsedMinutes,
       dailyLimitMinute: focusStoreDailyUsage.dailyLimitMinutes,
@@ -396,6 +404,20 @@ export default function Sidebar({
 
       <div className="p-3 border-t border-slate-300 space-y-1">
         <DailyUsageCard usage={effectiveDailyUsage} collapsed={collapsed} />
+
+        <button
+          type="button"
+          data-tutorial="open-tutorial"
+          onClick={onOpenTutorial}
+          disabled={isLocked}
+          title={collapsed ? t("sidebar.tutorial", { defaultValue: "Hướng dẫn" }) : undefined}
+          className={`w-full flex items-center py-2.5 rounded-xl text-sm text-slate-500 transition-colors duration-200 overflow-hidden ${collapsed ? "justify-center px-0" : "px-3"} ${isLocked ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f5f2ff] hover:text-slate-800"}`}
+        >
+          <span className={`material-symbols-outlined shrink-0 w-[18px] h-[18px] flex items-center justify-center text-[19px] ${collapsed ? "mx-auto" : ""}`}>help</span>
+          <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0 ml-0" : "max-w-[160px] opacity-100 ml-3"}`}>
+            {t("sidebar.tutorial", { defaultValue: "Hướng dẫn" })}
+          </span>
+        </button>
 
         <NavItem
           page="profile"

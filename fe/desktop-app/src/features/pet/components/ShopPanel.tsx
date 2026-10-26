@@ -54,7 +54,7 @@ export function ShopPanel({ onPetAdded }: ShopPanelProps) {
     }
 
     return (
-        <section className="shop-panel">
+        <section className="shop-panel" data-tutorial="pet-shop-panel">
             {error && <div className="pet-error">{error}</div>}
 
             <div className="shop-header">
@@ -161,6 +161,7 @@ function ShopPetCard({ pet, adding, onPreview, onAdd }: ShopPetCardProps) {
                 <button
                     type="button"
                     className="shop-preview-button"
+                    data-tutorial="pet-preview-button"
                     onClick={onPreview}
                 >
                     {SHOP_TEXT.preview}
@@ -195,7 +196,12 @@ function ShopPetPreviewModal({ pet, onClose }: ShopPetPreviewModalProps) {
                         <h2>{pet.name}</h2>
                         <span>{SHOP_TEXT.previewDescription}</span>
                     </div>
-                    <button type="button" onClick={onClose} aria-label={SHOP_TEXT.close}>
+                    <button
+                        type="button"
+                        data-tutorial="pet-preview-close"
+                        onClick={onClose}
+                        aria-label={SHOP_TEXT.close}
+                    >
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>

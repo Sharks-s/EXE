@@ -28,7 +28,7 @@ export function SessionHistoryLaunchCard({
   onOpen,
 }: SessionHistoryLaunchCardProps) {
   return (
-    <article className="info-card history-launch-card">
+    <article className="info-card history-launch-card" data-tutorial="analytics-history">
       <button className="history-launch-button" type="button" onClick={onOpen}>
         <div className="session-review-header compact">
           <div>

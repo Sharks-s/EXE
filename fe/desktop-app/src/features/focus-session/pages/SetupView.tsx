@@ -279,7 +279,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
 
         <div className="dashboard-grid">
           <div className="main-column">
-            <section className="bento-card goal-card">
+            <section className="bento-card goal-card" data-tutorial="goal-card">
               <div className="section-title">
                 <div className="title-icon">
                   <MaterialIcon name="track_changes" />
@@ -293,6 +293,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
                     <div className="goal-row" key={rowIndex}>
                       {row.map((goal) => (
                         <button
+                          data-tutorial="goal-option"
                           key={goal.value}
                           type="button"
                           className={`goal-chip ${selectedGoal === goal.value && !customGoal.trim()
@@ -323,7 +324,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               </div>
             </section>
 
-            <section className="bento-card duration-card">
+            <section className="bento-card duration-card" data-tutorial="duration-card">
               <div className="duration-header">
                 <div className="section-title no-margin">
                   <div className="title-icon">
@@ -359,6 +360,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               <div className="preset-grid">
                 {presets.map((preset) => (
                   <button
+                    data-tutorial="duration-option"
                     key={preset}
                     type="button"
                     className={`preset-btn ${selectedPreset === preset && focusMode === "STANDARD" ? "active" : ""}`}
@@ -400,6 +402,7 @@ export function SetupView({ onNavigate }: SetupViewProps) {
               </div>
 
               <button
+                data-tutorial="start-session"
                 className="start-btn"
                 type="button"
                 onClick={handleStart}

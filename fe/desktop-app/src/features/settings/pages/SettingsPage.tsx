@@ -198,8 +198,6 @@ export default function SettingsPage() {
     handleRemoveKeyword,
     warningWindowEnabled,
     setWarningWindowEnabled,
-    soundReminderEnabled,
-    setSoundReminderEnabled,
     cameraEnabled,
     isCameraSettingLoading,
     isSavingCameraSetting,
@@ -304,7 +302,7 @@ export default function SettingsPage() {
             </div>
           </header>
 
-          <section className={`card grid-full subscription-card ${isProPlan ? "subscription-card-pro" : "subscription-card-free"}`}>
+          <section data-tutorial="settings-subscription" className={`card grid-full subscription-card ${isProPlan ? "subscription-card-pro" : "subscription-card-free"}`}>
             <div className="subscription-summary">
               <div className={`subscription-plan-icon ${isProPlan ? "pro" : ""}`}>
                 <span className="material-symbols-outlined">
@@ -375,7 +373,7 @@ export default function SettingsPage() {
           </section>
 
           {/* ── Cấu hình AI đồng hành ── */}
-          <section className="card grid-full">
+          <section className="card grid-full" data-tutorial="settings-ai">
             <div className="card-intro">
               <h3>{t("settings.ai.title")}</h3>
               <p>{t("settings.ai.description")}</p>
@@ -416,10 +414,13 @@ export default function SettingsPage() {
           </section>
 
           {/* ── Ngôn ngữ ── */}
-          <section className="card grid-left">
-            <div className="card-intro">
-              <h3>{t("settings.language.title")}</h3>
-              <p>{t("settings.language.description")}</p>
+          <section className="card grid-left preference-card language-card" data-tutorial="settings-language">
+            <div className="card-intro preference-card-heading">
+              <span className="preference-heading-icon material-symbols-outlined">language</span>
+              <div>
+                <h3>{t("settings.language.title")}</h3>
+                <p>{t("settings.language.description")}</p>
+              </div>
             </div>
 
             <div className="language-options">
@@ -449,15 +450,19 @@ export default function SettingsPage() {
           </section>
 
           {/* ── Phiên tập trung ── */}
-          <section className="card grid-right">
-            <div className="card-intro">
-              <h3>{t("settings.focus.title")}</h3>
-              <p>{t("settings.focus.description")}</p>
+          <section className="card grid-right preference-card focus-preference-card">
+            <div className="card-intro preference-card-heading">
+              <span className="preference-heading-icon material-symbols-outlined">center_focus_strong</span>
+              <div>
+                <h3>{t("settings.focus.title")}</h3>
+                <p>{t("settings.focus.description")}</p>
+              </div>
             </div>
 
             <div className="toggle-list">
-              <div className="toggle-row">
-                <div>
+              <div className="toggle-row preference-toggle-row">
+                <span className="setting-row-icon material-symbols-outlined">videocam</span>
+                <div className="setting-row-copy">
                   <p>{t("settings.focus.camera")}</p>
                   <small>{t("settings.focus.camera_desc")}</small>
                 </div>
@@ -470,7 +475,8 @@ export default function SettingsPage() {
 
               {cameraEnabled && (
                 <div className="camera-device-setting">
-                  <div>
+                  <span className="setting-row-icon material-symbols-outlined">video_settings</span>
+                  <div className="setting-row-copy">
                     <p>{t("settings.focus.camera_device")}</p>
                     <small>{t("settings.focus.camera_device_desc")}</small>
                   </div>
@@ -501,8 +507,9 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              <div className="toggle-row">
-                <div>
+              <div className="toggle-row preference-toggle-row">
+                <span className="setting-row-icon material-symbols-outlined">warning</span>
+                <div className="setting-row-copy">
                   <p>{t("settings.focus.warning_window")}</p>
                   <small>{t("settings.focus.warning_window_desc")}</small>
                 </div>
@@ -512,21 +519,11 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="toggle-row">
-                <div>
-                  <p>{t("settings.focus.sound_reminder")}</p>
-                  <small>{t("settings.focus.sound_reminder_desc")}</small>
-                </div>
-                <ToggleSwitch
-                  enabled={soundReminderEnabled}
-                  onClick={() => setSoundReminderEnabled((v) => !v)}
-                />
-              </div>
             </div>
           </section>
 
           {/* ── Thông báo ── */}
-          <section className="card grid-full">
+          <section className="card grid-full" data-tutorial="settings-notifications">
             <div className="card-intro">
               <h3>{t("settings.notifications.title")}</h3>
               <p>{t("settings.notifications.description")}</p>
@@ -729,7 +726,7 @@ export default function SettingsPage() {
           </section>
 
           {/* ── Bảo mật & Tài khoản ── */}
-          <section className="card security-card grid-full">
+          <section className="card security-card grid-full" data-tutorial="settings-security">
             <h3>{t("settings.security.title")}</h3>
 
             <div className="security-list">

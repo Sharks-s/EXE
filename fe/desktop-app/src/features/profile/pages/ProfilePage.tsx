@@ -74,7 +74,7 @@ export default function ProfilePage() {
             </div>
           </header>
 
-          <section className="hero-card grid-full">
+          <section className="hero-card grid-full" data-tutorial="profile-hero">
             <div className="hero-blob" />
 
             <button
@@ -141,7 +141,7 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <section className="card profile-card grid-left">
+          <section className="card profile-card grid-left" data-tutorial="profile-info">
             <div className="card-header">
               <h3>{t("profile.personal_info_title")}</h3>
               <button
@@ -198,7 +198,7 @@ export default function ProfilePage() {
             </button>
           </section>
 
-          <section className="card achievement-progress-card grid-right">
+          <section className="card achievement-progress-card grid-right" data-tutorial="profile-achievements">
             <div className="card-header">
               <h3>{t("profile.achievements_title")}</h3>
             </div>

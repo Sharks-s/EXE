@@ -19,7 +19,7 @@ export function AnalyticsHeader({
   onRangeChange,
 }: AnalyticsHeaderProps) {
   return (
-    <header className="page-header app-page-header">
+    <header className="page-header app-page-header" data-tutorial="analytics-header">
       <div className="app-page-title">
         <div className="app-page-title-row">
           <span className="app-page-title-icon">

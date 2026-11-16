@@ -3,9 +3,9 @@ import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { authStorage, authSession } from "@/features/auth";
 
 
-// const API_BASE = import.meta.env.VITE_API_BASE ?? "https://focusbuddy-api-lw5a.onrender.com";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "https://focusbuddy-api-lw5a.onrender.com";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
+// const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
 export const api = axios.create({
   baseURL: API_BASE,

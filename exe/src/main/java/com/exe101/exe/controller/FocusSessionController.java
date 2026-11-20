@@ -13,10 +13,12 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/focus-sessions")
 @RequiredArgsConstructor
+@Slf4j
 public class FocusSessionController {
 
     private final FocusSessionService focusSessionService;
@@ -57,7 +59,11 @@ public class FocusSessionController {
             @PathVariable Long id,
             @RequestParam int actualElapsedSeconds
     ) {
-        return ApiResponse.success(focusSessionService.recordHeartbeat(id, actualElapsedSeconds));
+        log.info("[FOCUS_HEARTBEAT_API] received sessionId={} elapsedSeconds={}", id, actualElapsedSeconds);
+        HeartbeatResponse response = focusSessionService.recordHeartbeat(id, actualElapsedSeconds);
+        log.info("[FOCUS_HEARTBEAT_API] success sessionId={} dailyUsedMinutes={} unlimited={}",
+                id, response.dailyUsedMinutes(), response.unlimited());
+        return ApiResponse.success(response);
     }
 
     @PostMapping("/{sessionId}/cycle")
@@ -74,7 +80,12 @@ public class FocusSessionController {
             @PathVariable Long sessionId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        return ApiResponse.success(focusSessionService.completeSession(sessionId, userDetails.getId()));
+        Long userId = userDetails.getId();
+        log.info("[FOCUS_COMPLETE_API] received sessionId={} userId={}", sessionId, userId);
+        SessionCompleteResponse response = focusSessionService.completeSession(sessionId, userId);
+        log.info("[FOCUS_COMPLETE_API] success sessionId={} userId={} earnedPoints={} earnedExperience={}",
+                sessionId, userId, response.earnedPoints(), response.earnedExperience());
+        return ApiResponse.success(response);
     }
 
     @PostMapping("/{sessionId}/cancel")

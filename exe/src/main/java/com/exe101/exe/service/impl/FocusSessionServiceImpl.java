@@ -24,6 +24,7 @@ import com.exe101.exe.repository.PersonalityRepository;
 import com.exe101.exe.service.result.AiCallResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class FocusSessionServiceImpl implements FocusSessionService {
 
@@ -223,7 +225,8 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     public FocusSessionResponse endSession(Long sessionId, Long userId, boolean isAborted) {
         Instant now = Instant.now();
 
-        FocusSession session = focusSessionRepository.findById(sessionId)
+        // Serialize every terminal update with heartbeat/complete/cancel updates.
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
         if (!session.getUser().getId().equals(userId)) {
@@ -285,18 +288,31 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     @Transactional
     public SessionCompleteResponse completeSession(Long sessionId, Long userId) {
         Instant now = Instant.now();
+        log.info("[FOCUS_COMPLETE_SERVICE] start sessionId={} userId={} completedAt={}", sessionId, userId, now);
+
         FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+        log.info("[FOCUS_COMPLETE_SERVICE] locked sessionId={} ownerId={} status={} startedAt={} " +
+                        "plannedDuration={} activeSeconds={} completedCycles={}",
+                sessionId, session.getUser().getId(), session.getStatus(), session.getStartedAt(),
+                session.getPlannedDuration(), session.getActiveSeconds(), session.getCompletedCycles());
 
         if (!session.getUser().getId().equals(userId)) {
+            log.warn("[FOCUS_COMPLETE_SERVICE] unauthorized sessionId={} ownerId={} requestedUserId={}",
+                    sessionId, session.getUser().getId(), userId);
             throw new BusinessException(ErrorCode.SESSION_UNAUTHORIZED_ACCESS);
         }
 
         if (session.getStatus() != SessionStatus.IN_PROGRESS) {
+            log.warn("[FOCUS_COMPLETE_SERVICE] rejected sessionId={} userId={} currentStatus={}",
+                    sessionId, userId, session.getStatus());
             throw new BusinessException(ErrorCode.SESSION_ALREADY_ENDED);
         }
 
         int activeSeconds = calculateActiveSeconds(session, now);
+        log.info("[FOCUS_COMPLETE_SERVICE] duration-calculated sessionId={} activeSeconds={} actualMinutes={} " +
+                        "pausedMinutes={} pausedSeconds={}",
+                sessionId, activeSeconds, activeSeconds / 60, session.getPausedMinutes(), session.getPausedSeconds());
         session.setActiveSeconds(activeSeconds);
         session.setActualDuration(activeSeconds / 60);
         session.setEndedAt(now);
@@ -304,9 +320,22 @@ public class FocusSessionServiceImpl implements FocusSessionService {
         session.setStatus(SessionStatus.COMPLETED);
 
         FocusSession savedSession = focusSessionRepository.save(session);
+        log.info("[FOCUS_COMPLETE_SERVICE] session-marked-completed sessionId={} status={} endedAt={} completedAt={}",
+                savedSession.getId(), savedSession.getStatus(), savedSession.getEndedAt(), savedSession.getCompletedAt());
+
+        log.info("[FOCUS_COMPLETE_SERVICE] pet-experience-start sessionId={} userPetId={}",
+                sessionId, savedSession.getUserPet() == null ? null : savedSession.getUserPet().getId());
         int earnedExperience = addExperienceToSessionPet(savedSession, savedSession.getActualDuration());
+        log.info("[FOCUS_COMPLETE_SERVICE] pet-experience-success sessionId={} earnedExperience={}",
+                sessionId, earnedExperience);
+
+        log.info("[FOCUS_COMPLETE_SERVICE] reward-calculation-start sessionId={}", sessionId);
         int earnedPoints = calculateSessionRewardPointsWithDailyCap(userId, savedSession, now);
+        log.info("[FOCUS_COMPLETE_SERVICE] reward-calculation-success sessionId={} earnedPoints={}",
+                sessionId, earnedPoints);
         if (earnedPoints > 0) {
+            log.info("[FOCUS_COMPLETE_SERVICE] wallet-credit-start sessionId={} userId={} points={}",
+                    sessionId, userId, earnedPoints);
             pointService.creditWallet(
                     userId,
                     earnedPoints,
@@ -314,15 +343,28 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                     "Focus session reward",
                     String.valueOf(savedSession.getId())
             );
+            log.info("[FOCUS_COMPLETE_SERVICE] wallet-credit-success sessionId={} userId={}", sessionId, userId);
         }
 
+        log.info("[FOCUS_COMPLETE_SERVICE] achievements-start sessionId={} userId={}", sessionId, userId);
         List<UnlockedAchievementResponse> unlocked = achievementService.checkSessionCompletedAchievements(userId);
+        log.info("[FOCUS_COMPLETE_SERVICE] achievements-success sessionId={} unlockedCount={}",
+                sessionId, unlocked.size());
+
+        log.info("[FOCUS_COMPLETE_SERVICE] wallet-read-start sessionId={} userId={}", sessionId, userId);
         WalletResponse wallet = pointService.getWallet(userId);
+        log.info("[FOCUS_COMPLETE_SERVICE] wallet-read-success sessionId={} currentPoints={}",
+                sessionId, wallet.currentPoints());
+
+        log.info("[FOCUS_COMPLETE_SERVICE] streak-start sessionId={} userId={}", sessionId, userId);
         int currentStreak = achievementService.getCurrentStreakDays(userId);
         boolean newStreakMilestone = unlocked.stream().anyMatch(a -> a.code().startsWith("STREAK_"));
+        log.info("[FOCUS_COMPLETE_SERVICE] notification-start sessionId={} streak={} newMilestone={}",
+                sessionId, currentStreak, newStreakMilestone);
         notifySessionCompleted(userId, savedSession, earnedPoints, unlocked, currentStreak);
+        log.info("[FOCUS_COMPLETE_SERVICE] notification-success sessionId={}", sessionId);
 
-        return new SessionCompleteResponse(
+        SessionCompleteResponse response = new SessionCompleteResponse(
                 earnedPoints,
                 wallet.currentPoints(),
                 earnedExperience,
@@ -330,6 +372,9 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 unlocked,
                 new StreakResponse(currentStreak, newStreakMilestone)
         );
+        log.info("[FOCUS_COMPLETE_SERVICE] finished sessionId={} userId={} status={} points={} experience={}",
+                sessionId, userId, savedSession.getStatus(), earnedPoints, earnedExperience);
+        return response;
     }
 
     @Override
@@ -625,8 +670,14 @@ public class FocusSessionServiceImpl implements FocusSessionService {
     @Override
     @Transactional
     public HeartbeatResponse recordHeartbeat(Long sessionId, int actualElapsedSeconds) {
-        FocusSession session = focusSessionRepository.findById(sessionId)
+        log.info("[FOCUS_HEARTBEAT_SERVICE] start sessionId={} elapsedSeconds={}",
+                sessionId, actualElapsedSeconds);
+        // Serialize heartbeat with complete/cancel/violation updates. Without the
+        // row lock, a heartbeat can read IN_PROGRESS, then commit after complete
+        // and overwrite the freshly persisted COMPLETED status with stale state.
+        FocusSession session = focusSessionRepository.findByIdForUpdate(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+        log.info("[FOCUS_HEARTBEAT_SERVICE] locked sessionId={} status={}", sessionId, session.getStatus());
         Instant now = Instant.now();
         User user = session.getUser();
         resetDailyUsageIfNeeded(user, now);
@@ -635,11 +686,18 @@ public class FocusSessionServiceImpl implements FocusSessionService {
                 ? session.getLastHeartbeatElapsedSeconds() : 0;
         int deltaSeconds = Math.max(0, actualElapsedSeconds - lastElapsedSeconds);
         int deltaMinutes = deltaSeconds / 60;
+        log.info("[FOCUS_HEARTBEAT_SERVICE] usage sessionId={} userId={} status={} lastElapsedSeconds={} " +
+                        "deltaSeconds={} deltaMinutes={} currentDailyMinutes={}",
+                sessionId, user.getId(), session.getStatus(), lastElapsedSeconds,
+                deltaSeconds, deltaMinutes, currentDailyUsedMinutes(user));
 
         if (deltaMinutes > 0) {
             boolean hasProAccess = hasActiveProAccess(user.getId(), now);
 
             if (!hasProAccess && exceedsDailyUsageLimit(user, deltaMinutes)) {
+                log.warn("[FOCUS_HEARTBEAT_SERVICE] daily-limit-exceeded sessionId={} userId={} " +
+                                "currentDailyMinutes={} attemptedDeltaMinutes={}",
+                        sessionId, user.getId(), currentDailyUsedMinutes(user), deltaMinutes);
                 notificationService.create(
                         user.getId(),
                         NotificationType.DAILY_LIMIT_REACHED,
@@ -667,11 +725,14 @@ public class FocusSessionServiceImpl implements FocusSessionService {
 
         boolean unlimited = hasActiveProAccess(user.getId(), now);
 
-        return new HeartbeatResponse(
+        HeartbeatResponse response = new HeartbeatResponse(
                 currentDailyUsedMinutes(user),
                 unlimited ? null : appSeedProperties.getDailyFreeUsage(),
                 unlimited
         );
+        log.info("[FOCUS_HEARTBEAT_SERVICE] success sessionId={} userId={} dailyUsedMinutes={} unlimited={}",
+                sessionId, user.getId(), response.dailyUsedMinutes(), response.unlimited());
+        return response;
     }
 
     @Override

@@ -59,6 +59,7 @@ export function useFocusSession() {
   const finalPomodoroBreakPendingRef = useRef<boolean>(false);
   const downtimeMsRef = useRef<number>(0);
   const violationQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const isEndingRef = useRef<boolean>(false);
 
   // Đồng bộ session mới nhất vào ref để đọc trong interval, tránh stale closure
   const sessionRef = useRef(session);
@@ -466,18 +467,24 @@ export function useFocusSession() {
   };
 
   const handleEndSession = async (isAborted: boolean) => {
+    // React state updates asynchronously, so use a ref to block overlapping
+    // interval ticks before either terminal request can start.
+    if (isEndingRef.current) return;
+
     const latestSession = sessionRef.current;
     if (!latestSession) return;
 
+    isEndingRef.current = true;
     setIsEnding(true);
-    stopOrchestrator();
 
     try {
       if (isAborted) {
         const res = await focusApi.endSession(latestSession.id, true);
+        stopOrchestrator();
         syncSession(res);
       } else {
         const result = await focusApi.completeSession(latestSession.id);
+        stopOrchestrator();
         const completedSession = {
           ...latestSession,
           status: "COMPLETED" as const,
@@ -498,6 +505,7 @@ export function useFocusSession() {
       }
       console.error("[useFocusSession] Lỗi khi kết thúc phiên học:", err);
     } finally {
+      isEndingRef.current = false;
       setIsEnding(false);
     }
   };

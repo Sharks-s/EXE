@@ -104,8 +104,25 @@ export const focusApi = {
   completeSession: async (
     sessionId: number,
   ): Promise<FocusSessionCompleteResult> => {
-    const res = await api.post(`/focus-sessions/${sessionId}/complete`);
-    return res.data.data;
+    const startedAt = performance.now();
+    console.info("[FOCUS_COMPLETE_CLIENT] request", { sessionId });
+    try {
+      const res = await api.post(`/focus-sessions/${sessionId}/complete`);
+      console.info("[FOCUS_COMPLETE_CLIENT] success", {
+        sessionId,
+        status: res.status,
+        durationMs: Math.round(performance.now() - startedAt),
+        data: res.data.data,
+      });
+      return res.data.data;
+    } catch (error) {
+      console.error("[FOCUS_COMPLETE_CLIENT] failed", {
+        sessionId,
+        durationMs: Math.round(performance.now() - startedAt),
+        error,
+      });
+      throw error;
+    }
   },
 
   // GET /focus-sessions/history
